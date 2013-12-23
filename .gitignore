@@ -1,0 +1,8 @@
+# IntelliJ IDEA
+.idea/workspace.xml
+
+# VIM
+.*.swp
+
+# Others
+*~

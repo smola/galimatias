@@ -22,5 +22,11 @@
 
 package io.mola.galimatias;
 
-public class URLCanonicalizer {
+import java.io.Serializable;
+
+public abstract class Host implements Serializable {
+
+    @Override
+    public abstract String toString();
+
 }

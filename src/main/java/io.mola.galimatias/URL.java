@@ -1,9 +1,35 @@
+/*
+ * Copyright (c) 2013 Santiago M. Mola <santi@mola.io>
+ *
+ *   Permission is hereby granted, free of charge, to any person obtaining a
+ *   copy of this software and associated documentation files (the "Software"),
+ *   to deal in the Software without restriction, including without limitation
+ *   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ *   and/or sell copies of the Software, and to permit persons to whom the
+ *   Software is furnished to do so, subject to the following conditions:
+ *
+ *   The above copyright notice and this permission notice shall be included in
+ *   all copies or substantial portions of the Software.
+ *
+ *   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ *   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ *   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ *   DEALINGS IN THE SOFTWARE.
+ */
+
 package io.mola.galimatias;
+
+import java.io.Serializable;
+import java.util.Arrays;
 
 /**
  * A parsed URL. Immutable.
+ *
  */
-public class URL {
+public class URL implements Serializable {
 
     final static String HTTP = "http";
     final static String HTTPS = "https";
@@ -13,43 +39,64 @@ public class URL {
     private final static int DEFAULT_HTTPS_PORT = 443;
 
     private String scheme;
-    private String user;
+    private String schemeData;
+    private String username;
     private String password;
-    private String host;
+    private Host host;
     private Integer port;
-    private String path;
-    private String queryString;
+    private String[] path;
+    private String query;
     private String fragment;
-    private String content; // For data: URLs
 
+    private boolean relativeFlag;
     private boolean isAbsolute;
-    private String fullURL;
 
-    URL(final String scheme, final String user, final String password, final String host, final Integer port, final String path, final String queryString, final String fragment) {
+    private transient String fullURL;
+
+    URL() {
+
+    }
+
+    URL(final String scheme, final String schemeData,
+            final String username, final String password,
+            final Host host, final Integer port,
+            final String[] path,
+            final String query, final String fragment,
+            final boolean relativeFlag) {
         this.isAbsolute = true;
         this.scheme = scheme;
-        this.user = user;
+        this.schemeData = schemeData;
+        this.username = username;
         this.password = password;
         this.host = host;
         this.port = port;
-        this.path = path;
-        this.queryString = queryString;
+        if (path != null) {
+            this.path = Arrays.copyOf(path, path.length);
+        } else {
+            this.path = new String[0];
+        }
+        this.query = query;
         this.fragment = fragment;
+        this.relativeFlag = relativeFlag;
     }
 
     public String scheme() {
         return scheme;
     }
 
-    public String user() {
-        return user;
+    public String schemeData() {
+        return schemeData;
+    }
+
+    public String username() {
+        return username;
     }
 
     public String password() {
         return password;
     }
 
-    public String host() {
+    public Host host() {
         return host;
     }
 
@@ -57,64 +104,67 @@ public class URL {
         return port;
     }
 
-    public String path() {
-        return path;
+    public String[] path() {
+        return Arrays.copyOf(path, path.length);
     }
 
     public String queryString() {
-        return queryString;
+        return query;
     }
 
     public String fragment() {
         return fragment;
     }
 
-    public String content() {
-        return content;
-    }
-
+    /**
+     * Serializes the URL.
+     *
+     * Note that the "exclude fragment flag" (as in WHATWG standard) is not implemented.
+     *
+     */
     @Override
     public String toString() {
         if (fullURL == null) {
-            final StringBuilder sb = new StringBuilder();
+            final StringBuilder output = new StringBuilder();
 
-            if (DATA.equals(schema)) {
-                sb.append(DATA);
-                sb.append(':');
-                sb.append(content);
-                fullURL = sb.toString();
-                return fullURL;
-            }
+            output.append(scheme).append(':');
 
-            // Absolute URL
-            if (host != null) {
-                if (schema != null) {
-                    sb.append(schema);
-                } else {
-                    // Protocol-relative URL
-                    sb.append('/');
+            if (relativeFlag) {
+                output.append("//");
+                if ((username != null && username.isEmpty()) || password != null) {
+                    output.append((username == null) ? "" : username);
+                    if (password != null) {
+                       output.append(':').append(password);
+                    }
+                    output.append('@');
+                    //FIXME: It is not clear the empty string / null behaviour of username.
                 }
-                sb.append("://");
-                if (user != null && password != null) {
-                    sb.append(user).append(':').append(password).append("@");
+                if (host != null) {
+                    output.append(host);
                 }
-                sb.append(host);
                 if (port != null) {
-                    sb.append(':').append(port);
+                    output.append(':').append(port);
                 }
+                output.append('/');
+                if (path.length > 0) {
+                    output.append(path[0]);
+                    for (int i = 1; i < path.length; i++) {
+                        output.append('/').append(path[i]);
+                    }
+                }
+            } else {
+                output.append(schemeData);
             }
 
-            sb.append(path)
-            ;
-            if (queryString != null) {
-                sb.append('?').append(queryString);
+            if (query != null) {
+                output.append('?').append(query);
             }
 
             if (fragment != null) {
-                sb.append('#').append(fragment);
+                output.append('#').append(fragment);
             }
 
-            fullURL = sb.toString();
+            fullURL = output.toString();
         }
 
         return fullURL;

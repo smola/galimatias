@@ -1,13 +1,49 @@
+/*
+ * Copyright (c) 2013 Santiago M. Mola <santi@mola.io>
+ *
+ *   Permission is hereby granted, free of charge, to any person obtaining a
+ *   copy of this software and associated documentation files (the "Software"),
+ *   to deal in the Software without restriction, including without limitation
+ *   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ *   and/or sell copies of the Software, and to permit persons to whom the
+ *   Software is furnished to do so, subject to the following conditions:
+ *
+ *   The above copyright notice and this permission notice shall be included in
+ *   all copies or substantial portions of the Software.
+ *
+ *   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ *   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ *   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ *   DEALINGS IN THE SOFTWARE.
+ */
+
 package io.mola.galimatias;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Locale;
+import static io.mola.galimatias.URLUtils.*;
 
 /**
  *  http://url.spec.whatwg.org/
+ *
+ *  NOTES:
+ *
+ *  - Lowercase percent-encoded bytes are not uppercased, although
+ *    it's good practice to uppercase then. Is this work for the canonicalizer
+ *    or the parser itself? Google Chrome does not normalize here.
+ *
+ *  - Why utf-8 percent-encoding in fragment and only percent-encoding in query?
  */
 public class URLParser {
+
+    private static final Logger log = LoggerFactory.getLogger(URLParser.class);
 
     public URLParser() {
 
@@ -63,14 +99,19 @@ public class URLParser {
 
         URL base = null;
         ParseUrlState stateOverride = null;
+        String encodingOverride = "utf-8";
         String scheme = null;
-        String host = null;
+        StringBuilder schemeData = new StringBuilder();
+        StringBuilder username = null;
+        StringBuilder password = null;
+        Host host = null;
         Integer port = null;
-        boolean relativeSchemeFlag = false;
         boolean relativeFlag = false;
-        String path = null;
-        String query = null;
-        String fragment = null;
+        boolean atFlag = false; // @-flag
+        boolean bracketsFlag = false; // []-flag
+        String[] path = new String[0];
+        StringBuilder query = null;
+        StringBuilder fragment = null;
 
         int idx = 0;
 
@@ -90,32 +131,41 @@ public class URLParser {
         boolean terminate = false;
         while (!terminate) {
 
-            final boolean isEOF = idx >= urlChars.length;
+            if (idx > urlChars.length) {
+                break;
+            }
+
+            final boolean isEOF = idx == urlChars.length;
             final char c = (isEOF)? 0x00 : urlChars[idx];
-            final int cp = (isEOF)? 0x00 : Character.codePointAt(urlChars, idx);
+
+            log.debug("STATE: {}", state.name());
+            log.debug("IDX: {} | C: {}", idx, c);
 
             switch (state) {
 
                 case SCHEME_START: {
+
                     // WHATWG URL .8.1: If c is an ASCII alpha, append c, lowercased, to buffer, and set state to scheme state.
-                    if (isASCIIAlpha(cp)) {
+                    if (isASCIIAlpha(c)) {
                         buffer.append(Character.toLowerCase(c));
                         state = ParseUrlState.SCHEME;
-                        idx++;
                     } else {
                         // WHATWG URL .8.2: Otherwise, if state override is not given, set state to no scheme state,
                         //                  and decrease pointer by one.
-                        state = ParseUrlState.NO_SCHEME;
-
-                        //TODO: 3. Otherwise, parse error, terminate this algorithm.
+                        if (stateOverride == null) {
+                            state = ParseUrlState.NO_SCHEME;
+                            idx--;
+                        } else {
+                            log.error("Parse error");
+                            terminate = true;
+                        }
                     }
                     break;
                 }
                 case SCHEME: {
                     // WHATWG URL .8.1: If c is an ASCII alphanumeric, "+", "-", or ".", append c, lowercased, to buffer.
-                    if (isASCIIAlphanumeric(cp) || c == '+' || c == '-' || c == '.') {
+                    if (isASCIIAlphanumeric(c) || c == '+' || c == '-' || c == '.') {
                         buffer.append(Character.toLowerCase(c));
-                        idx++;
                     }
 
                     // WHATWG URL .8.2: Otherwise, if c is ":", set url's scheme to buffer, buffer to the empty string,
@@ -124,10 +174,16 @@ public class URLParser {
                         scheme = buffer.toString();
                         buffer.setLength(0);
 
-                        //TODO: WHATWG URL .1: If state override is given, terminate this algorithm.
+                        log.debug("SET SCHEME: {}", scheme);
+
+                        // WHATWG URL .1: If state override is given, terminate this algorithm.
+                        if (stateOverride != null) {
+                            terminate = true;
+                            break;
+                        }
 
                         // WHATWG URL .2: If url's scheme is a relative scheme, set url's relative flag.
-                        relativeSchemeFlag = isRelativeScheme(scheme);
+                        relativeFlag = isRelativeScheme(scheme);
 
                         // WHATWG URL .3: If url's scheme is "file", set state to relative state.
                         if ("file".equals(scheme)) {
@@ -135,11 +191,11 @@ public class URLParser {
                         }
                         // WHATWG URL .4: Otherwise, if url's relative flag is set, base is not null and base's
                         //                     scheme is equal to url's scheme, set state to relative or authority state.
-                        else if (relativeSchemeFlag && base != null && false) { // TODO: Complete condition here
+                        else if (relativeFlag && base != null && base.scheme().equals(scheme)) {
                             state = ParseUrlState.RELATIVE_OR_AUTHORITY;
                         }
                         // WHATWG URL .5: Otherwise, if url's relative flag is set, set state to authority first slash state.
-                        else if (relativeSchemeFlag) {
+                        else if (relativeFlag) {
                             state = ParseUrlState.AUTHORITY_FIRST_SLASH;
                         }
                         // WHAT WG URL .6: Otherwise, set state to scheme data state.
@@ -174,37 +230,32 @@ public class URLParser {
 
                     // WHATWG URL: If c is "?", set url's query to the empty string and state to query state.
                     if (c == '?') {
-                        query = "";
+                        query = new StringBuilder();
                         state = ParseUrlState.QUERY;
                     }
                     // WHATWG URL: Otherwise, if c is "#", set url's fragment to the empty string and state to fragment state.
                     else if (c == '#') {
-                        fragment = "";
+                        fragment = new StringBuilder();
                         state = ParseUrlState.FRAGMENT;
                     }
                     // WHATWG URL: Otherwise, run these substeps:
                     else {
 
-                        //XXX: This seems to be missing in the WHATWG URL spec?
-                        if (isEOF) {
-                            terminate = true;
-                        }
-
                         // WHATWG URL: If c is not the EOF code point, not a URL code point, and not "%", parse error.
-                        else if (!isEOF && c != '%' && !isURLCodePoint(cp)) {
-                            throw new MalformedURLException("Bad scheme data");
+                        if (!isEOF && c != '%' && !isURLCodePoint(c)) {
+                            log.error("Parse error");
                         }
 
                         // WHATWG URL: If c is "%" and remaining does not start with two ASCII hex digits, parse error.
-                        else if (c == '%' && ( idx >= urlChars.length - 2 || !isASCIIHexDigit(urlChars[idx+1]) || !isASCIIHexDigit(urlChars[idx+2]))) {
-                            throw new MalformedURLException("Invalid percent-encoded code");
+                        if (c == '%' && ( idx >= urlChars.length - 2 || !isASCIIHexDigit(urlChars[idx+1]) || !isASCIIHexDigit(urlChars[idx+2]))) {
+                            log.error("Parse error");
 
                         }
 
                         // WHATWG URL: If c is none of EOF code point, U+0009, U+000A, and U+000D, utf-8 percent encode
                         //             c using the simple encode set, and append the result to url's scheme data.
-                        else if (!isEOF && cp != 0x0009 && cp != 0x000A && cp != 0x000D) {
-                            utf8PercentEncode(cp, EncodeSet.SIMPLE, buffer);
+                        if (!isEOF && c != 0x0009 && c != 0x000A && c != 0x000D) {
+                            utf8PercentEncode(c, EncodeSet.SIMPLE, schemeData);
                         }
 
                     }
@@ -243,24 +294,24 @@ public class URLParser {
                         host = (base == null)? null : base.host();
                         port = (base == null)? null : base.port();
                         path = (base == null)? null : base.path();
-                        query = (base == null)? null : base.queryString();
+                        query = (base == null)? null : new StringBuilder(base.queryString());
                     } else if (c == '/' || c == '\\') {
                         if (c == '\\') {
-                            //TODO: Log parse error
+                            log.error("Parse error");
                         }
                         state = ParseUrlState.RELATIVE_SLASH;
                     } else if (c == '?') {
                         host = (base == null)? null : base.host();
                         port = (base == null)? null : base.port();
                         path = (base == null)? null : base.path();
-                        query = "";
+                        query = new StringBuilder();
                         state = ParseUrlState.QUERY;
                     } else if (c == '#') {
                         host = (base == null)? null : base.host();
                         port = (base == null)? null : base.port();
                         path = (base == null)? null : base.path();
-                        query = (base == null)? null : base.queryString();
-                        fragment = "";
+                        query = (base == null)? null : new StringBuilder(base.queryString());
+                        fragment = new StringBuilder();
                         state = ParseUrlState.FRAGMENT;
                     } else {
                         //TODO: file: and Windows drive quirk
@@ -295,7 +346,7 @@ public class URLParser {
                     if (c == '/') {
                         state = ParseUrlState.AUTHORITY_SECOND_SLASH;
                     } else {
-                        //TODO: Log error
+                        log.error("Parse error");
                         state = ParseUrlState.AUTHORITY_IGNORE_SLASHES;
                         idx--;
                     }
@@ -306,7 +357,7 @@ public class URLParser {
                     if (c == '/') {
                         state = ParseUrlState.AUTHORITY_IGNORE_SLASHES;
                     } else {
-                        //TODO: Log error
+                        log.error("Parse error");
                         state = ParseUrlState.AUTHORITY_IGNORE_SLASHES;
                         idx--;
                     }
@@ -316,163 +367,504 @@ public class URLParser {
                 case AUTHORITY_IGNORE_SLASHES: {
                     if (c != '/' && c != '\\') {
                         state = ParseUrlState.AUTHORITY;
+                        idx--;
                     } else {
-                        //TODO: Log error
+                        log.error("Parse error");
                     }
                     break;
                 }
 
                 case AUTHORITY: {
+                    // If c is "@", run these substeps:
                     if (c == '@') {
-                        //TODO
-                    } //TODO...
+                        if (atFlag) {
+                            log.error("Parse error");
+                            buffer.insert(0, "%40");
+                        }
+                        atFlag = true;
+                        for (int i = 0; i < buffer.length(); i++) {
+                            final char otherCodePoint = buffer.charAt(i);
+                            if (
+                                    otherCodePoint == 0x0009 ||
+                                    otherCodePoint == 0x000A ||
+                                    otherCodePoint == 0x000D
+                                ) {
+                                log.error("Parse error");
+                                continue;
+                            }
+                            if (!isURLCodePoint(otherCodePoint) && otherCodePoint != '%') {
+                                log.error("Parse error");
+                            }
+                            if (otherCodePoint == '%') {
+                                if (i + 2 >= buffer.length() ||
+                                    !isASCIIHexDigit(buffer.charAt(i+1)) ||
+                                    !isASCIIHexDigit(buffer.charAt(i + 2))) {
+                                    log.error("Parse error");
+                                }
+                            }
+                            if (otherCodePoint == ':' && password == null) {
+                                password = new StringBuilder();
+                                continue;
+                            }
+                            if (password != null) {
+                                utf8PercentEncode(otherCodePoint, EncodeSet.DEFAULT, password);
+                            } else {
+                                if (username == null) {
+                                    username = new StringBuilder();
+                                }
+                                utf8PercentEncode(otherCodePoint, EncodeSet.DEFAULT, username);
+                            }
+                        }
+
+                        buffer.setLength(0);
+
+                    } else if (isEOF || c == '/' || c == '\\' || c == '?' || c == '#') {
+                        idx -= buffer.length() + 1;
+                        buffer.setLength(0);
+                        state = ParseUrlState.HOST;
+                    } else {
+                        buffer.append(c);
+                    }
+                    break;
+                }
+
+                case FILE_HOST: {
+
+                    if (isEOF || c == '/' || c == '\\' || c == '?' || c == '#') {
+                        idx--;
+                        if (buffer.length() == 2 && isASCIIAlpha(buffer.charAt(0)) &&
+                                (buffer.charAt(1) == ':' || buffer.charAt(1) == '|')) {
+                            state = ParseUrlState.RELATIVE_PATH;
+                        } else if (buffer.length() == 0) {
+                            state = ParseUrlState.RELATIVE_PATH_START;
+                        } else {
+                            host = parseHost(buffer.toString());
+                            if (host == null) {
+                                log.error("Parse error - Invalid host");
+                                return null;
+                            }
+                            buffer.setLength(0);
+                            state = ParseUrlState.RELATIVE_PATH_START;
+                        }
+                    } else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
+                        log.error("Parse error");
+                    } else {
+                        buffer.append(c);
+                    }
+                    break;
+                }
+
+                case HOST:
+                case HOSTNAME: {
+                    if (c == ':' && !bracketsFlag) {
+                        host = parseHost(buffer.toString());
+                        if (host == null) {
+                            log.error("Parse error");
+                            return null;
+                        }
+                        buffer.setLength(0);
+                        state = ParseUrlState.PORT;
+                        if (stateOverride == ParseUrlState.HOSTNAME) {
+                            terminate = true;
+                        }
+                    } else if (isEOF || c == '/' || c == '\\' || c == '?' || c == '#') {
+                        host = parseHost(buffer.toString());
+                        if (host == null) {
+                            log.error("Parse error");
+                            return null;
+                        }
+                        buffer.setLength(0);
+                        state = ParseUrlState.RELATIVE_PATH_START;
+                        if (stateOverride != null) {
+                            terminate = true;
+                        }
+                    } else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
+                        log.error("Parse error");
+                    } else {
+                        if (c == '[') {
+                            bracketsFlag = true;
+                        } else if (c == ']') {
+                            bracketsFlag = false;
+                        }
+                        buffer.append(c);
+                    }
+                    break;
+                }
+
+                case PORT: {
+                    if (isASCIIDigit(c)) {
+                        buffer.append(c);
+                    } else if (isEOF || c == '/' || c == '\\' || c == '?' || c == '#') {
+                        // Remove leading zeroes
+                        while (buffer.charAt(0) == 0x0030 && buffer.length() > 1) {
+                            buffer.deleteCharAt(0);
+                        }
+                        if (buffer.toString().equals(getDefaultPortForScheme(scheme))) {
+                            buffer.setLength(0);
+                        }
+                        if (buffer.length() == 0) {
+                            port = null;
+                        } else {
+                            port = Integer.valueOf(buffer.toString());
+                        }
+                        if (stateOverride != null) {
+                            terminate = true;
+                        } else {
+                            buffer.setLength(0);
+                            state = ParseUrlState.RELATIVE_PATH_START;
+                            idx--;
+                        }
+                    } else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
+                        log.error("Parse error");
+                    } else {
+                        buffer.append(c);
+                    }
+                    break;
+                }
+
+                case RELATIVE_PATH_START: {
+                    if (c == '\\') {
+                        log.error("Parse error");
+                    } else {
+                        state = ParseUrlState.RELATIVE_PATH;
+                        if (c != '/' && c != '\\') {
+                            idx--;
+                        }
+                    }
+                    break;
+                }
+
+                case RELATIVE_PATH: {
+                    if (isEOF || c == '/' || c == '\\' || (stateOverride == null && (c == '?' || c == '#'))) {
+                        if (c == '\\') {
+                            log.error("Parse error");
+                        }
+                        final String lowerCasedBuffer = buffer.toString().toLowerCase(Locale.ENGLISH);
+                        if ("%2e".equals(lowerCasedBuffer)) {
+                            buffer.setLength(0);
+                            buffer.append(".");
+                        } else if (
+                                ".%2e".equals(lowerCasedBuffer) ||
+                                "%2e.".equals(lowerCasedBuffer) ||
+                                "%2e%2e".equals(lowerCasedBuffer)
+                                ) {
+                            buffer.setLength(0);
+                            buffer.append("..");
+                        }
+                        if ("..".equals(buffer.toString())) {
+                            // Pop path
+                            if (path.length > 0) {
+                                path = Arrays.copyOf(path, path.length - 1);
+                            }
+                            if (c != '/' && c != '\\') {
+                                path = Arrays.copyOf(path, path.length + 1);
+                                path[path.length - 1] = "";
+                            }
+                            //FIX: It is not clear in the spec how a path should be pop'd
+
+                        } else if (".".equals(buffer.toString()) && c != '/' && c != '\\') {
+                            path = Arrays.copyOf(path, path.length + 1);
+                            path[path.length - 1] = "";
+                        } else if (!".".equals(buffer.toString())) {
+                            if ("file".equals(scheme) && path.length == 0 &&
+                                    buffer.length() == 2 &&
+                                    isASCIIAlpha(buffer.charAt(0)) &&
+                                    buffer.codePointAt(1) == '|') {
+                                buffer.setCharAt(1, ':');
+                            }
+                            path = Arrays.copyOf(path, path.length + 1);
+                            path[path.length - 1] = buffer.toString();
+                        }
+                        buffer.setLength(0);
+                        if (c == '?') {
+                            query = new StringBuilder();
+                            state = ParseUrlState.QUERY;
+                        } else if (c == '#') {
+                            fragment = new StringBuilder();
+                            state = ParseUrlState.FRAGMENT;
+                        }
+
+                    } else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
+                        log.error("Parse error");
+                    } else {
+                        if (!isURLCodePoint(c) && c != '%') {
+                            log.error("Parse error");
+                        }
+
+                        if (c == '%') {
+                            if (idx + 2 >= urlChars.length ||
+                                    !isASCIIHexDigit(urlChars[idx+1]) ||
+                                    !isASCIIHexDigit(urlChars[idx+2])) {
+                                log.error("Parse error");
+                            }
+                        }
+
+                        utf8PercentEncode(c, EncodeSet.DEFAULT, buffer);
+                    }
+                    break;
+                }
+
+                case QUERY: {
+                    if (isEOF || (stateOverride == null && c == '#')) {
+                        if (relativeFlag) {
+                            encodingOverride = "utf-8";
+                        }
+                        final byte[] bytes = buffer.toString().getBytes();
+                        for (final byte b : bytes) {
+                            if (b < 0x21 || b > 0x7E || b == 0x22 || b == 0x23 || b == 0x3C || b == 0x3E || b == 0x60) {
+                               percentEncode(b, query);
+                            } else {
+                                query.append((char)b);
+                            }
+                        }
+                        buffer.setLength(0);
+                        if (c == '#') {
+                            fragment = new StringBuilder();
+                            state = ParseUrlState.FRAGMENT;
+                        }
+                    }  else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
+                        log.error("Parse error");
+                    } else {
+                        if (!isURLCodePoint(c) && c != '%') {
+                            log.error("Parse error");
+                        }
+                        if (c == '%') {
+                            if (idx + 2 >= urlChars.length ||
+                                    !isASCIIHexDigit(urlChars[idx+1]) ||
+                                    !isASCIIHexDigit(urlChars[idx+2])) {
+                                log.error("Parse error");
+                            }
+                        }
+                        buffer.append(c);
+                    }
+                    break;
+                }
+
+                case FRAGMENT: {
+                    if (isEOF) {
+                        // Do nothing
+                    } else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
+                        log.error("Parse error");
+                    } else {
+                        if (!isURLCodePoint(c) && c != '%') {
+                            log.error("Parse error");
+                        }
+                        if (c == '%') {
+                            if (idx + 2 >= urlChars.length ||
+                                    !isASCIIHexDigit(urlChars[idx+1]) ||
+                                    !isASCIIHexDigit(urlChars[idx+2])) {
+                                log.error("Parse error");
+                            }
+                        }
+                        utf8PercentEncode(c, EncodeSet.SIMPLE, fragment);
+                    }
+                    break;
                 }
 
             }
 
+            idx++;
+
         }
 
+        return new URL(scheme, schemeData.toString(),
+                (username == null)? null : username.toString(),
+                (password == null)? null : password.toString(),
+                host, port, path,
+                (query == null)? null : query.toString(),
+                (fragment == null)? null : fragment.toString(),
+                relativeFlag);
+
     }
 
-    private boolean isASCIIAlphaUppercase(final int cp) {
-        return cp >= 0x0061 && cp <= 0x007A;
-    }
+    public IPv6Address parseIPv6Address(final String ipString) {
+        final short[] address = new short[8];
+        int piecePointer = 0;
+        Integer compressPointer = null;
+        int idx = 0;
+        final char[] input = ipString.toCharArray();
+        boolean isEOF = idx == input.length;
+        char c = (isEOF)? 0x00 : input[idx];
 
-    private boolean isASCIIAlphaLowercase(final int cp) {
-        return cp >= 0x0041 && cp <= 0x005A;
-    }
-
-    private boolean isASCIIAlpha(final int cp) {
-        return isASCIIAlphaLowercase(cp) || isASCIIAlphaUppercase(cp);
-    }
-
-    private boolean isASCIIDigit(final int cp) {
-        return cp >= 0x0030 && cp <= 0x0039;
-    }
-
-    private boolean isASCIIAlphanumeric(final int cp) {
-        return isASCIIAlpha(cp) || isASCIIDigit(cp);
-    }
-
-    private boolean isASCIIHexDigit(final int cp) {
-        return (cp >= 0x0041 && cp <= 0x0046) || (cp >= 0x0061 && cp <= 0x0066) || isASCIIDigit(cp);
-    }
-
-    private boolean isURLCodePoint(final int cp) {
-        return
-                isASCIIAlphanumeric(cp) ||
-                cp == '!' ||
-                cp == '$' ||
-                cp == '&' ||
-                cp == '\'' ||
-                cp == '(' ||
-                cp == ')' ||
-                cp == '*' ||
-                cp == '+' ||
-                cp == ',' ||
-                cp == '-' ||
-                cp == '.' ||
-                cp == '/' ||
-                cp == ':' ||
-                cp == ';' ||
-                cp == '=' ||
-                cp == '?' ||
-                cp == '@' ||
-                cp == '_' ||
-                cp == '~' ||
-                (cp >= 0x00A0 && cp <= 0xD7FF) ||
-                (cp >= 0xE000 && cp <= 0xFDCF) ||
-                (cp >= 0xFDF0 && cp <= 0xFFEF) ||
-                (cp >= 0x10000 && cp <= 0x1FFFD) ||
-                (cp >= 0x20000 && cp <= 0x2FFFD) ||
-                (cp >= 0x30000 && cp <= 0x3FFFD) ||
-                (cp >= 0x40000 && cp <= 0x4FFFD) ||
-                (cp >= 0x50000 && cp <= 0x5FFFD) ||
-                (cp >= 0x60000 && cp <= 0x6FFFD) ||
-                (cp >= 0x70000 && cp <= 0x7FFFD) ||
-                (cp >= 0x80000 && cp <= 0x8FFFD) ||
-                (cp >= 0x90000 && cp <= 0x9FFFD) ||
-                (cp >= 0xA0000 && cp <= 0xAFFFD) ||
-                (cp >= 0xB0000 && cp <= 0xBFFFD) ||
-                (cp >= 0xC0000 && cp <= 0xCFFFD) ||
-                (cp >= 0xD0000 && cp <= 0xDFFFD) ||
-                (cp >= 0xE0000 && cp <= 0xEFFFD) ||
-                (cp >= 0xF0000 && cp <= 0xFFFFD) ||
-                (cp >= 0x100000 && cp <= 0x10FFFD);
-    }
-
-    private static enum EncodeSet {
-        SIMPLE,
-        DEFAULT,
-        PASSWORD,
-        USERNAME
-    }
-
-    private static boolean isInSimpleEncodeSet(final int cp) {
-        return cp < 0x0020 || cp > 0x007E;
-    }
-
-    private static boolean isInDefaultEncodeSet(final int cp) {
-        return isInSimpleEncodeSet(cp) || cp == '"' || cp == '#' || cp == '<' || cp == '>' || cp == '?' || cp == '`';
-    }
-
-    private static boolean isInPasswordEncodeSet(final int cp) {
-        return isInDefaultEncodeSet(cp) || cp == '/' || cp == '@' || cp == '\\';
-    }
-
-    private static boolean isInUsernameEncodeSet(final int cp) {
-        return isInPasswordEncodeSet(cp) || cp == ':';
-    }
-
-    private static final char[] _hex = "0123456789ABCDEF".toCharArray();
-    private static void byteToHex(final byte b, StringBuilder buffer) {
-        int i = b & 0xFF;
-        buffer.append(_hex[i >>> 4]);
-        buffer.append(_hex[i & 0x0F]);
-    }
-
-    private static void percentEncode(final byte b, StringBuilder buffer) {
-        buffer.append('%');
-        byteToHex(b, buffer);
-    }
-
-    private static void utf8PercentEncode(final int cp, final EncodeSet encodeSet, StringBuilder buffer) {
-        if (encodeSet == EncodeSet.SIMPLE) {
-            if (!isInSimpleEncodeSet(cp)) {
-                buffer.append((char)cp);
-                return;
+        if (!isEOF && c == ':') {
+            if (idx + 1 >= input.length || input[idx+1] == ':') {
+                log.error("Parse error - 1");
+                return null;
             }
-        } else if (encodeSet == EncodeSet.DEFAULT) {
-            if (!isInDefaultEncodeSet(cp)) {
-                buffer.append((char)cp);
-                return;
-            }
-        } else if (encodeSet == EncodeSet.PASSWORD) {
-            if (!isInPasswordEncodeSet(cp)) {
-                buffer.append((char)cp);
-                return;
-            }
-        } else if (encodeSet == EncodeSet.USERNAME) {
-            if (!isInUsernameEncodeSet(cp)) {
-                buffer.append((char)cp);
-                return;
-            }
-        } else {
-            throw new IllegalArgumentException("encodeSet");
+            idx += 2;
+            piecePointer = 1;
+            compressPointer = piecePointer;
         }
 
-        //FIXME: Let bytes be the result of running utf-8 encode on code point.
+        boolean jumpToIpV4 = false;
 
-        //FIXME: Percent encode each byte in bytes, and then return them concatenated, in the same order.
+        while (!isEOF) { // MAIN
 
-        percentEncode((byte) cp, buffer);
+            isEOF = idx == input.length;
+            c = (isEOF)? 0x00 : input[idx];
+
+            if (piecePointer == 8) {
+                log.error("Parse error - 2");
+                return null;
+            }
+            if (c == ':') {
+                if (compressPointer != null) {
+                    log.error("Parse error - 3");
+                    return null;
+                }
+                idx++;
+                piecePointer++;
+                compressPointer = piecePointer;
+                continue;
+            }
+
+            int value = 0;
+            int length = 0;
+
+            while (!isEOF && length < 4 && URLUtils.isASCIIHexDigit(c)) {
+                value =  value * 0x10 + Integer.parseInt("" + c, 16);
+                idx++;
+                isEOF = idx == input.length;
+                c = (isEOF)? 0x00 : input[idx];
+                length++;
+            }
+
+            if (c == '.') {
+                if (length == 0) {
+                    log.error("Parse error - 4");
+                    return null;
+                }
+                idx -= length;
+                jumpToIpV4 = true;
+                break;
+            } else if (c == ':') {
+                idx++;
+                isEOF = idx == input.length;
+                if (isEOF) {
+                    log.error("Parse error - 5");
+                    return null;
+                }
+            } else if (!isEOF) {
+                log.error("Parse error - 6");
+                return null;
+            }
+
+            address[piecePointer] = (short)value;
+            piecePointer++;
+
+        } // end while MAIN
+
+        boolean jumpToFinale = false;
+
+        // Step 7
+        if (!jumpToIpV4 && isEOF) {
+            jumpToFinale = true;
+        }
+
+        if (!jumpToFinale) {
+            // Step 8 IPv4
+            if (piecePointer > 6) {
+                log.error("Parse error - 7");
+                return null;
+            }
+        }
+
+        // Step 9
+        int dotsSeen = 0;
+
+        if (!jumpToFinale) {
+            // Step 10
+            while (!isEOF) {
+                // Step 10.1
+                int value = 0;
+
+                // Step 10.2
+                if (!isASCIIDigit(c)) {
+                    log.error("Parse error - 8");
+                    return null;
+                }
+
+                // Step 10.3
+                while (isASCIIDigit(c)) {
+                    value = value * 0x10 + (c - 0x30);
+                    idx++;
+                    isEOF = idx == input.length;
+                    c = (isEOF)? 0x00 : input[idx];
+                }
+
+                // Step 10.4
+                if (value > 255) {
+                    log.error("Parse error - 9");
+                    return null;
+                }
+
+                // Step 10.5
+                if (dotsSeen < 3 && c != '.') {
+                    log.error("Parse error - 10");
+                    return null;
+                }
+
+                // Step 10.6
+                address[piecePointer] = (short) (address[piecePointer] * 0x100 + value);
+
+                // Step 10.7
+                if (dotsSeen == 0 || dotsSeen == 2) {
+                    piecePointer++;
+                }
+
+                // Step 10.8
+                idx++;
+                isEOF = idx == input.length;
+                c = (isEOF)? 0x00 : input[idx];
+
+                // Step 10.9
+                if (dotsSeen == 3 && !isEOF) {
+                    log.error("Parse error - 11");
+                    return null;
+                }
+
+                // Step 10.10
+                dotsSeen++;
+            }
+        }
+
+        // Step 11 Finale
+        if (compressPointer != null) {
+            // Step 11.1
+            int swaps = piecePointer - compressPointer;
+            // Step 11.2
+            piecePointer = 7;
+            // Step 11.3
+            while (piecePointer != 0 && swaps != 0) {
+                short swappedPiece = address[piecePointer];
+                address[piecePointer] = address[compressPointer + swaps - 1];
+                address[compressPointer + swaps - 1] = swappedPiece;
+                piecePointer--;
+                swaps--;
+            }
+        }
+        // Step 12
+        else if (piecePointer != 8) {
+            log.error("Parse error");
+            return null;
+        }
+
+        return new IPv6Address(address);
     }
 
-    private static final List<String> RELATIVE_SCHEMES = Arrays.asList(
-        "ftp", "file", "gopher", "http", "https", "ws", "wss"
-    );
-    private boolean isRelativeScheme(final String scheme) {
-        return RELATIVE_SCHEMES.contains(scheme);
+    public Host parseHost(final String input) throws MalformedURLException {
+        if (input.isEmpty()) {
+            return null;
+        }
+        if (input.charAt(0) == '[') {
+            if (input.charAt(input.length() - 1) != ']') {
+                log.error("Parse error: Unmatched '['");
+                return null;
+            }
+            parseIPv6Address(input.substring(1, input.length() - 1));
+        }
+
+        return Domain.parseDomain(input);
     }
 
 
@@ -509,12 +901,8 @@ public class URLParser {
 
         // WHATWG URL 4.3.3: Let host be the result of running utf-8's decoder on the percent decoding of input.
 
-
-    }
-
-    private int _hexDecode(final char c1, final char c2) {
-        //TODO: Some micro-optimization here?
-        return Integer.parseInt(new String(new char[]{c1, c2}), 16);
+        //TODO
+        return "";
     }
 
 }

@@ -22,5 +22,15 @@
 
 package io.mola.galimatias;
 
-public class URLCanonicalizer {
+public class IPv4Address extends Host {
+
+    IPv4Address() {
+
+    }
+
+    @Override
+    public String toString() {
+        return "";
+    }
+
 }
