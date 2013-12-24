@@ -37,58 +37,137 @@ public class URLParserTest {
 
     private static final Logger log = LoggerFactory.getLogger(URLParserTest.class);
 
+    @Test(expected = NullPointerException.class)
+    public void parseNullURL() throws MalformedURLException {
+        new URLParser().parse(null);
+    }
+
+    @Test(expected = MalformedURLException.class)
+    public void parseEmptyURL() throws MalformedURLException {
+        new URLParser().parse("");
+    }
+
+    private static class TestURL {
+        String original;
+        String result;
+        TestURL(String original, String result) {
+            this.original = original;
+            this.result = result;
+        }
+    }
+
+    private static final TestURL[] TEST_URLS = new TestURL[] {
+            new TestURL("http://example.com/", "http://example.com/"),
+            new TestURL("http://example.com", "http://example.com/"),
+
+            new TestURL("http://1.1.1.1/", "http://1.1.1.1/"),
+            new TestURL("http://[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]/", "http://[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]/"),
+
+            new TestURL("https://example.com:443/", "https://example.com/"),
+            new TestURL("ftp://example.com:80/", "ftp://example.com:80/"),
+
+            new TestURL("http://user:pass@example.com/", "http://user:pass@example.com/"),
+            new TestURL("http://user@example.com/", "http://user@example.com/"),
+            new TestURL("http://user:@example.com/", "http://user:@example.com/"),
+            new TestURL("http://:@example.com/", "http://:@example.com/"),
+
+
+            new TestURL("http://example.com/foo", "http://example.com/foo"),
+            new TestURL("http://example.com/foo/", "http://example.com/foo/"),
+            new TestURL("http://example.com/foo/../bar", "http://example.com/bar"),
+            new TestURL("http://example.com/foo/%2E%2e/bar", "http://example.com/bar"),
+            new TestURL("http://example.com/foo/%2E./bar", "http://example.com/bar"),
+            new TestURL("http://example.com/foo/./bar", "http://example.com/foo/bar"),
+            new TestURL("http://example.com/./bar", "http://example.com/bar"),
+
+            new TestURL("http://example.com/?foo=1", "http://example.com/?foo=1"),
+            new TestURL("http://example.com/?foo%c3%9f", "http://example.com/?foo%c3%9f"),
+            new TestURL("http://example.com/?fooß", "http://example.com/?foo%C3%9F"),
+
+            new TestURL("http://example.com/#foo", "http://example.com/#foo"),
+            new TestURL("http://example.com/?foo=1#foo", "http://example.com/?foo=1#foo"),
+            new TestURL("http://example.com/?foo=1#", "http://example.com/?foo=1#"),
+            new TestURL("http://example.com/#foo%c3%9f", "http://example.com/#foo%c3%9f"),
+            new TestURL("http://example.com/#fooß", "http://example.com/#foo%DF")
+    };
+
     @Test
     public void parseURL() throws MalformedURLException {
         URLParser p = new URLParser();
 
-        // Authority (host)
-        assertThat(p.parse("http://example.com/").toString()).isEqualTo("http://example.com/");
-        assertThat(p.parse("http://example.com").toString()).isEqualTo("http://example.com/");
+        for (final TestURL testURL : TEST_URLS) {
+            System.out.println("TESTING: " + testURL.original);
+            final URL url = p.parse(testURL.original);
+            assertThat(url.toString()).isEqualTo(testURL.result);
+            url.toJavaURI();
+            url.toJavaURL();
+        }
+    }
 
-        // Authority (IPv4)
-        assertThat(p.parse("http://1.1.1.1/").toString()).isEqualTo("http://1.1.1.1/");
+    @Test(expected = MalformedURLException.class)
+    public void parseOneToken() throws MalformedURLException {
+        new URLParser().parse("http").toString();
+    }
 
-        // Authority (IPv6)
-        assertThat(p.parse("http://[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]/").toString())
-                .isEqualTo("http://[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]/");
+    @Test
+    public void parseURLLeadingWhitespace() throws MalformedURLException {
+        URLParser p = new URLParser();
+        assertThat(p.parse("   http://google.com/").toString()).isEqualTo("http://google.com/");
+    }
 
-        // Port
-        assertThat(p.parse("https://example.com:443/").toString()).isEqualTo("https://example.com/");
-        assertThat(p.parse("ftp://example.com:80/").toString()).isEqualTo("ftp://example.com:80/");
+    @Test
+    public void parseURLUncommonSchemes() throws MalformedURLException {
+        URLParser p = new URLParser();
 
-        // Auth
-        assertThat(p.parse("http://user:pass@example.com/").toString()).isEqualTo("http://user:pass@example.com/");
+        //TODO: Is this really parsed correctly?
+        assertThat(p.parse("aaa://host.example.com:1813;transport=udp;protocol=rad").toString()).isEqualTo("aaa://host.example.com:1813;transport=udp;protocol=rad");
+        assertThat(p.parse("about:blank").toString()).isEqualTo("about:blank");
+        assertThat(p.parse("adiumxtra://www.adiumxtras.com/download/0000").toString()).isEqualTo("adiumxtra://www.adiumxtras.com/download/0000");
+        assertThat(p.parse("aim:goim?screenname=notarealuser&message=This+is+my+message").toString()).isEqualTo("aim:goim?screenname=notarealuser&message=This+is+my+message");
+        assertThat(p.parse("apt:gcc").toString()).isEqualTo("apt:gcc");
+        assertThat(p.parse("callto:+34600800900").toString()).isEqualTo("callto:+34600800900");
+        assertThat(p.parse("ed2k://|file|The_Two_Towers-The_Purist_Edit-Trailer.avi|14997504|965c013e991ee246d63d45ea71954c4d|/|sources,202.89.123.6:4662|/").toString())
+                .isEqualTo("ed2k://|file|The_Two_Towers-The_Purist_Edit-Trailer.avi|14997504|965c013e991ee246d63d45ea71954c4d|/|sources,202.89.123.6:4662|/");
+        assertThat(p.parse("feed:https://example.com/rss.xml").toString()).isEqualTo("feed:https://example.com/rss.xml");
+        assertThat(p.parse("magnet:?xt=urn:sha1:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C").toString())
+                .isEqualTo("magnet:?xt=urn:sha1:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C");
+        assertThat(p.parse("mailto:user@example.com").toString())
+                .isEqualTo("mailto:user@example.com");
 
-        // Path
-        assertThat(p.parse("http://example.com/foo").toString()).isEqualTo("http://example.com/foo");
-        assertThat(p.parse("http://example.com/foo/").toString()).isEqualTo("http://example.com/foo/");
-        //TODO: Should path be treated differently if there is traling slash in the original path?
-        assertThat(p.parse("http://example.com/foo/../bar").toString()).isEqualTo("http://example.com/bar");
-        assertThat(p.parse("http://example.com/foo/%2E%2e/bar").toString()).isEqualTo("http://example.com/bar");
-        assertThat(p.parse("http://example.com/foo/%2E./bar").toString()).isEqualTo("http://example.com/bar");
-        assertThat(p.parse("http://example.com/foo/./bar").toString()).isEqualTo("http://example.com/foo/bar");
-        assertThat(p.parse("http://example.com/./bar").toString()).isEqualTo("http://example.com/bar");
+    }
 
-        // Query string
-        assertThat(p.parse("http://example.com/?foo=1").toString()).isEqualTo("http://example.com/?foo=1");
-        assertThat(p.parse("http://example.com/?foo%c3%9f").toString()).isEqualTo("http://example.com/?foo%c3%9f");
-        assertThat(p.parse("http://example.com/?fooß").toString()).isEqualTo("http://example.com/?foo%C3%9F");
+    @Test
+    public void parseURLWithBase() throws MalformedURLException {
+        URLParser p = new URLParser();
+        assertThat(p.parse(p.parse("http://example.com"), "/foo").toString())
+                .isEqualTo("http://example.com/foo");
+        assertThat(p.parse(p.parse("https://example.com"), "//mycdn.com/foo").toString())
+                .isEqualTo("https://mycdn.com/foo");
+        assertThat(p.parse(p.parse("http://example.com"), "http://mycdn.com/foo").toString())
+                .isEqualTo("http://mycdn.com/foo");
+        assertThat(p.parse(p.parse("http://example.com"), "http://example.com/foo").toString())
+                .isEqualTo("http://example.com/foo");
+    }
 
-        // Fragment
-        assertThat(p.parse("http://example.com/#foo").toString()).isEqualTo("http://example.com/#foo");
-        assertThat(p.parse("http://example.com/?foo=1#foo").toString()).isEqualTo("http://example.com/?foo=1#foo");
-        assertThat(p.parse("http://example.com/?foo=1#").toString()).isEqualTo("http://example.com/?foo=1#");
-        assertThat(p.parse("http://example.com/#foo%c3%9f").toString()).isEqualTo("http://example.com/#foo%c3%9f");
-        assertThat(p.parse("http://example.com/#fooß").toString()).isEqualTo("http://example.com/#foo%DF");
+    @Test
+    public void parseURLStateOverride() throws MalformedURLException {
+        URLParser p = new URLParser();
+        assertThat(p.parse("ftp:", p.parse("http://google.com/"), URLParser.ParseURLState.SCHEME_START).toString())
+                .isEqualTo("ftp://google.com/");
+        assertThat(p.parse("ftp:", p.parse("http://google.com/"), URLParser.ParseURLState.SCHEME_START).toString())
+                .isEqualTo("ftp://google.com/");
     }
 
     @Test
     public void parseSchemeData() throws MalformedURLException {
         URLParser p = new URLParser();
         assertThat(p.parse("data:foo").toString()).isEqualTo("data:foo");
-        assertThat(p.parse("tel:+34600800900").toString()).isEqualTo("tel:+34600800900");
-        assertThat(p.parse("magnet:?xt=urn:sha1:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C").toString())
-                .isEqualTo("magnet:?xt=urn:sha1:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C");
+    }
+
+    @Test
+    public void parseURLWithIDNA() throws MalformedURLException {
+        URLParser p = new URLParser();
+        assertThat(p.parse("http://ジェーピーニック.jp").toString()).isEqualTo("http://xn--hckqz9bzb1cyrb.jp/");
     }
 
     @Test
@@ -96,6 +175,7 @@ public class URLParserTest {
         URLParser p = new URLParser();
         //TODO: Check errors
         assertThat(p.parse("http://example.com\\foo\\bar").toString()).isEqualTo("http://example.com/foo/bar");
+        //TODO: assertThat(p.parse("http://example.com/^").toString()).isEqualTo("http://example.com/%5E");
     }
 
     @Test

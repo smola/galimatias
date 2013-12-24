@@ -22,6 +22,9 @@
 
 package io.mola.galimatias;
 
+import java.net.IDN;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -29,6 +32,7 @@ import java.util.List;
  * Utils for parsing and serializing URLs.
  *
  * Not to be confused with the URLUtils from the WHATWG URL spec.
+ *
  */
 public final class URLUtils {
 
@@ -69,19 +73,77 @@ public final class URLUtils {
                 isASCIIHexDigit(input[idx+1]) && isASCIIHexDigit(input[idx+2]);
     }
 
+    /**
+     * <strong>domain to ASCII</strong> algorithm.
+     *
+     * @todo Handle failures.
+     *
+     * @see <a href="http://url.spec.whatwg.org/#idna">WHATWG URL Standard - IDNA Section</a>
+     *
+     * @param domainLabels
+     * @return
+     */
+    static String[] domainToASCII(final String[] domainLabels) {
+        final List<String> asciiLabels = new ArrayList<String>();
+        for (final String domainLabel : domainLabels) {
+            asciiLabels.add(domainLabelToASCII(domainLabel));
+        }
+        final String[] result = new String[asciiLabels.size()];
+        return asciiLabels.toArray(result);
+    }
+
+    /**
+     * <strong>domain to Unicode</strong> algorithm.
+     *
+     * @see <a href="http://url.spec.whatwg.org/#idna">WHATWG URL Standard - IDNA Section</a>
+     *
+     * @param domainLabels
+     * @return
+     */
+    static String[] domainToUnicode(final String[] domainLabels) {
+        final List<String> unicodeLabels = new ArrayList<String>();
+        for (final String domainLabel : domainLabels) {
+            unicodeLabels.add(domainLabelToUnicode(domainLabel));
+        }
+        return (String[]) unicodeLabels.toArray();
+    }
+
+    /**
+     * <strong>domain label to ASCII</strong> algorithm.
+     *
+     * This happens to be {@link java.net.IDN#toASCII(String,int)} with the
+     * {@link java.net.IDN#ALLOW_UNASSIGNED} flag set.
+     *
+     * @see <a href="http://url.spec.whatwg.org/#idna">WHATWG URL Standard - IDNA Section</a>
+     *
+     * @param input
+     * @return
+     */
+    static String domainLabelToASCII(final String input) {
+        return IDN.toASCII(input, IDN.ALLOW_UNASSIGNED);
+    }
+
+    /**
+     * <strong>domain label to Unicode</strong> algorithm.
+     *
+     * This happens to be {@link java.net.IDN#toUnicode(String,int)} with the
+     * {@link java.net.IDN#ALLOW_UNASSIGNED} flag set.
+     *
+     * @see <a href="http://url.spec.whatwg.org/#idna">WHATWG URL Standard - IDNA Section</a>
+     *
+     * @param input
+     * @return
+     */
+    static String domainLabelToUnicode(final String input) {
+        return IDN.toUnicode(input, IDN.ALLOW_UNASSIGNED);
+    }
+
     static boolean isASCIIHexDigit(final char c) {
         return (c >= 0x0041 && c <= 0x0046) || (c >= 0x0061 && c <= 0x0066) || isASCIIDigit(c);
     }
 
     static boolean isASCIIDigit(final char c) {
         return c >= 0x0030 && c <= 0x0039;
-    }
-
-    static String[] domainToASCII(final String[] domain) {
-        //TODO: Let asciiLabels be an empty list.
-        //TODO: On each domain label in input, in order, run the domain label to ASCII algorithm. If that operation failed, return failure. Otherwise, append the result to asciiLabels.
-        //TODO: Return asciiLabels.
-        return domain;
     }
 
     static boolean isASCIIAlphaUppercase(final char c) {
@@ -186,22 +248,22 @@ public final class URLUtils {
     static void utf8PercentEncode(final char c, final EncodeSet encodeSet, StringBuilder buffer) {
         if (encodeSet == EncodeSet.SIMPLE) {
             if (!isInSimpleEncodeSet(c)) {
-                buffer.append((char)c);
+                buffer.append(c);
                 return;
             }
         } else if (encodeSet == EncodeSet.DEFAULT) {
             if (!isInDefaultEncodeSet(c)) {
-                buffer.append((char)c);
+                buffer.append(c);
                 return;
             }
         } else if (encodeSet == EncodeSet.PASSWORD) {
             if (!isInPasswordEncodeSet(c)) {
-                buffer.append((char)c);
+                buffer.append(c);
                 return;
             }
         } else if (encodeSet == EncodeSet.USERNAME) {
             if (!isInUsernameEncodeSet(c)) {
-                buffer.append((char)c);
+                buffer.append(c);
                 return;
             }
         } else {
@@ -209,7 +271,6 @@ public final class URLUtils {
         }
 
         //FIXME: Let bytes be the result of running utf-8 encode on code point.
-
         //FIXME: Percent encode each byte in bytes, and then return them concatenated, in the same order.
 
         percentEncode((byte) c, buffer);

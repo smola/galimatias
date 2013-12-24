@@ -22,18 +22,36 @@
 
 package io.mola.galimatias;
 
-import java.io.Serializable;
-import java.net.MalformedURLException;
+import com.carrotsearch.junitbenchmarks.AbstractBenchmark;
+import org.junit.Test;
 
-public abstract class Host implements Serializable {
+import java.net.*;
 
-    @Override
-    public abstract String toString();
+public class Benchmark extends AbstractBenchmark {
 
-    private static final URLParser DEFAULT_URL_PARSER = new URLParser();
+    private static String testURL = "https://www.google.es/search?q=complex+URL&oq=complex+URL&aqs=chrome..69i57j0l3.1875j0j4&sourceid=chrome&ie=UTF-8";
 
-    public static Host parse(final String host) throws MalformedURLException {
-        return DEFAULT_URL_PARSER.parseHost(host);
+    private static final int COUNT = 5000;
+
+    @Test
+    public void benchParseURL() throws MalformedURLException{
+        for (int i = 0; i < COUNT; i++) {
+            new URLParser().parse(testURL);
+        }
+    }
+
+    @Test
+    public void benchParseURL_URI() throws URISyntaxException {
+        for (int i = 0; i < COUNT; i++) {
+            new URI(testURL);
+        }
+    }
+
+    @Test
+    public void benchParseURL_URL() throws MalformedURLException {
+        for (int i = 0; i < COUNT; i++) {
+            new java.net.URL(testURL);
+        }
     }
 
 }

@@ -23,39 +23,33 @@
 package io.mola.galimatias;
 
 import java.io.Serializable;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 
 /**
  * A parsed URL. Immutable.
  *
+ * TODO: Add modifier methods.
+ *
  */
 public class URL implements Serializable {
 
-    final static String HTTP = "http";
-    final static String HTTPS = "https";
-    final static String DATA = "data";
+    private final String scheme;
+    private final String schemeData;
+    private final String username;
+    private final String password;
+    private final Host host;
+    private final Integer port;
+    private final String[] path;
+    private final String query;
+    private final String fragment;
 
-    private final static int DEFAULT_HTTP_PORT = 80;
-    private final static int DEFAULT_HTTPS_PORT = 443;
-
-    private String scheme;
-    private String schemeData;
-    private String username;
-    private String password;
-    private Host host;
-    private Integer port;
-    private String[] path;
-    private String query;
-    private String fragment;
-
-    private boolean relativeFlag;
-    private boolean isAbsolute;
+    private final boolean relativeFlag;
+    private final boolean isAbsolute;
 
     private transient String fullURL;
-
-    URL() {
-
-    }
 
     URL(final String scheme, final String schemeData,
             final String username, final String password,
@@ -96,6 +90,21 @@ public class URL implements Serializable {
         return password;
     }
 
+    /**
+     * Mirrors {@link java.net.URL#getUserInfo()} behaviour.
+     *
+     * @return
+     */
+    public String userInfo() {
+        if (username == null) {
+            return null;
+        }
+        if (password == null) {
+            return username;
+        }
+        return String.format("%s:%s", username, password);
+    }
+
     public Host host() {
         return host;
     }
@@ -108,12 +117,130 @@ public class URL implements Serializable {
         return Arrays.copyOf(path, path.length);
     }
 
-    public String queryString() {
+    public String pathString() {
+        if (relativeFlag) {
+            return null;
+        }
+        StringBuilder output = new StringBuilder();
+        output.append('/');
+        if (path.length > 0) {
+            output.append(path[0]);
+            for (int i = 1; i < path.length; i++) {
+                output.append('/').append(path[i]);
+            }
+        }
+        return output.toString();
+    }
+
+    public String query() {
         return query;
     }
 
     public String fragment() {
         return fragment;
+    }
+
+    protected String file() {
+        final String pathString = pathString();
+        if (pathString == null && query == null && fragment == null) {
+            return "";
+        }
+        final StringBuilder output = new StringBuilder(
+                ((pathString != null)? pathString.length() : 0) +
+                ((query != null)? query.length() + 1 : 0) +
+                ((fragment != null)? fragment.length() + 1 : 0)
+                );
+        if (pathString != null) {
+            output.append(pathString);
+        }
+        if (query != null) {
+            output.append('?').append(query);
+        }
+        if (fragment != null) {
+            output.append('#').append(fragment);
+        }
+        return output.toString();
+    }
+
+    boolean relativeFlag() {
+        return relativeFlag;
+    }
+
+    private static final URLParser DEFAULT_URL_PARSER = new URLParser();
+
+    /**
+     * Parses a URL by using the default {@link io.mola.galimatias.URLParser}.
+     *
+     * @param input
+     * @return
+     * @throws MalformedURLException
+     */
+    public static URL parse(final String input) throws MalformedURLException {
+        return DEFAULT_URL_PARSER.parse(input);
+    }
+
+    /**
+     * Converts to {@link java.net.URI}.
+     *
+     * @return
+     */
+    public java.net.URI toJavaURI() {
+        try {
+            return new URI(
+                scheme, userInfo(), host.toString(), (port == null)? -1 : port, pathString(), query, fragment
+            );
+        } catch (URISyntaxException e) {
+            // This should not happen
+            throw new RuntimeException("BUG", e);
+        }
+    }
+
+    /**
+     * Converts to {@link java.net.URL}.
+     *
+     * @return
+     */
+    public java.net.URL toJavaURL() {
+        try {
+            return new java.net.URL(
+              scheme, host.toString(), (port == null)? -1 : port, file()
+            );
+        } catch (MalformedURLException e) {
+            // This should not happend
+            throw new RuntimeException("BUG", e);
+        }
+    }
+
+    /**
+     * Construct a URL from a {@link java.net.URI}.
+     *
+     * @param uri
+     * @return
+     */
+    public static URL fromJavaURI(java.net.URI uri) {
+        //TODO: Let's do this more efficient.
+        try {
+            return DEFAULT_URL_PARSER.parse(uri.toString());
+        } catch (MalformedURLException e) {
+            // This should not happen.
+            throw new RuntimeException("BUG", e);
+        }
+    }
+
+    /**
+     * Construct a URL from a {@link java.net.URL}.
+     *
+     * @param url
+     * @return
+     */
+    public static URL fromJavaURI(java.net.URL url) {
+        //TODO: Let's do this more efficient.
+        try {
+            return DEFAULT_URL_PARSER.parse(url.toString());
+        } catch (MalformedURLException e) {
+            // This should not happen.
+            throw new RuntimeException("BUG", e);
+        }
     }
 
     /**
@@ -131,13 +258,14 @@ public class URL implements Serializable {
 
             if (relativeFlag) {
                 output.append("//");
-                if ((username != null && username.isEmpty()) || password != null) {
-                    output.append((username == null) ? "" : username);
+                if (username != null || password != null) {
+                    if (username != null) {
+                        output.append(username);
+                    }
                     if (password != null) {
                        output.append(':').append(password);
                     }
                     output.append('@');
-                    //FIXME: It is not clear the empty string / null behaviour of username.
                 }
                 if (host != null) {
                     output.append(host);

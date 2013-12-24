@@ -50,7 +50,7 @@ public class Domain extends Host {
         if (domain.length == 0) {
             throw new MalformedURLException("Zero domain labels found");
         }
-        return new Domain(domain);
+        return new Domain(URLUtils.domainToASCII(domain));
     }
 
     @Override

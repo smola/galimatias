@@ -20,7 +20,20 @@
  *   DEALINGS IN THE SOFTWARE.
  */
 
-package io.mola.galimatias;
+package io.mola.galimatias.canonicalization;
 
-public class URLCanonicalizer {
+import io.mola.galimatias.URL;
+
+public class UppercasePercentEncodingURLCanonicalizer implements URLCanonicalizer {
+
+    /**
+     * TODO
+     *
+     * @param input
+     * @return
+     */
+    public URL canonicalize(final URL input) {
+        return input;
+    }
+
 }

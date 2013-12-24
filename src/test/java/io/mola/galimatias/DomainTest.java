@@ -22,18 +22,20 @@
 
 package io.mola.galimatias;
 
-import java.io.Serializable;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
 import java.net.MalformedURLException;
 
-public abstract class Host implements Serializable {
+import static org.fest.assertions.Assertions.assertThat;
 
-    @Override
-    public abstract String toString();
+@RunWith(JUnit4.class)
+public class DomainTest {
 
-    private static final URLParser DEFAULT_URL_PARSER = new URLParser();
-
-    public static Host parse(final String host) throws MalformedURLException {
-        return DEFAULT_URL_PARSER.parseHost(host);
+    @Test
+    public void parseDomainIDNA() throws MalformedURLException {
+        assertThat(Domain.parseDomain("ジェーピーニック.jp").toString()).isEqualTo("xn--hckqz9bzb1cyrb.jp");
     }
 
 }

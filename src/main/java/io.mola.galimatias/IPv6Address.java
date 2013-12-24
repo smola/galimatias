@@ -22,6 +22,8 @@
 
 package io.mola.galimatias;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 
 public class IPv6Address extends Host {
@@ -30,6 +32,26 @@ public class IPv6Address extends Host {
 
     IPv6Address(short[] pieces) {
         this.pieces = Arrays.copyOf(pieces, pieces.length);
+    }
+
+    /**
+     * Convert to @{java.net.InetAddress}.
+     *
+     * @return The IPv6 address as a @{java.net.InetAddress}.
+     */
+    public InetAddress toInetAddress() {
+        final byte[] bytes = new byte[8];
+        for (int i = 0; i < pieces.length; i++) {
+            bytes[i*2] = (byte)(pieces[i] & 0xFF);
+            bytes[1*2+1] = (byte)((pieces[i] >> 8) & 0xFF);
+        }
+
+        try {
+            return InetAddress.getByAddress(bytes);
+        } catch (UnknownHostException e) {
+            // Can't happen if we pass the right amount of bytes
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

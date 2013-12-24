@@ -20,20 +20,12 @@
  *   DEALINGS IN THE SOFTWARE.
  */
 
-package io.mola.galimatias;
+package io.mola.galimatias.canonicalization;
 
-import java.io.Serializable;
-import java.net.MalformedURLException;
+import io.mola.galimatias.URL;
 
-public abstract class Host implements Serializable {
+interface URLCanonicalizer {
 
-    @Override
-    public abstract String toString();
-
-    private static final URLParser DEFAULT_URL_PARSER = new URLParser();
-
-    public static Host parse(final String host) throws MalformedURLException {
-        return DEFAULT_URL_PARSER.parseHost(host);
-    }
+    public URL canonicalize(URL url);
 
 }

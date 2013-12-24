@@ -27,6 +27,9 @@
         <module name="galimatias" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="galimatias" target="1.6" />
+    </bytecodeTargetLevel>
   </component>
 </project>
 

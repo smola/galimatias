@@ -40,6 +40,16 @@ import static io.mola.galimatias.URLUtils.*;
  *    or the parser itself? Google Chrome does not normalize here.
  *
  *  - Why utf-8 percent-encoding in fragment and only percent-encoding in query?
+ *
+ *  TODO: This still does not perform percent-decoding of unreserved characters
+ *       on parsing. It seems WebKit does decode while Gecko does not (or does in
+ *       a limited fashion).
+ *       https://www.w3.org/Bugs/Public/show_bug.cgi?id=24164
+ *
+ *  TODO: Unsafe characters are not percent-encoded: ^, {, }, [, ], |... the URL
+ *       Spec does not specify their encoding, but WebKit/Gecko encodes them,
+ *       which is aligned with relevant RFCs and common practices.
+ *       https://www.w3.org/Bugs/Public/show_bug.cgi?id=24163
  */
 public class URLParser {
 
@@ -54,7 +64,7 @@ public class URLParser {
      *
      * http://url.spec.whatwg.org/#scheme-start-state
      */
-    private static enum ParseUrlState {
+    public static enum ParseURLState {
         SCHEME_START,
         SCHEME,
         SCHEME_DATA,
@@ -76,10 +86,22 @@ public class URLParser {
         FRAGMENT
     }
 
+    public URL parse(final String urlString) throws MalformedURLException {
+          return parse(null, urlString, null, null);
+    }
+
+    public URL parse(final URL base, final String urlString) throws MalformedURLException {
+        return parse(base, urlString, null, null);
+    }
+
+    public URL parse(final String urlString, final URL url, final ParseURLState stateOverride) throws MalformedURLException {
+        return parse(null, urlString, url, stateOverride);
+    }
+
     // Based on http://src.chromium.org/viewvc/chrome/trunk/src/url/third_party/mozilla/url_parse.cc
     // http://url.spec.whatwg.org/#parsing
     //
-    public URL parse(final String urlString) throws MalformedURLException {
+    public URL parse(final URL base, final String urlString, final URL url, final ParseURLState stateOverride) throws MalformedURLException {
 
         if (urlString == null) {
             throw new NullPointerException("urlString");
@@ -97,21 +119,19 @@ public class URLParser {
         //TODO: WHATWG URL: base
         //TODO: WHATWG URL: at_flag and brackets_flag
 
-        URL base = null;
-        ParseUrlState stateOverride = null;
         String encodingOverride = "utf-8";
-        String scheme = null;
-        StringBuilder schemeData = new StringBuilder();
-        StringBuilder username = null;
-        StringBuilder password = null;
-        Host host = null;
-        Integer port = null;
-        boolean relativeFlag = false;
+        String scheme = (url == null)? null : url.scheme();
+        StringBuilder schemeData = (url == null)? new StringBuilder() : new StringBuilder(url.schemeData());
+        String username = (url == null || url.username() == null)? null : url.username();
+        String password = (url == null || url.password() == null)? null : url.password();
+        Host host = (url == null)? null : url.host();
+        Integer port = (url == null)? null : url.port();
+        boolean relativeFlag = (url != null) && url.relativeFlag();
         boolean atFlag = false; // @-flag
         boolean bracketsFlag = false; // []-flag
-        String[] path = new String[0];
-        StringBuilder query = null;
-        StringBuilder fragment = null;
+        String[] path = (url == null)? new String[0] : url.path();
+        StringBuilder query = (url == null || url.query() == null)? null : new StringBuilder(url.query());
+        StringBuilder fragment = (url == null || url.fragment() == null)? null : new StringBuilder(url.fragment());
 
         int idx = 0;
 
@@ -124,7 +144,7 @@ public class URLParser {
 
         // TODO: Skip traling spaces
 
-        ParseUrlState state = ParseUrlState.SCHEME_START;
+        ParseURLState state = (stateOverride == null)? ParseURLState.SCHEME_START : stateOverride;
 
         // WHATWG URL 5.2.8: Keep running the following state machine by switching on state, increasing pointer by one
         //                   after each time it is run, as long as pointer does not point past the end of input.
@@ -138,8 +158,8 @@ public class URLParser {
             final boolean isEOF = idx == urlChars.length;
             final char c = (isEOF)? 0x00 : urlChars[idx];
 
-            log.debug("STATE: {}", state.name());
-            log.debug("IDX: {} | C: {}", idx, c);
+            //log.debug("STATE: {}", state.name());
+            //log.debug("IDX: {} | C: {}", idx, c);
 
             switch (state) {
 
@@ -148,12 +168,12 @@ public class URLParser {
                     // WHATWG URL .8.1: If c is an ASCII alpha, append c, lowercased, to buffer, and set state to scheme state.
                     if (isASCIIAlpha(c)) {
                         buffer.append(Character.toLowerCase(c));
-                        state = ParseUrlState.SCHEME;
+                        state = ParseURLState.SCHEME;
                     } else {
                         // WHATWG URL .8.2: Otherwise, if state override is not given, set state to no scheme state,
                         //                  and decrease pointer by one.
                         if (stateOverride == null) {
-                            state = ParseUrlState.NO_SCHEME;
+                            state = ParseURLState.NO_SCHEME;
                             idx--;
                         } else {
                             log.error("Parse error");
@@ -174,8 +194,6 @@ public class URLParser {
                         scheme = buffer.toString();
                         buffer.setLength(0);
 
-                        log.debug("SET SCHEME: {}", scheme);
-
                         // WHATWG URL .1: If state override is given, terminate this algorithm.
                         if (stateOverride != null) {
                             terminate = true;
@@ -187,29 +205,29 @@ public class URLParser {
 
                         // WHATWG URL .3: If url's scheme is "file", set state to relative state.
                         if ("file".equals(scheme)) {
-                            state = ParseUrlState.RELATIVE;
+                            state = ParseURLState.RELATIVE;
                         }
                         // WHATWG URL .4: Otherwise, if url's relative flag is set, base is not null and base's
                         //                     scheme is equal to url's scheme, set state to relative or authority state.
                         else if (relativeFlag && base != null && base.scheme().equals(scheme)) {
-                            state = ParseUrlState.RELATIVE_OR_AUTHORITY;
+                            state = ParseURLState.RELATIVE_OR_AUTHORITY;
                         }
                         // WHATWG URL .5: Otherwise, if url's relative flag is set, set state to authority first slash state.
                         else if (relativeFlag) {
-                            state = ParseUrlState.AUTHORITY_FIRST_SLASH;
+                            state = ParseURLState.AUTHORITY_FIRST_SLASH;
                         }
                         // WHAT WG URL .6: Otherwise, set state to scheme data state.
                         else {
-                            state = ParseUrlState.SCHEME_DATA;
+                            state = ParseURLState.SCHEME_DATA;
                         }
 
                     }
 
                     // WHATWG URL: Otherwise, if state override is not given, set buffer to the empty string,
                     //                  state to no scheme state, and start over (from the first code point in input).
-                    else if (stateOverride != null) {
+                    else if (stateOverride == null) {
                         buffer.setLength(0);
-                        state = ParseUrlState.NO_SCHEME;
+                        state = ParseURLState.NO_SCHEME;
                         idx = 0;
                     }
 
@@ -231,12 +249,12 @@ public class URLParser {
                     // WHATWG URL: If c is "?", set url's query to the empty string and state to query state.
                     if (c == '?') {
                         query = new StringBuilder();
-                        state = ParseUrlState.QUERY;
+                        state = ParseURLState.QUERY;
                     }
                     // WHATWG URL: Otherwise, if c is "#", set url's fragment to the empty string and state to fragment state.
                     else if (c == '#') {
                         fragment = new StringBuilder();
-                        state = ParseUrlState.FRAGMENT;
+                        state = ParseURLState.FRAGMENT;
                     }
                     // WHATWG URL: Otherwise, run these substeps:
                     else {
@@ -267,14 +285,14 @@ public class URLParser {
                     if (base == null || !isRelativeScheme(base.scheme())) {
                         throw new MalformedURLException();
                     }
-                    state = ParseUrlState.RELATIVE;
+                    state = ParseURLState.RELATIVE;
                     idx--;
                     break;
                 }
 
                 case RELATIVE_OR_AUTHORITY: {
                     if (c == '/' && idx < urlChars.length - 1 && urlChars[idx+1] == '/') {
-                        state = ParseUrlState.AUTHORITY_IGNORE_SLASHES;
+                        state = ParseURLState.AUTHORITY_IGNORE_SLASHES;
                         idx++;
                     } else {
                         throw new MalformedURLException();
@@ -294,28 +312,28 @@ public class URLParser {
                         host = (base == null)? null : base.host();
                         port = (base == null)? null : base.port();
                         path = (base == null)? null : base.path();
-                        query = (base == null)? null : new StringBuilder(base.queryString());
+                        query = (base == null)? null : new StringBuilder(base.query());
                     } else if (c == '/' || c == '\\') {
                         if (c == '\\') {
                             log.error("Parse error");
                         }
-                        state = ParseUrlState.RELATIVE_SLASH;
+                        state = ParseURLState.RELATIVE_SLASH;
                     } else if (c == '?') {
                         host = (base == null)? null : base.host();
                         port = (base == null)? null : base.port();
                         path = (base == null)? null : base.path();
                         query = new StringBuilder();
-                        state = ParseUrlState.QUERY;
+                        state = ParseURLState.QUERY;
                     } else if (c == '#') {
                         host = (base == null)? null : base.host();
                         port = (base == null)? null : base.port();
                         path = (base == null)? null : base.path();
-                        query = (base == null)? null : new StringBuilder(base.queryString());
+                        query = (base == null)? null : new StringBuilder(base.query());
                         fragment = new StringBuilder();
-                        state = ParseUrlState.FRAGMENT;
+                        state = ParseURLState.FRAGMENT;
                     } else {
                         //TODO: file: and Windows drive quirk
-                        state = ParseUrlState.RELATIVE_PATH;
+                        state = ParseURLState.RELATIVE_PATH;
                         idx--;
                     }
                     break;
@@ -327,16 +345,16 @@ public class URLParser {
                             //TODO: Log parse error
                         }
                         if ("file".equals(scheme)) {
-                            state = ParseUrlState.FILE_HOST;
+                            state = ParseURLState.FILE_HOST;
                         } else {
-                            state = ParseUrlState.AUTHORITY_IGNORE_SLASHES;
+                            state = ParseURLState.AUTHORITY_IGNORE_SLASHES;
                         }
                     } else {
                         if (!"file".equals(scheme)) {
                             host = base.host();
                             port = base.port();
                         }
-                        state = ParseUrlState.RELATIVE_PATH;
+                        state = ParseURLState.RELATIVE_PATH;
                         idx--;
                     }
                     break;
@@ -344,10 +362,10 @@ public class URLParser {
 
                 case AUTHORITY_FIRST_SLASH: {
                     if (c == '/') {
-                        state = ParseUrlState.AUTHORITY_SECOND_SLASH;
+                        state = ParseURLState.AUTHORITY_SECOND_SLASH;
                     } else {
                         log.error("Parse error");
-                        state = ParseUrlState.AUTHORITY_IGNORE_SLASHES;
+                        state = ParseURLState.AUTHORITY_IGNORE_SLASHES;
                         idx--;
                     }
                     break;
@@ -355,10 +373,10 @@ public class URLParser {
 
                 case AUTHORITY_SECOND_SLASH: {
                     if (c == '/') {
-                        state = ParseUrlState.AUTHORITY_IGNORE_SLASHES;
+                        state = ParseURLState.AUTHORITY_IGNORE_SLASHES;
                     } else {
                         log.error("Parse error");
-                        state = ParseUrlState.AUTHORITY_IGNORE_SLASHES;
+                        state = ParseURLState.AUTHORITY_IGNORE_SLASHES;
                         idx--;
                     }
                     break;
@@ -366,7 +384,7 @@ public class URLParser {
 
                 case AUTHORITY_IGNORE_SLASHES: {
                     if (c != '/' && c != '\\') {
-                        state = ParseUrlState.AUTHORITY;
+                        state = ParseURLState.AUTHORITY;
                         idx--;
                     } else {
                         log.error("Parse error");
@@ -382,6 +400,10 @@ public class URLParser {
                             buffer.insert(0, "%40");
                         }
                         atFlag = true;
+
+                        final StringBuilder usernameBuffer = new StringBuilder(buffer.length());
+                        StringBuilder passwordBuffer = null;
+
                         for (int i = 0; i < buffer.length(); i++) {
                             final char otherCodePoint = buffer.charAt(i);
                             if (
@@ -402,18 +424,20 @@ public class URLParser {
                                     log.error("Parse error");
                                 }
                             }
-                            if (otherCodePoint == ':' && password == null) {
-                                password = new StringBuilder();
+                            if (otherCodePoint == ':' && passwordBuffer == null) {
+                                passwordBuffer = new StringBuilder(buffer.length() - i);
                                 continue;
                             }
-                            if (password != null) {
-                                utf8PercentEncode(otherCodePoint, EncodeSet.DEFAULT, password);
+                            if (passwordBuffer != null) {
+                                utf8PercentEncode(otherCodePoint, EncodeSet.DEFAULT, passwordBuffer);
                             } else {
-                                if (username == null) {
-                                    username = new StringBuilder();
-                                }
-                                utf8PercentEncode(otherCodePoint, EncodeSet.DEFAULT, username);
+                                utf8PercentEncode(otherCodePoint, EncodeSet.DEFAULT, usernameBuffer);
                             }
+                        }
+
+                        username = usernameBuffer.toString();
+                        if (passwordBuffer != null) {
+                            password = passwordBuffer.toString();
                         }
 
                         buffer.setLength(0);
@@ -421,7 +445,7 @@ public class URLParser {
                     } else if (isEOF || c == '/' || c == '\\' || c == '?' || c == '#') {
                         idx -= buffer.length() + 1;
                         buffer.setLength(0);
-                        state = ParseUrlState.HOST;
+                        state = ParseURLState.HOST;
                     } else {
                         buffer.append(c);
                     }
@@ -434,9 +458,9 @@ public class URLParser {
                         idx--;
                         if (buffer.length() == 2 && isASCIIAlpha(buffer.charAt(0)) &&
                                 (buffer.charAt(1) == ':' || buffer.charAt(1) == '|')) {
-                            state = ParseUrlState.RELATIVE_PATH;
+                            state = ParseURLState.RELATIVE_PATH;
                         } else if (buffer.length() == 0) {
-                            state = ParseUrlState.RELATIVE_PATH_START;
+                            state = ParseURLState.RELATIVE_PATH_START;
                         } else {
                             host = parseHost(buffer.toString());
                             if (host == null) {
@@ -444,7 +468,7 @@ public class URLParser {
                                 return null;
                             }
                             buffer.setLength(0);
-                            state = ParseUrlState.RELATIVE_PATH_START;
+                            state = ParseURLState.RELATIVE_PATH_START;
                         }
                     } else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
                         log.error("Parse error");
@@ -463,8 +487,8 @@ public class URLParser {
                             return null;
                         }
                         buffer.setLength(0);
-                        state = ParseUrlState.PORT;
-                        if (stateOverride == ParseUrlState.HOSTNAME) {
+                        state = ParseURLState.PORT;
+                        if (stateOverride == ParseURLState.HOSTNAME) {
                             terminate = true;
                         }
                     } else if (isEOF || c == '/' || c == '\\' || c == '?' || c == '#') {
@@ -474,7 +498,7 @@ public class URLParser {
                             return null;
                         }
                         buffer.setLength(0);
-                        state = ParseUrlState.RELATIVE_PATH_START;
+                        state = ParseURLState.RELATIVE_PATH_START;
                         if (stateOverride != null) {
                             terminate = true;
                         }
@@ -511,7 +535,7 @@ public class URLParser {
                             terminate = true;
                         } else {
                             buffer.setLength(0);
-                            state = ParseUrlState.RELATIVE_PATH_START;
+                            state = ParseURLState.RELATIVE_PATH_START;
                             idx--;
                         }
                     } else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
@@ -526,7 +550,7 @@ public class URLParser {
                     if (c == '\\') {
                         log.error("Parse error");
                     } else {
-                        state = ParseUrlState.RELATIVE_PATH;
+                        state = ParseURLState.RELATIVE_PATH;
                         if (c != '/' && c != '\\') {
                             idx--;
                         }
@@ -578,10 +602,10 @@ public class URLParser {
                         buffer.setLength(0);
                         if (c == '?') {
                             query = new StringBuilder();
-                            state = ParseUrlState.QUERY;
+                            state = ParseURLState.QUERY;
                         } else if (c == '#') {
                             fragment = new StringBuilder();
-                            state = ParseUrlState.FRAGMENT;
+                            state = ParseURLState.FRAGMENT;
                         }
 
                     } else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
@@ -620,7 +644,7 @@ public class URLParser {
                         buffer.setLength(0);
                         if (c == '#') {
                             fragment = new StringBuilder();
-                            state = ParseUrlState.FRAGMENT;
+                            state = ParseURLState.FRAGMENT;
                         }
                     }  else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
                         log.error("Parse error");
@@ -668,8 +692,7 @@ public class URLParser {
         }
 
         return new URL(scheme, schemeData.toString(),
-                (username == null)? null : username.toString(),
-                (password == null)? null : password.toString(),
+                username, password,
                 host, port, path,
                 (query == null)? null : query.toString(),
                 (fragment == null)? null : fragment.toString(),
@@ -852,6 +875,14 @@ public class URLParser {
         return new IPv6Address(address);
     }
 
+    /**
+     *
+     * TODO: Generate IPv4Address instead of Domain when relevant?
+     *
+     * @param input
+     * @return
+     * @throws MalformedURLException
+     */
     public Host parseHost(final String input) throws MalformedURLException {
         if (input.isEmpty()) {
             return null;
@@ -865,44 +896,6 @@ public class URLParser {
         }
 
         return Domain.parseDomain(input);
-    }
-
-
-
-    private String parseHost(char[] buffer, int startIdx) throws MalformedURLException {
-
-        // WHATWG URL 4.3.1: If input is the empty string, return failure.
-        if (buffer.length <= startIdx) {
-            throw new MalformedURLException("buffer.length <= startIdx");
-        }
-
-        int hostStartIdx = 0;
-        int hostEndIdx = 0;
-
-        // WHATWG URL 4.3.2: If input starts with "[", run these substeps:
-        if (buffer[0] == '[') {
-            // WHATWG URL 4.3.2.1: If input does not end with "]", parse error, return failure.
-            // WHATWG URL 4.3.2.2: Return the result of parsing input with its leading "[" and trailing "]" removed.
-            int currentIdx = 1;
-            hostStartIdx = 1;
-            hostEndIdx = 1;
-            while (currentIdx < buffer.length) {
-                if (buffer[currentIdx] != ']') {
-                    hostEndIdx = currentIdx;
-                } else {
-                    break;
-                }
-                currentIdx++;
-            }
-            if (currentIdx == buffer.length) {
-                throw new MalformedURLException("Found '[' at the begining of host, but no matching ']' at the end.");
-            }
-        }
-
-        // WHATWG URL 4.3.3: Let host be the result of running utf-8's decoder on the percent decoding of input.
-
-        //TODO
-        return "";
     }
 
 }
