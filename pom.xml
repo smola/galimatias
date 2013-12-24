@@ -8,6 +8,12 @@
     <artifactId>galimatias</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
+    <name>galimatias</name>
+    <description>
+        galimatias is a library for URL parsing, canonicalization and manipulation.
+    </description>
+    <url>http://galimatias.mola.io</url>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -15,9 +21,22 @@
 
     <licenses>
         <license>
-            <name>MIT</name>
+            <name>MIT License</name>
+            <url>https://raw.github.com/smola/galimatias/master/LICENSE</url>
+            <distribution>repo</distribution>
         </license>
     </licenses>
+
+    <scm>
+        <developerConnection>https://github.com/smola/galimatias.git</developerConnection>
+        <url>https://github.com/smola/galimatias.git</url>
+        <connection>git://github.com/smola/galimatias.git</connection>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub</system>
+        <url>http://github.com/smola/galimatias/issues</url>
+    </issueManagement>
 
     <developers>
         <developer>
@@ -69,8 +88,11 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.1</version>
                 <configuration>
+                    <encoding>UTF-8</encoding>
                     <source>1.6</source>
                     <target>1.6</target>
+                    <showWarnings>true</showWarnings>
+                    <showDeprecation>true</showDeprecation>
                 </configuration>
             </plugin>
             <plugin>
