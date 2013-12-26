@@ -31,26 +31,27 @@ import java.net.MalformedURLException;
 import static org.fest.assertions.Assertions.assertThat;
 
 @RunWith(JUnit4.class)
-public class DomainTest {
+public class HostTest {
 
     @Test
-    public void parseDomainIDNA() throws MalformedURLException {
-        assertThat(Domain.parseDomain("ジェーピーニック.jp").toString()).isEqualTo("xn--hckqz9bzb1cyrb.jp");
+    public void parseTest() throws MalformedURLException {
+        assertThat(Host.parse("example.com")).isInstanceOf(Domain.class);
+        assertThat(Host.parse("[2001:0db8:85a3:08d3:1319:8a2e:0370:7334]")).isInstanceOf(IPv6Address.class);
     }
 
     @Test(expected = MalformedURLException.class)
-    public void parseDomainEmpty() throws MalformedURLException {
-        Domain.parseDomain("");
+    public void parseHostWithUnmatchedBracket() throws MalformedURLException {
+        Host.parse("[2001:0db8:85a3:08d3:1319:8a2e:0370:7334");
     }
 
     @Test(expected = NullPointerException.class)
-    public void parseDomainNull() throws MalformedURLException {
-        Domain.parseDomain(null);
+    public void parseNullHost() throws MalformedURLException {
+        Host.parse(null);
     }
 
     @Test(expected = MalformedURLException.class)
-    public void parseDomainDot() throws MalformedURLException {
-        Domain.parseDomain(".");
+    public void parseEmptyHost() throws MalformedURLException {
+        Host.parse("");
     }
 
 }

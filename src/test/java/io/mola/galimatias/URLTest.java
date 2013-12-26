@@ -27,30 +27,41 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import java.net.MalformedURLException;
+import java.net.URI;
 
 import static org.fest.assertions.Assertions.assertThat;
 
 @RunWith(JUnit4.class)
-public class DomainTest {
+public class URLTest {
 
     @Test
-    public void parseDomainIDNA() throws MalformedURLException {
-        assertThat(Domain.parseDomain("ジェーピーニック.jp").toString()).isEqualTo("xn--hckqz9bzb1cyrb.jp");
+    public void testEquals() throws MalformedURLException {
+        for (final URLParserTest.TestURL testURL : URLParserTest.TEST_URLS) {
+            final URL originalURL = URL.parse(testURL.original);
+            final URL resultURL = URL.parse(testURL.result);
+            assertThat(originalURL).isEqualTo(resultURL);
+            assertThat(originalURL).isEqualTo(originalURL);
+            assertThat(originalURL.hashCode()).isEqualTo(resultURL.hashCode());
+        }
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseDomainEmpty() throws MalformedURLException {
-        Domain.parseDomain("");
+    @Test
+    public void toFromJavaURI() throws MalformedURLException {
+        for (final URLParserTest.TestURL testURL : URLParserTest.TEST_URLS) {
+            final URL originalURL = URL.parse(testURL.result);
+            final URI toURI = originalURL.toJavaURI();
+            assertThat(originalURL).isEqualTo(URL.fromJavaURI(toURI));
+        }
     }
 
-    @Test(expected = NullPointerException.class)
-    public void parseDomainNull() throws MalformedURLException {
-        Domain.parseDomain(null);
-    }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseDomainDot() throws MalformedURLException {
-        Domain.parseDomain(".");
+    @Test
+    public void toFromJavaURL() throws MalformedURLException {
+        for (final URLParserTest.TestURL testURL : URLParserTest.TEST_URLS) {
+            final URL originalURL = URL.parse(testURL.result);
+            final java.net.URL toURL = originalURL.toJavaURL();
+            assertThat(originalURL).isEqualTo(URL.fromJavaURL(toURL));
+        }
     }
 
 }

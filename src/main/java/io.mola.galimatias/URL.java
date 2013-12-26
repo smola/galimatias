@@ -33,8 +33,13 @@ import java.util.Arrays;
  *
  * TODO: Add modifier methods.
  *
+ * TODO: Study android.net.URI implementation. It has interesting API
+ *       bits and tricks.
+ *
  */
 public class URL implements Serializable {
+
+    private static final String[] EMPTY_PATH = new String[0];
 
     private final String scheme;
     private final String schemeData;
@@ -47,9 +52,6 @@ public class URL implements Serializable {
     private final String fragment;
 
     private final boolean relativeFlag;
-    private final boolean isAbsolute;
-
-    private transient String fullURL;
 
     URL(final String scheme, final String schemeData,
             final String username, final String password,
@@ -57,17 +59,16 @@ public class URL implements Serializable {
             final String[] path,
             final String query, final String fragment,
             final boolean relativeFlag) {
-        this.isAbsolute = true;
         this.scheme = scheme;
         this.schemeData = schemeData;
         this.username = username;
         this.password = password;
         this.host = host;
         this.port = port;
-        if (path != null) {
+        if (path != null && path.length > 0 && (path.length > 1 || !path[0].equals(""))) {
             this.path = Arrays.copyOf(path, path.length);
         } else {
-            this.path = new String[0];
+            this.path = EMPTY_PATH;
         }
         this.query = query;
         this.fragment = fragment;
@@ -118,7 +119,7 @@ public class URL implements Serializable {
     }
 
     public String pathString() {
-        if (relativeFlag) {
+        if (!relativeFlag) {
             return null;
         }
         StringBuilder output = new StringBuilder();
@@ -179,6 +180,10 @@ public class URL implements Serializable {
         return DEFAULT_URL_PARSER.parse(input);
     }
 
+    public static URL parse(final URL base, final String input) throws MalformedURLException {
+        return DEFAULT_URL_PARSER.parse(base, input);
+    }
+
     /**
      * Converts to {@link java.net.URI}.
      *
@@ -202,9 +207,7 @@ public class URL implements Serializable {
      */
     public java.net.URL toJavaURL() {
         try {
-            return new java.net.URL(
-              scheme, host.toString(), (port == null)? -1 : port, file()
-            );
+            return new java.net.URL(toString());
         } catch (MalformedURLException e) {
             // This should not happend
             throw new RuntimeException("BUG", e);
@@ -233,7 +236,7 @@ public class URL implements Serializable {
      * @param url
      * @return
      */
-    public static URL fromJavaURI(java.net.URL url) {
+    public static URL fromJavaURL(java.net.URL url) {
         //TODO: Let's do this more efficient.
         try {
             return DEFAULT_URL_PARSER.parse(url.toString());
@@ -251,51 +254,101 @@ public class URL implements Serializable {
      */
     @Override
     public String toString() {
-        if (fullURL == null) {
-            final StringBuilder output = new StringBuilder();
+        final StringBuilder output = new StringBuilder();
 
-            output.append(scheme).append(':');
+        output.append(scheme).append(':');
 
-            if (relativeFlag) {
-                output.append("//");
-                if (username != null || password != null) {
-                    if (username != null) {
-                        output.append(username);
-                    }
-                    if (password != null) {
-                       output.append(':').append(password);
-                    }
-                    output.append('@');
+        if (relativeFlag) {
+            output.append("//");
+            if (username != null || password != null) {
+                if (username != null) {
+                    output.append(username);
                 }
-                if (host != null) {
+                if (password != null) {
+                   output.append(':').append(password);
+                }
+                output.append('@');
+            }
+            if (host != null) {
+                if (host instanceof IPv6Address) {
+                    output.append('[').append(host).append(']');
+                } else {
                     output.append(host);
                 }
-                if (port != null) {
-                    output.append(':').append(port);
+            }
+            if (port != null) {
+                output.append(':').append(port);
+            }
+            output.append('/');
+            if (path.length > 0) {
+                output.append(path[0]);
+                for (int i = 1; i < path.length; i++) {
+                    output.append('/').append(path[i]);
                 }
-                output.append('/');
-                if (path.length > 0) {
-                    output.append(path[0]);
-                    for (int i = 1; i < path.length; i++) {
-                        output.append('/').append(path[i]);
-                    }
-                }
-            } else {
-                output.append(schemeData);
             }
-
-            if (query != null) {
-                output.append('?').append(query);
-            }
-
-            if (fragment != null) {
-                output.append('#').append(fragment);
-            }
-
-            fullURL = output.toString();
+        } else {
+            output.append(schemeData);
         }
 
-        return fullURL;
+        if (query != null) {
+            output.append('?').append(query);
+        }
+
+        if (fragment != null) {
+            output.append('#').append(fragment);
+        }
+
+        return output.toString();
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof URL)) {
+            return false;
+        }
+        final URL other = (URL) obj;
+        return  relativeFlag == other.relativeFlag &&
+                ((scheme == null)? other.scheme == null : scheme.equals(other.scheme)) &&
+                ((username == null)? other.username == null : username.equals(other.username)) &&
+                ((password == null)? other.password == null : password.equals(other.password)) &&
+                ((host == null)? other.host == null : host.equals(other.host)) &&
+                ((port == null)? other.port == null : port.equals(other.port)) &&
+                ((fragment == null)? other.fragment == null : fragment.equals(fragment)) &&
+                arrayEquals(path, other.path)
+                ;
+    }
+
+    private static boolean arrayEquals(final String[] one, final String[] other) {
+        if (one == other) {
+            return true;
+        }
+        if (one.length != other.length) {
+            return false;
+        }
+        for (int i = 0; i < one.length; i++) {
+            if (!one[i].equals(other[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = scheme != null ? scheme.hashCode() : 0;
+        result = 31 * result + (schemeData != null ? schemeData.hashCode() : 0);
+        result = 31 * result + (username != null ? username.hashCode() : 0);
+        result = 31 * result + (password != null ? password.hashCode() : 0);
+        result = 31 * result + (host != null ? host.hashCode() : 0);
+        result = 31 * result + (port != null ? port.hashCode() : 0);
+        result = 31 * result + Arrays.hashCode(path);
+        result = 31 * result + (query != null ? query.hashCode() : 0);
+        result = 31 * result + (fragment != null ? fragment.hashCode() : 0);
+        result = 31 * result + (relativeFlag ? 1 : 0);
+        return result;
     }
 
 }

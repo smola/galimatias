@@ -47,7 +47,12 @@ public class URLParserTest {
         new URLParser().parse("");
     }
 
-    private static class TestURL {
+    @Test(expected = MalformedURLException.class)
+    public void parseURLwithoutScheme() throws MalformedURLException {
+        new URLParser().parse("//scheme-relative-stuff");
+    }
+
+    static class TestURL {
         String original;
         String result;
         TestURL(String original, String result) {
@@ -56,12 +61,12 @@ public class URLParserTest {
         }
     }
 
-    private static final TestURL[] TEST_URLS = new TestURL[] {
+    static final TestURL[] TEST_URLS = new TestURL[] {
             new TestURL("http://example.com/", "http://example.com/"),
             new TestURL("http://example.com", "http://example.com/"),
 
             new TestURL("http://1.1.1.1/", "http://1.1.1.1/"),
-            new TestURL("http://[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]/", "http://[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]/"),
+            new TestURL("http://[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]/", "http://[fedc:ba98:7654:3210:fedc:ba98:7654:3210]/"),
 
             new TestURL("https://example.com:443/", "https://example.com/"),
             new TestURL("ftp://example.com:80/", "ftp://example.com:80/"),
@@ -149,6 +154,16 @@ public class URLParserTest {
                 .isEqualTo("http://example.com/foo");
     }
 
+    @Test(expected = MalformedURLException.class)
+    public void parseURLWithBadBase() throws MalformedURLException {
+        URL.parse(URL.parse("mailto:user@example.com"), "/relative");
+    }
+
+    @Test(expected = MalformedURLException.class)
+    public void parseURLWithMalformedScheme() throws MalformedURLException {
+        URL.parse("+http://example.com");
+    }
+
     @Test
     public void parseURLStateOverride() throws MalformedURLException {
         URLParser p = new URLParser();
@@ -188,15 +203,6 @@ public class URLParserTest {
         assertThat(p.parse("file://localhost/c|/WINDOWS/clock.avi").toString()).isEqualTo("file://localhost/c:/WINDOWS/clock.avi");
         assertThat(p.parse("file:///c|/WINDOWS/clock.avi").toString()).isEqualTo("file:///c:/WINDOWS/clock.avi");
         assertThat(p.parse("file://localhost/c:/WINDOWS/clock.avi").toString()).isEqualTo("file://localhost/c:/WINDOWS/clock.avi");
-    }
-
-    @Test
-    public void parseIPv6Address() {
-        URLParser p = new URLParser();
-        assertThat(p.parseIPv6Address("0:0:0:0:0:0:0:1").toString()).isEqualTo("::1");
-        assertThat(p.parseIPv6Address("0:0:0:0:0:0:0:0").toString()).isEqualTo("::");
-        assertThat(p.parseIPv6Address("2001:0db8:85a3:0000:0000:8a2e:0370:7334").toString())
-                .isEqualTo("2001:db8:85a3::8a2e:370:7334");
     }
 
 }

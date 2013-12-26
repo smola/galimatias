@@ -50,6 +50,8 @@ import static io.mola.galimatias.URLUtils.*;
  *       Spec does not specify their encoding, but WebKit/Gecko encodes them,
  *       which is aligned with relevant RFCs and common practices.
  *       https://www.w3.org/Bugs/Public/show_bug.cgi?id=24163
+ *       Add info about java.net.URI
+ *       and Nutch https://github.com/apache/nutch/blob/2.1/src/java/org/apache/nutch/parse/OutlinkExtractor.java
  */
 public class URLParser {
 
@@ -114,11 +116,6 @@ public class URLParser {
         final char[] urlChars = urlString.toCharArray();
         final StringBuilder buffer = new StringBuilder(urlChars.length);
 
-        //TODO: WHATWG URL: state override
-        //TODO: WHATWG URL: encoding override
-        //TODO: WHATWG URL: base
-        //TODO: WHATWG URL: at_flag and brackets_flag
-
         String encodingOverride = "utf-8";
         String scheme = (url == null)? null : url.scheme();
         StringBuilder schemeData = (url == null)? new StringBuilder() : new StringBuilder(url.schemeData());
@@ -176,8 +173,7 @@ public class URLParser {
                             state = ParseURLState.NO_SCHEME;
                             idx--;
                         } else {
-                            log.error("Parse error");
-                            terminate = true;
+                            throw new MalformedURLException("Scheme must start with alpha character.");
                         }
                     }
                     break;
@@ -283,7 +279,7 @@ public class URLParser {
 
                 case NO_SCHEME: {
                     if (base == null || !isRelativeScheme(base.scheme())) {
-                        throw new MalformedURLException();
+                        throw new MalformedURLException("Cannot build URL without scheme");
                     }
                     state = ParseURLState.RELATIVE;
                     idx--;
@@ -295,8 +291,9 @@ public class URLParser {
                         state = ParseURLState.AUTHORITY_IGNORE_SLASHES;
                         idx++;
                     } else {
-                        throw new MalformedURLException();
-                        //FIXME: state = RELATIVE; idx--;
+                        log.error("Parse error");
+                        state = ParseURLState.RELATIVE;
+                        idx--;
                     }
                     break;
                 }
@@ -700,19 +697,29 @@ public class URLParser {
 
     }
 
-    public IPv6Address parseIPv6Address(final String ipString) {
+    public IPv6Address parseIPv6Address(final String ipString) throws MalformedURLException {
+        // See also Mozilla's IPv6 parser:
+        //  http://bonsai.mozilla.org/cvsblame.cgi?file=/mozilla/nsprpub/pr/src/misc/prnetdb.c&rev=3.54&mark=1561#1561
+
+        if (ipString == null) {
+            throw new NullPointerException("Argument is null");
+        }
+        if (ipString.isEmpty()) {
+            throw new MalformedURLException("Empty string");
+        }
+
         final short[] address = new short[8];
+
         int piecePointer = 0;
         Integer compressPointer = null;
         int idx = 0;
         final char[] input = ipString.toCharArray();
-        boolean isEOF = idx == input.length;
+        boolean isEOF = idx >= input.length;
         char c = (isEOF)? 0x00 : input[idx];
 
-        if (!isEOF && c == ':') {
-            if (idx + 1 >= input.length || input[idx+1] == ':') {
-                log.error("Parse error - 1");
-                return null;
+        if (c == ':') {
+            if (idx + 1 >= input.length || input[idx+1] != ':') {
+                throw new MalformedURLException("IPv6 address starting with ':' is not followed by a second ':'.");
             }
             idx += 2;
             piecePointer = 1;
@@ -723,19 +730,19 @@ public class URLParser {
 
         while (!isEOF) { // MAIN
 
-            isEOF = idx == input.length;
+            isEOF = idx >= input.length;
             c = (isEOF)? 0x00 : input[idx];
 
             if (piecePointer == 8) {
-                log.error("Parse error - 2");
-                return null;
+                throw new MalformedURLException("Address too long");
             }
             if (c == ':') {
                 if (compressPointer != null) {
-                    log.error("Parse error - 3");
-                    return null;
+                    throw new MalformedURLException("Zero-compression can be used only once.");
                 }
                 idx++;
+                isEOF = idx >= input.length;
+                c = (isEOF)? 0x00 : input[idx];
                 piecePointer++;
                 compressPointer = piecePointer;
                 continue;
@@ -744,32 +751,31 @@ public class URLParser {
             int value = 0;
             int length = 0;
 
-            while (!isEOF && length < 4 && URLUtils.isASCIIHexDigit(c)) {
+            while (length < 4 && URLUtils.isASCIIHexDigit(c)) {
                 value =  value * 0x10 + Integer.parseInt("" + c, 16);
                 idx++;
-                isEOF = idx == input.length;
+                isEOF = idx >= input.length;
                 c = (isEOF)? 0x00 : input[idx];
                 length++;
             }
 
             if (c == '.') {
                 if (length == 0) {
-                    log.error("Parse error - 4");
-                    return null;
+                    throw new MalformedURLException("':' cannot be followed by '.'");
                 }
                 idx -= length;
+                isEOF = idx >= input.length;
+                c = (isEOF)? 0x00 : input[idx];
                 jumpToIpV4 = true;
                 break;
             } else if (c == ':') {
                 idx++;
-                isEOF = idx == input.length;
+                isEOF = idx >= input.length;
                 if (isEOF) {
-                    log.error("Parse error - 5");
-                    return null;
+                    throw new MalformedURLException("Cannot end with ':'");
                 }
             } else if (!isEOF) {
-                log.error("Parse error - 6");
-                return null;
+                throw new MalformedURLException("Illegal character");
             }
 
             address[piecePointer] = (short)value;
@@ -787,8 +793,7 @@ public class URLParser {
         if (!jumpToFinale) {
             // Step 8 IPv4
             if (piecePointer > 6) {
-                log.error("Parse error - 7");
-                return null;
+                throw new MalformedURLException("Not enough room for a IPv4-mapped address");
             }
         }
 
@@ -796,54 +801,50 @@ public class URLParser {
         int dotsSeen = 0;
 
         if (!jumpToFinale) {
-            // Step 10
+            // Step 10: IPv4-mapped address.
             while (!isEOF) {
                 // Step 10.1
                 int value = 0;
 
                 // Step 10.2
                 if (!isASCIIDigit(c)) {
-                    log.error("Parse error - 8");
-                    return null;
+                    throw new MalformedURLException("Non-digit character in IPv4-mapped address");
                 }
 
                 // Step 10.3
                 while (isASCIIDigit(c)) {
-                    value = value * 0x10 + (c - 0x30);
+                    value = value * 10 + (c - 0x30);
                     idx++;
-                    isEOF = idx == input.length;
+                    isEOF = idx >= input.length;
                     c = (isEOF)? 0x00 : input[idx];
                 }
 
                 // Step 10.4
                 if (value > 255) {
-                    log.error("Parse error - 9");
-                    return null;
+                    throw new MalformedURLException("Invalid value for IPv4-mapped address");
                 }
 
                 // Step 10.5
                 if (dotsSeen < 3 && c != '.') {
-                    log.error("Parse error - 10");
-                    return null;
+                    throw new MalformedURLException("Illegal character in IPv4-mapped address");
                 }
 
                 // Step 10.6
-                address[piecePointer] = (short) (address[piecePointer] * 0x100 + value);
+                address[piecePointer] = (short) ((address[piecePointer] << 8) + value);
 
                 // Step 10.7
-                if (dotsSeen == 0 || dotsSeen == 2) {
+                if (dotsSeen == 1 || dotsSeen == 3) { //FIXME: This was 0 and 2 in the spec?
                     piecePointer++;
                 }
 
                 // Step 10.8
                 idx++;
-                isEOF = idx == input.length;
+                isEOF = idx >= input.length;
                 c = (isEOF)? 0x00 : input[idx];
 
                 // Step 10.9
                 if (dotsSeen == 3 && !isEOF) {
-                    log.error("Parse error - 11");
-                    return null;
+                    throw new MalformedURLException("Too long IPv4-mapped address");
                 }
 
                 // Step 10.10
@@ -858,7 +859,8 @@ public class URLParser {
             // Step 11.2
             piecePointer = 7;
             // Step 11.3
-            while (piecePointer != 0 && swaps != 0) {
+            while (swaps != 0) {  //FIXME: Spec states that piecePointer should be checked for
+                                                       //       != 0, but it is always non-zero if 'swaps' is non-zero.
                 short swappedPiece = address[piecePointer];
                 address[piecePointer] = address[compressPointer + swaps - 1];
                 address[compressPointer + swaps - 1] = swappedPiece;
@@ -868,8 +870,7 @@ public class URLParser {
         }
         // Step 12
         else if (piecePointer != 8) {
-            log.error("Parse error");
-            return null;
+            throw new MalformedURLException("Address too short");
         }
 
         return new IPv6Address(address);
@@ -884,15 +885,17 @@ public class URLParser {
      * @throws MalformedURLException
      */
     public Host parseHost(final String input) throws MalformedURLException {
+        if (input == null) {
+            throw new NullPointerException("null host");
+        }
         if (input.isEmpty()) {
-            return null;
+            throw new MalformedURLException("Empty host");
         }
         if (input.charAt(0) == '[') {
             if (input.charAt(input.length() - 1) != ']') {
-                log.error("Parse error: Unmatched '['");
-                return null;
+                throw new MalformedURLException("Unmatched '['");
             }
-            parseIPv6Address(input.substring(1, input.length() - 1));
+            return parseIPv6Address(input.substring(1, input.length() - 1));
         }
 
         return Domain.parseDomain(input);

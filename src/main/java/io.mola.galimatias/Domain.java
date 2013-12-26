@@ -23,6 +23,7 @@
 package io.mola.galimatias;
 
 import java.net.MalformedURLException;
+import java.util.Arrays;
 import java.util.StringTokenizer;
 
 public class Domain extends Host {
@@ -67,4 +68,29 @@ public class Domain extends Host {
         return output.toString();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Domain domain = (Domain) o;
+
+        if (labels.length != domain.labels.length) {
+            return false;
+        }
+
+        for (int i = 0; i < labels.length; i++) {
+            if (!labels[i].equals(domain.labels[i])) {
+                return false;
+            }
+
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(labels);
+    }
 }

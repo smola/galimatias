@@ -23,6 +23,7 @@
 package io.mola.galimatias;
 
 import java.net.InetAddress;
+import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 
@@ -34,16 +35,22 @@ public class IPv6Address extends Host {
         this.pieces = Arrays.copyOf(pieces, pieces.length);
     }
 
+    private static final URLParser DEFAULT_URL_PARSER = new URLParser();
+
+    public static IPv6Address parseIPv6Address(final String address) throws MalformedURLException {
+        return DEFAULT_URL_PARSER.parseIPv6Address(address);
+    }
+
     /**
      * Convert to @{java.net.InetAddress}.
      *
      * @return The IPv6 address as a @{java.net.InetAddress}.
      */
     public InetAddress toInetAddress() {
-        final byte[] bytes = new byte[8];
+        final byte[] bytes = new byte[16];
         for (int i = 0; i < pieces.length; i++) {
-            bytes[i*2] = (byte)(pieces[i] & 0xFF);
-            bytes[1*2+1] = (byte)((pieces[i] >> 8) & 0xFF);
+            bytes[i*2] = (byte)((pieces[i] >> 8) & 0xFF);
+            bytes[i*2+1] = (byte)(pieces[i] & 0xFF);
         }
 
         try {
@@ -123,5 +130,18 @@ public class IPv6Address extends Host {
         return output.toString();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
+        IPv6Address that = (IPv6Address) o;
+
+        return Arrays.equals(pieces, that.pieces);
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(pieces);
+    }
 }
