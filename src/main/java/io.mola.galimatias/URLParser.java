@@ -29,6 +29,7 @@ import java.net.MalformedURLException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Locale;
+
 import static io.mola.galimatias.URLUtils.*;
 
 /**
@@ -737,7 +738,12 @@ class URLParser {
                         if (c == '%' && (!isASCIIHexDigit(at(idx+1)) || !isASCIIHexDigit(at(idx+2)))) {
                             log.error("Parse error");
                         }
-                        utf8PercentEncode(c, EncodeSet.SIMPLE, fragment);
+                        if (isFragmentChar(c) ||
+                                (c == '%' && isASCIIHexDigit(at(idx + 1)) && isASCIIHexDigit(at(idx+1)))) {
+                            fragment.appendCodePoint(c);
+                        } else {
+                            utf8PercentEncode(c, null, fragment);
+                        }
                     }
                     break;
                 }
@@ -792,34 +798,47 @@ class URLParser {
         }
     }
 
-    private void utf8PercentEncode(final int c, final EncodeSet encodeSet, final StringBuilder buffer) {
-        switch (encodeSet) {
-            case SIMPLE:
-                if (!isInSimpleEncodeSet(c)) {
-                    buffer.appendCodePoint(c);
-                    return;
-                }
-                break;
-            case DEFAULT:
-                if (!isInDefaultEncodeSet(c)) {
-                    buffer.appendCodePoint(c);
-                    return;
-                }
-                break;
-            case PASSWORD:
-                if (!isInPasswordEncodeSet(c)) {
-                    buffer.appendCodePoint(c);
-                    return;
-                }
-                break;
-            case USERNAME:
-                if (!isInUsernameEncodeSet(c)) {
-                    buffer.appendCodePoint(c);
-                    return;
-                }
-                break;
+    private boolean isFragmentChar(final int c) {
+        switch (settings.standard()) {
+            case WHATWG:
+                return !isInSimpleEncodeSet(c);
+            case RFC_2396:
+            case RFC_3986:
             default:
-                throw new IllegalArgumentException("encodeSet");
+                return isPChar(c) || c == '/' || c == '?';
+        }
+    }
+
+    private void utf8PercentEncode(final int c, final EncodeSet encodeSet, final StringBuilder buffer) {
+        if (encodeSet != null) {
+            switch (encodeSet) {
+                case SIMPLE:
+                    if (!isInSimpleEncodeSet(c)) {
+                        buffer.appendCodePoint(c);
+                        return;
+                    }
+                    break;
+                case DEFAULT:
+                    if (!isInDefaultEncodeSet(c)) {
+                        buffer.appendCodePoint(c);
+                        return;
+                    }
+                    break;
+                case PASSWORD:
+                    if (!isInPasswordEncodeSet(c)) {
+                        buffer.appendCodePoint(c);
+                        return;
+                    }
+                    break;
+                case USERNAME:
+                    if (!isInUsernameEncodeSet(c)) {
+                        buffer.appendCodePoint(c);
+                        return;
+                    }
+                    break;
+                default:
+                    throw new IllegalArgumentException("encodeSet");
+            }
         }
 
 
@@ -854,6 +873,5 @@ class URLParser {
     private boolean isInUsernameEncodeSet(final int c) {
         return isInPasswordEncodeSet(c) || c == ':';
     }
-
 
 }
