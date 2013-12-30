@@ -36,7 +36,7 @@ public class Benchmark extends AbstractBenchmark {
     @Test
     public void benchParseURL() throws MalformedURLException{
         for (int i = 0; i < COUNT; i++) {
-            new URLParser().parse(testURL);
+            URL.parse(testURL);
         }
     }
 

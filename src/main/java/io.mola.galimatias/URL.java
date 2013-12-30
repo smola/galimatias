@@ -167,8 +167,6 @@ public class URL implements Serializable {
         return relativeFlag;
     }
 
-    private static final URLParser DEFAULT_URL_PARSER = new URLParser();
-
     /**
      * Parses a URL by using the default {@link io.mola.galimatias.URLParser}.
      *
@@ -177,23 +175,44 @@ public class URL implements Serializable {
      * @throws MalformedURLException
      */
     public static URL parse(final String input) throws MalformedURLException {
-        return DEFAULT_URL_PARSER.parse(input);
+        return new URLParser(input).parse();
     }
 
     public static URL parse(final URL base, final String input) throws MalformedURLException {
-        return DEFAULT_URL_PARSER.parse(base, input);
+        return new URLParser(base, input).parse();
+    }
+
+    public static URL parse(final URLParsingSettings settings, final String input) throws MalformedURLException {
+        return new URLParser(input).settings(settings).parse();
+    }
+
+    public static URL parse(final URLParsingSettings settings, final URL base, final String input) throws MalformedURLException {
+        return new URLParser(base, input).settings(settings).parse();
+    }
+
+    public URL withScheme(final String scheme) throws MalformedURLException {
+        if (scheme == null) {
+            throw new NullPointerException("null scheme");
+        }
+        if (scheme.isEmpty()) {
+            throw new MalformedURLException("empty scheme");
+        }
+        if (URLUtils.isRelativeScheme(scheme) && URLUtils.isRelativeScheme(this.scheme)) {
+            return new URLParser(scheme + ":", this, URLParser.ParseURLState.SCHEME_START).parse();
+        }
+        return new URLParser(toString().replaceFirst(this.scheme, scheme)).parse();
     }
 
     /**
      * Converts to {@link java.net.URI}.
      *
+     * FIXME: This will throw an exception for ed2k links.
+     *
      * @return
      */
     public java.net.URI toJavaURI() {
         try {
-            return new URI(
-                scheme, userInfo(), host.toString(), (port == null)? -1 : port, pathString(), query, fragment
-            );
+            return new URI(toString());
         } catch (URISyntaxException e) {
             // This should not happen
             throw new RuntimeException("BUG", e);
@@ -203,15 +222,16 @@ public class URL implements Serializable {
     /**
      * Converts to {@link java.net.URL}.
      *
+     * This method is guaranteed to not throw an exception
+     * for URL protocols http, https, ftp, file and jar.
+     *
+     * It might or might not throw {@link java.net.MalformedURLException}
+     * for other URL protocols.
+     *
      * @return
      */
-    public java.net.URL toJavaURL() {
-        try {
-            return new java.net.URL(toString());
-        } catch (MalformedURLException e) {
-            // This should not happend
-            throw new RuntimeException("BUG", e);
-        }
+    public java.net.URL toJavaURL() throws MalformedURLException {
+        return new java.net.URL(toString());
     }
 
     /**
@@ -223,7 +243,7 @@ public class URL implements Serializable {
     public static URL fromJavaURI(java.net.URI uri) {
         //TODO: Let's do this more efficient.
         try {
-            return DEFAULT_URL_PARSER.parse(uri.toString());
+            return new URLParser(uri.toString()).parse();
         } catch (MalformedURLException e) {
             // This should not happen.
             throw new RuntimeException("BUG", e);
@@ -239,7 +259,7 @@ public class URL implements Serializable {
     public static URL fromJavaURL(java.net.URL url) {
         //TODO: Let's do this more efficient.
         try {
-            return DEFAULT_URL_PARSER.parse(url.toString());
+            return new URLParser(url.toString()).parse();
         } catch (MalformedURLException e) {
             // This should not happen.
             throw new RuntimeException("BUG", e);

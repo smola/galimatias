@@ -138,31 +138,31 @@ public final class URLUtils {
         return IDN.toUnicode(input, IDN.ALLOW_UNASSIGNED);
     }
 
-    static boolean isASCIIHexDigit(final char c) {
+    static boolean isASCIIHexDigit(final int c) {
         return (c >= 0x0041 && c <= 0x0046) || (c >= 0x0061 && c <= 0x0066) || isASCIIDigit(c);
     }
 
-    static boolean isASCIIDigit(final char c) {
+    static boolean isASCIIDigit(final int c) {
         return c >= 0x0030 && c <= 0x0039;
     }
 
-    static boolean isASCIIAlphaUppercase(final char c) {
+    static boolean isASCIIAlphaUppercase(final int c) {
         return c >= 0x0061 && c <= 0x007A;
     }
 
-    static boolean isASCIIAlphaLowercase(final char c) {
+    static boolean isASCIIAlphaLowercase(final int c) {
         return c >= 0x0041 && c <= 0x005A;
     }
 
-    static boolean isASCIIAlpha(final char c) {
+    static boolean isASCIIAlpha(final int c) {
         return isASCIIAlphaLowercase(c) || isASCIIAlphaUppercase(c);
     }
 
-    static boolean isASCIIAlphanumeric(final char c) {
+    static boolean isASCIIAlphanumeric(final int c) {
         return isASCIIAlpha(c) || isASCIIDigit(c);
     }
 
-    static boolean isURLCodePoint(final char c) {
+    static boolean isURLCodePoint(final int c) {
         return
                 isASCIIAlphanumeric(c) ||
                         c == '!' ||
@@ -205,29 +205,6 @@ public final class URLUtils {
                         (c >= 0x100000 && c <= 0x10FFFD);
     }
 
-    static enum EncodeSet {
-        SIMPLE,
-        DEFAULT,
-        PASSWORD,
-        USERNAME
-    }
-
-    static boolean isInSimpleEncodeSet(final char c) {
-        return c < 0x0020 || c > 0x007E;
-    }
-
-    static boolean isInDefaultEncodeSet(final char c) {
-        return isInSimpleEncodeSet(c) || c == '"' || c == '#' || c == '<' || c == '>' || c == '?' || c == '`';
-    }
-
-    static boolean isInPasswordEncodeSet(final char c) {
-        return isInDefaultEncodeSet(c) || c == '/' || c == '@' || c == '\\';
-    }
-
-    static boolean isInUsernameEncodeSet(final char c) {
-        return isInPasswordEncodeSet(c) || c == ':';
-    }
-
     private static final char[] _hex = "0123456789ABCDEF".toCharArray();
     static void byteToHex(final byte b, StringBuilder buffer) {
         int i = b & 0xFF;
@@ -243,37 +220,6 @@ public final class URLUtils {
     static void percentEncode(final byte b, StringBuilder buffer) {
         buffer.append('%');
         byteToHex(b, buffer);
-    }
-
-    static void utf8PercentEncode(final char c, final EncodeSet encodeSet, StringBuilder buffer) {
-        if (encodeSet == EncodeSet.SIMPLE) {
-            if (!isInSimpleEncodeSet(c)) {
-                buffer.append(c);
-                return;
-            }
-        } else if (encodeSet == EncodeSet.DEFAULT) {
-            if (!isInDefaultEncodeSet(c)) {
-                buffer.append(c);
-                return;
-            }
-        } else if (encodeSet == EncodeSet.PASSWORD) {
-            if (!isInPasswordEncodeSet(c)) {
-                buffer.append(c);
-                return;
-            }
-        } else if (encodeSet == EncodeSet.USERNAME) {
-            if (!isInUsernameEncodeSet(c)) {
-                buffer.append(c);
-                return;
-            }
-        } else {
-            throw new IllegalArgumentException("encodeSet");
-        }
-
-        //FIXME: Let bytes be the result of running utf-8 encode on code point.
-        //FIXME: Percent encode each byte in bytes, and then return them concatenated, in the same order.
-
-        percentEncode((byte) c, buffer);
     }
 
     private static final List<String> RELATIVE_SCHEMES = Arrays.asList(

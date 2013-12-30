@@ -30,10 +30,29 @@ public abstract class Host implements Serializable {
     @Override
     public abstract String toString();
 
-    private static final URLParser DEFAULT_URL_PARSER = new URLParser();
+    /**
+     *
+     * TODO: Generate IPv4Address instead of Domain when relevant?
+     *
+     * @param input
+     * @return
+     * @throws MalformedURLException
+     */
+    public static Host parseHost(final String input) throws MalformedURLException {
+        if (input == null) {
+            throw new NullPointerException("null host");
+        }
+        if (input.isEmpty()) {
+            throw new MalformedURLException("Empty host");
+        }
+        if (input.charAt(0) == '[') {
+            if (input.charAt(input.length() - 1) != ']') {
+                throw new MalformedURLException("Unmatched '['");
+            }
+            return IPv6Address.parseIPv6Address(input.substring(1, input.length() - 1));
+        }
 
-    public static Host parse(final String host) throws MalformedURLException {
-        return DEFAULT_URL_PARSER.parseHost(host);
+        return Domain.parseDomain(input);
     }
 
 }

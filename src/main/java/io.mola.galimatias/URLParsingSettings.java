@@ -22,36 +22,36 @@
 
 package io.mola.galimatias;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+public final class URLParsingSettings {
 
-import java.net.MalformedURLException;
+    private static URLParsingSettings DEFAULT = new URLParsingSettings();
 
-import static org.fest.assertions.Assertions.assertThat;
-
-@RunWith(JUnit4.class)
-public class HostTest {
-
-    @Test
-    public void parseTest() throws MalformedURLException {
-        assertThat(Host.parseHost("example.com")).isInstanceOf(Domain.class);
-        assertThat(Host.parseHost("[2001:0db8:85a3:08d3:1319:8a2e:0370:7334]")).isInstanceOf(IPv6Address.class);
+    public static enum Standard {
+        RFC_2396,
+        RFC_3986,
+        WHATWG
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseHostWithUnmatchedBracket() throws MalformedURLException {
-        Host.parseHost("[2001:0db8:85a3:08d3:1319:8a2e:0370:7334");
+    private Standard standard;
+
+    private URLParsingSettings() {
+        this(Standard.WHATWG);
     }
 
-    @Test(expected = NullPointerException.class)
-    public void parseNullHost() throws MalformedURLException {
-        Host.parseHost(null);
+    private URLParsingSettings(final Standard standard) {
+        this.standard = standard;
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseEmptyHost() throws MalformedURLException {
-        Host.parseHost("");
+    public Standard standard() {
+        return this.standard;
+    }
+
+    public static URLParsingSettings create() {
+        return DEFAULT;
+    }
+
+    public URLParsingSettings withStandard(final Standard standard) {
+        return new URLParsingSettings(standard);
     }
 
 }

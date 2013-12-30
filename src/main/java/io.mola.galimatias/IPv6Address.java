@@ -27,6 +27,8 @@ import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 
+import static io.mola.galimatias.URLUtils.isASCIIDigit;
+
 public class IPv6Address extends Host {
 
     private final short[] pieces;
@@ -35,10 +37,183 @@ public class IPv6Address extends Host {
         this.pieces = Arrays.copyOf(pieces, pieces.length);
     }
 
-    private static final URLParser DEFAULT_URL_PARSER = new URLParser();
+    public static IPv6Address parseIPv6Address(final String ipString) throws MalformedURLException {
+        // See also Mozilla's IPv6 parser:
+        //  http://bonsai.mozilla.org/cvsblame.cgi?file=/mozilla/nsprpub/pr/src/misc/prnetdb.c&rev=3.54&mark=1561#1561
 
-    public static IPv6Address parseIPv6Address(final String address) throws MalformedURLException {
-        return DEFAULT_URL_PARSER.parseIPv6Address(address);
+        if (ipString == null) {
+            throw new NullPointerException("Argument is null");
+        }
+        if (ipString.isEmpty()) {
+            throw new MalformedURLException("Empty string");
+        }
+
+        final short[] address = new short[8];
+
+        int piecePointer = 0;
+        Integer compressPointer = null;
+        int idx = 0;
+        final char[] input = ipString.toCharArray();
+        boolean isEOF = idx >= input.length;
+        char c = (isEOF)? 0x00 : input[idx];
+
+        if (c == ':') {
+            if (idx + 1 >= input.length || input[idx+1] != ':') {
+                throw new MalformedURLException("IPv6 address starting with ':' is not followed by a second ':'.");
+            }
+            idx += 2;
+            piecePointer = 1;
+            compressPointer = piecePointer;
+        }
+
+        boolean jumpToIpV4 = false;
+
+        while (!isEOF) { // MAIN
+
+            isEOF = idx >= input.length;
+            c = (isEOF)? 0x00 : input[idx];
+
+            if (piecePointer == 8) {
+                throw new MalformedURLException("Address too long");
+            }
+            if (c == ':') {
+                if (compressPointer != null) {
+                    throw new MalformedURLException("Zero-compression can be used only once.");
+                }
+                idx++;
+                isEOF = idx >= input.length;
+                c = (isEOF)? 0x00 : input[idx];
+                piecePointer++;
+                compressPointer = piecePointer;
+                continue;
+            }
+
+            int value = 0;
+            int length = 0;
+
+            while (length < 4 && URLUtils.isASCIIHexDigit(c)) {
+                value =  value * 0x10 + Integer.parseInt("" + c, 16);
+                idx++;
+                isEOF = idx >= input.length;
+                c = (isEOF)? 0x00 : input[idx];
+                length++;
+            }
+
+            if (c == '.') {
+                if (length == 0) {
+                    throw new MalformedURLException("':' cannot be followed by '.'");
+                }
+                idx -= length;
+                isEOF = idx >= input.length;
+                c = (isEOF)? 0x00 : input[idx];
+                jumpToIpV4 = true;
+                break;
+            } else if (c == ':') {
+                idx++;
+                isEOF = idx >= input.length;
+                if (isEOF) {
+                    throw new MalformedURLException("Cannot end with ':'");
+                }
+            } else if (!isEOF) {
+                throw new MalformedURLException("Illegal character");
+            }
+
+            address[piecePointer] = (short)value;
+            piecePointer++;
+
+        } // end while MAIN
+
+        boolean jumpToFinale = false;
+
+        // Step 7
+        if (!jumpToIpV4 && isEOF) {
+            jumpToFinale = true;
+        }
+
+        if (!jumpToFinale) {
+            // Step 8 IPv4
+            if (piecePointer > 6) {
+                throw new MalformedURLException("Not enough room for a IPv4-mapped address");
+            }
+        }
+
+        // Step 9
+        int dotsSeen = 0;
+
+        if (!jumpToFinale) {
+            // Step 10: IPv4-mapped address.
+            while (!isEOF) {
+                // Step 10.1
+                int value = 0;
+
+                // Step 10.2
+                if (!isASCIIDigit(c)) {
+                    throw new MalformedURLException("Non-digit character in IPv4-mapped address");
+                }
+
+                // Step 10.3
+                while (isASCIIDigit(c)) {
+                    value = value * 10 + (c - 0x30);
+                    idx++;
+                    isEOF = idx >= input.length;
+                    c = (isEOF)? 0x00 : input[idx];
+                }
+
+                // Step 10.4
+                if (value > 255) {
+                    throw new MalformedURLException("Invalid value for IPv4-mapped address");
+                }
+
+                // Step 10.5
+                if (dotsSeen < 3 && c != '.') {
+                    throw new MalformedURLException("Illegal character in IPv4-mapped address");
+                }
+
+                // Step 10.6
+                address[piecePointer] = (short) ((address[piecePointer] << 8) + value);
+
+                // Step 10.7
+                if (dotsSeen == 1 || dotsSeen == 3) { //FIXME: This was 0 and 2 in the spec?
+                    piecePointer++;
+                }
+
+                // Step 10.8
+                idx++;
+                isEOF = idx >= input.length;
+                c = (isEOF)? 0x00 : input[idx];
+
+                // Step 10.9
+                if (dotsSeen == 3 && !isEOF) {
+                    throw new MalformedURLException("Too long IPv4-mapped address");
+                }
+
+                // Step 10.10
+                dotsSeen++;
+            }
+        }
+
+        // Step 11 Finale
+        if (compressPointer != null) {
+            // Step 11.1
+            int swaps = piecePointer - compressPointer;
+            // Step 11.2
+            piecePointer = 7;
+            // Step 11.3
+            while (swaps != 0) {  //FIXME: Spec states that piecePointer should be checked for
+                //       != 0, but it is always non-zero if 'swaps' is non-zero.
+                short swappedPiece = address[piecePointer];
+                address[piecePointer] = address[compressPointer + swaps - 1];
+                address[compressPointer + swaps - 1] = swappedPiece;
+                piecePointer--;
+                swaps--;
+            }
+        }
+        // Step 12
+        else if (piecePointer != 8) {
+            throw new MalformedURLException("Address too short");
+        }
+
+        return new IPv6Address(address);
     }
 
     /**

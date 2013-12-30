@@ -39,119 +39,189 @@ public class URLParserTest {
 
     @Test(expected = NullPointerException.class)
     public void parseNullURL() throws MalformedURLException {
-        new URLParser().parse(null);
+        URL.parse(null);
     }
 
     @Test(expected = MalformedURLException.class)
     public void parseEmptyURL() throws MalformedURLException {
-        new URLParser().parse("");
+        URL.parse("");
     }
 
     @Test(expected = MalformedURLException.class)
     public void parseURLwithoutScheme() throws MalformedURLException {
-        new URLParser().parse("//scheme-relative-stuff");
+        URL.parse("//scheme-relative-stuff");
     }
 
     static class TestURL {
         String original;
         String result;
+        String base;
+        boolean validURI;
+        String resultForRFC3986;
+        String resultForRFC2396;
+
+        TestURL(String original) {
+            this(null, original, original);
+        }
+
         TestURL(String original, String result) {
+            this(null, original, result);
+        }
+
+        TestURL(String base, String original, String result) {
+            this.base = base;
             this.original = original;
             this.result = result;
+            this.resultForRFC2396 = result;
+            this.resultForRFC3986 = result;
+            this.validURI = true;
         }
+
+        TestURL validURI(boolean validURI) {
+            this.validURI = validURI;
+            return this;
+        }
+
+        TestURL resultForRFC2396(String result) {
+            this.resultForRFC2396 = result;
+            return this;
+        }
+
+        TestURL resultForRFC3986(String result) {
+            this.resultForRFC3986 = result;
+            return this;
+        }
+
     }
 
     static final TestURL[] TEST_URLS = new TestURL[] {
-            new TestURL("http://example.com/", "http://example.com/"),
+            // basic
+            new TestURL("http://example.com/"),
             new TestURL("http://example.com", "http://example.com/"),
 
-            new TestURL("http://1.1.1.1/", "http://1.1.1.1/"),
+            // leading spaces
+            new TestURL("  http://example.com/", "http://example.com/"),
+
+            // ip host
+            new TestURL("http://1.1.1.1/"),
             new TestURL("http://[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]/", "http://[fedc:ba98:7654:3210:fedc:ba98:7654:3210]/"),
 
+            // default port
             new TestURL("https://example.com:443/", "https://example.com/"),
-            new TestURL("ftp://example.com:80/", "ftp://example.com:80/"),
+            new TestURL("ftp://example.com:80/"),
 
-            new TestURL("http://user:pass@example.com/", "http://user:pass@example.com/"),
-            new TestURL("http://user@example.com/", "http://user@example.com/"),
-            new TestURL("http://user:@example.com/", "http://user:@example.com/"),
-            new TestURL("http://:@example.com/", "http://:@example.com/"),
+            // user info
+            new TestURL("http://user:pass@example.com/"),
+            new TestURL("http://user@example.com/"),
+            new TestURL("http://user:@example.com/"),
+            new TestURL("http://:@example.com/"),
 
-
-            new TestURL("http://example.com/foo", "http://example.com/foo"),
-            new TestURL("http://example.com/foo/", "http://example.com/foo/"),
+            // path
+            new TestURL("http://example.com/foo"),
+            new TestURL("http://example.com/foo/"),
             new TestURL("http://example.com/foo/../bar", "http://example.com/bar"),
             new TestURL("http://example.com/foo/%2E%2e/bar", "http://example.com/bar"),
             new TestURL("http://example.com/foo/%2E./bar", "http://example.com/bar"),
             new TestURL("http://example.com/foo/./bar", "http://example.com/foo/bar"),
             new TestURL("http://example.com/./bar", "http://example.com/bar"),
 
-            new TestURL("http://example.com/?foo=1", "http://example.com/?foo=1"),
+            // query
+            new TestURL("http://example.com/?foo=1"),
             new TestURL("http://example.com/?foo%c3%9f", "http://example.com/?foo%c3%9f"),
             new TestURL("http://example.com/?fooß", "http://example.com/?foo%C3%9F"),
 
-            new TestURL("http://example.com/#foo", "http://example.com/#foo"),
-            new TestURL("http://example.com/?foo=1#foo", "http://example.com/?foo=1#foo"),
-            new TestURL("http://example.com/?foo=1#", "http://example.com/?foo=1#"),
+            // fragment
+            new TestURL("http://example.com/#foo"),
+            new TestURL("http://example.com/?foo=1#foo"),
+            new TestURL("http://example.com/?foo=1#"),
             new TestURL("http://example.com/#foo%c3%9f", "http://example.com/#foo%c3%9f"),
-            new TestURL("http://example.com/#fooß", "http://example.com/#foo%DF")
+            new TestURL("http://example.com/#fooß", "http://example.com/#foo%C3%9F"),
+
+            // Relative to base
+            new TestURL("http://example.com", "/foo", "http://example.com/foo"),
+            new TestURL("http://example.com", "foo", "http://example.com/foo"),
+            new TestURL("http://example.com/foo", "bar", "http://example.com/bar"),
+            new TestURL("http://example.com/foo/", "bar", "http://example.com/foo/bar"),
+            new TestURL("http://example.com/foo/bar", "/baz", "http://example.com/baz"),
+            new TestURL("http://example.com/foo/bar/", "/baz", "http://example.com/baz"),
+            new TestURL("http://example.com", "?foo", "http://example.com/?foo"),
+            new TestURL("http://example.com", "//other.com", "http://other.com/"),
+            new TestURL("https://example.com", "//other.com", "https://other.com/"),
+            new TestURL("https://example.com", "http://other.com", "http://other.com/"),
+
+            // Unicode
+            new TestURL("http://example.com/\uD801\uDC00", "http://example.com/%F0%90%90%80"),
+
+            // tilde
+            new TestURL("http://example.com/~user"),
+
+
+            // unwise characters   "{", "}", "|", "\", "^", "~", "[", "]", and "`".
+            new TestURL("http://example.com/^{}|[]`", "http://example.com/^{}|[]%60")
+                    .resultForRFC2396("http://example.com/%5E%7B%7D%7C%5B%5D%60"),
+            new TestURL("http://example.com/?^{}|[]`", "http://example.com/?^{}|[]%60")
+                    .resultForRFC2396("http://example.com/?%5E%7B%7D%7C%5B%5D%60"),
+            new TestURL("http://example.com/#^{}|[]`", "http://example.com/#^{}|[]`")
+                    .resultForRFC2396("http://example.com/#%5E%7B%7D%7C%5B%5D%60"),
+
+            // file:
+            new TestURL("file://localhost/etc/fstab"),
+            new TestURL("file:////etc/fstab"),
+            new TestURL("file:///c:/WINDOWS/clock.avi", "file:///c:/WINDOWS/clock.avi"),
+            new TestURL("file://localhost/c|/WINDOWS/clock.avi", "file://localhost/c:/WINDOWS/clock.avi"),
+            new TestURL("file:///c|/WINDOWS/clock.avi", "file:///c:/WINDOWS/clock.avi"),
+            new TestURL("file://localhost/c:/WINDOWS/clock.avi", "file://localhost/c:/WINDOWS/clock.avi"),
+
+            // data:
+            new TestURL("data:foo"),
+
+            // IDN
+            new TestURL("http://ジェーピーニック.jp", "http://xn--hckqz9bzb1cyrb.jp/"),
+
+            // Uncommon schemes
+
+            //XXX: 'aaa' URIs are not standard anymore as of RFC 3986.
+            //           java.net.URI can parse them fairly well anyway.
+            //new TestURL("aaa://host.example.com:1813;transport=udp;protocol=rad"),
+
+            new TestURL("about:blank"),
+            new TestURL("adiumxtra://www.adiumxtras.com/download/0000"),
+            new TestURL("aim:goim?screenname=notarealuser&message=This+is+my+message"),
+            new TestURL("apt:gcc"),
+            new TestURL("callto:+34600800900"),
+            new TestURL("ed2k://|file|The_Two_Towers-The_Purist_Edit-Trailer.avi|14997504|965c013e991ee246d63d45ea71954c4d|/|sources,202.89.123.6:4662|/").validURI(false),
+            new TestURL("feed:https://example.com/rss.xml"),
+            new TestURL("magnet:?xt=urn:sha1:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C"),
+            new TestURL("mailto:user@example.com"),
+
+            new TestURL("chrome-extension://ognampngfcbddbfemdapefohjiobgbdl/monitor.html?tabId=41&browserId=0")
     };
 
     @Test
     public void parseURL() throws MalformedURLException {
-        URLParser p = new URLParser();
-
         for (final TestURL testURL : TEST_URLS) {
-            System.out.println("TESTING: " + testURL.original);
-            final URL url = p.parse(testURL.original);
+            log.debug("TESTING: {}, {}", testURL.original, testURL.base);
+            final URL url = URL.parse((testURL.base == null)? null : URL.parse(testURL.base), testURL.original);
             assertThat(url.toString()).isEqualTo(testURL.result);
-            url.toJavaURI();
-            url.toJavaURL();
+        }
+    }
+
+    @Test
+    public void parseURLAsRFC2396() throws MalformedURLException {
+        final URLParsingSettings settings = URLParsingSettings.create()
+                .withStandard(URLParsingSettings.Standard.RFC_2396);
+        for (final TestURL testURL : TEST_URLS) {
+            log.debug("TESTING: {}, {}", testURL.original, testURL.base);
+            final URL url = URL.parse(settings,
+                    (testURL.base == null)? null : URL.parse(settings, testURL.base),
+                    testURL.original);
+            assertThat(url.toString()).isEqualTo(testURL.resultForRFC2396);
         }
     }
 
     @Test(expected = MalformedURLException.class)
     public void parseOneToken() throws MalformedURLException {
-        new URLParser().parse("http").toString();
-    }
-
-    @Test
-    public void parseURLLeadingWhitespace() throws MalformedURLException {
-        URLParser p = new URLParser();
-        assertThat(p.parse("   http://google.com/").toString()).isEqualTo("http://google.com/");
-    }
-
-    @Test
-    public void parseURLUncommonSchemes() throws MalformedURLException {
-        URLParser p = new URLParser();
-
-        //TODO: Is this really parsed correctly?
-        assertThat(p.parse("aaa://host.example.com:1813;transport=udp;protocol=rad").toString()).isEqualTo("aaa://host.example.com:1813;transport=udp;protocol=rad");
-        assertThat(p.parse("about:blank").toString()).isEqualTo("about:blank");
-        assertThat(p.parse("adiumxtra://www.adiumxtras.com/download/0000").toString()).isEqualTo("adiumxtra://www.adiumxtras.com/download/0000");
-        assertThat(p.parse("aim:goim?screenname=notarealuser&message=This+is+my+message").toString()).isEqualTo("aim:goim?screenname=notarealuser&message=This+is+my+message");
-        assertThat(p.parse("apt:gcc").toString()).isEqualTo("apt:gcc");
-        assertThat(p.parse("callto:+34600800900").toString()).isEqualTo("callto:+34600800900");
-        assertThat(p.parse("ed2k://|file|The_Two_Towers-The_Purist_Edit-Trailer.avi|14997504|965c013e991ee246d63d45ea71954c4d|/|sources,202.89.123.6:4662|/").toString())
-                .isEqualTo("ed2k://|file|The_Two_Towers-The_Purist_Edit-Trailer.avi|14997504|965c013e991ee246d63d45ea71954c4d|/|sources,202.89.123.6:4662|/");
-        assertThat(p.parse("feed:https://example.com/rss.xml").toString()).isEqualTo("feed:https://example.com/rss.xml");
-        assertThat(p.parse("magnet:?xt=urn:sha1:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C").toString())
-                .isEqualTo("magnet:?xt=urn:sha1:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C");
-        assertThat(p.parse("mailto:user@example.com").toString())
-                .isEqualTo("mailto:user@example.com");
-
-    }
-
-    @Test
-    public void parseURLWithBase() throws MalformedURLException {
-        URLParser p = new URLParser();
-        assertThat(p.parse(p.parse("http://example.com"), "/foo").toString())
-                .isEqualTo("http://example.com/foo");
-        assertThat(p.parse(p.parse("https://example.com"), "//mycdn.com/foo").toString())
-                .isEqualTo("https://mycdn.com/foo");
-        assertThat(p.parse(p.parse("http://example.com"), "http://mycdn.com/foo").toString())
-                .isEqualTo("http://mycdn.com/foo");
-        assertThat(p.parse(p.parse("http://example.com"), "http://example.com/foo").toString())
-                .isEqualTo("http://example.com/foo");
+        URL.parse("http");
     }
 
     @Test(expected = MalformedURLException.class)
@@ -165,44 +235,9 @@ public class URLParserTest {
     }
 
     @Test
-    public void parseURLStateOverride() throws MalformedURLException {
-        URLParser p = new URLParser();
-        assertThat(p.parse("ftp:", p.parse("http://google.com/"), URLParser.ParseURLState.SCHEME_START).toString())
-                .isEqualTo("ftp://google.com/");
-        assertThat(p.parse("ftp:", p.parse("http://google.com/"), URLParser.ParseURLState.SCHEME_START).toString())
-                .isEqualTo("ftp://google.com/");
-    }
-
-    @Test
-    public void parseSchemeData() throws MalformedURLException {
-        URLParser p = new URLParser();
-        assertThat(p.parse("data:foo").toString()).isEqualTo("data:foo");
-    }
-
-    @Test
-    public void parseURLWithIDNA() throws MalformedURLException {
-        URLParser p = new URLParser();
-        assertThat(p.parse("http://ジェーピーニック.jp").toString()).isEqualTo("http://xn--hckqz9bzb1cyrb.jp/");
-    }
-
-    @Test
     public void parseURLWithErrors() throws MalformedURLException {
-        URLParser p = new URLParser();
         //TODO: Check errors
-        assertThat(p.parse("http://example.com\\foo\\bar").toString()).isEqualTo("http://example.com/foo/bar");
-        //TODO: assertThat(p.parse("http://example.com/^").toString()).isEqualTo("http://example.com/%5E");
-    }
-
-    @Test
-    public void parseURLFile() throws MalformedURLException {
-        URLParser p = new URLParser();
-        assertThat(p.parse("file://localhost/etc/fstab").toString()).isEqualTo("file://localhost/etc/fstab");
-        assertThat(p.parse("file:////etc/fstab").toString()).isEqualTo("file:////etc/fstab");
-        assertThat(p.parse("file:////etc/fstab").toString()).isEqualTo("file:////etc/fstab");
-        assertThat(p.parse("file:///c:/WINDOWS/clock.avi").toString()).isEqualTo("file:///c:/WINDOWS/clock.avi");
-        assertThat(p.parse("file://localhost/c|/WINDOWS/clock.avi").toString()).isEqualTo("file://localhost/c:/WINDOWS/clock.avi");
-        assertThat(p.parse("file:///c|/WINDOWS/clock.avi").toString()).isEqualTo("file:///c:/WINDOWS/clock.avi");
-        assertThat(p.parse("file://localhost/c:/WINDOWS/clock.avi").toString()).isEqualTo("file://localhost/c:/WINDOWS/clock.avi");
+        assertThat(URL.parse("http://example.com\\foo\\bar").toString()).isEqualTo("http://example.com/foo/bar");
     }
 
 }

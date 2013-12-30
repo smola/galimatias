@@ -75,8 +75,8 @@ public class IPv6AddressTest {
             assertThat(original).isNotEqualTo(null);
             assertThat(original).isNotEqualTo("foo");
         }
-        assertThat(IPv6Address.parse(TEST_ADDRESSES[0][0]))
-                .isNotEqualTo(IPv6Address.parse(TEST_ADDRESSES[1][0]));
+        assertThat(IPv6Address.parseIPv6Address(TEST_ADDRESSES[0][0]))
+                .isNotEqualTo(IPv6Address.parseIPv6Address(TEST_ADDRESSES[1][0]));
 
     }
 
@@ -103,6 +103,11 @@ public class IPv6AddressTest {
     @Test(expected = MalformedURLException.class)
     public void parseTooLongAddress() throws MalformedURLException {
         IPv6Address.parseIPv6Address("0:0:0:0:0:0:0:1:2");
+    }
+
+    @Test(expected = MalformedURLException.class)
+    public void parseAddressWithFinalColon() throws MalformedURLException {
+        IPv6Address.parseIPv6Address("0:0:0:0:0:0:0:1:");
     }
 
     @Test(expected = MalformedURLException.class)
