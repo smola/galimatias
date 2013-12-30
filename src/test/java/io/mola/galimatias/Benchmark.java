@@ -25,7 +25,9 @@ package io.mola.galimatias;
 import com.carrotsearch.junitbenchmarks.AbstractBenchmark;
 import org.junit.Test;
 
-import java.net.*;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 public class Benchmark extends AbstractBenchmark {
 

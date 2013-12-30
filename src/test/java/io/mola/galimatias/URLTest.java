@@ -22,7 +22,6 @@
 
 package io.mola.galimatias;
 
-import org.fest.assertions.Condition;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -32,9 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static org.fest.assertions.Assertions.assertThat;
 
