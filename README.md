@@ -1,6 +1,9 @@
 galimatias
 ==========
 
+[![Build Status](https://travis-ci.org/smola/galimatias?branch=master)](https://travis-ci.org/smola/galimatias)
+[![Coverage Status](https://coveralls.io/repos/smola/galimatias/badge.png?branch=master)](https://coveralls.io/r/smola/galimatias?branch=master)
+
 galimatias is a URL parsing and normalization library written in Java.
 
 Design goals:
