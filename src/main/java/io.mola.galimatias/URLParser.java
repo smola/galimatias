@@ -451,7 +451,7 @@ class URLParser {
                 case AUTHORITY_IGNORE_SLASHES: {
                     if (c != '/' && c != '\\') {
                         state = ParseURLState.AUTHORITY;
-                        idx--;
+                        decrIdx();
                     } else {
                         log.error("Parse error");
                     }

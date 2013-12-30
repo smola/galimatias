@@ -151,6 +151,13 @@ public class URLParserTest {
 
             // Unicode
             new TestURL("http://example.com/\uD801\uDC00", "http://example.com/%F0%90%90%80"),
+            new TestURL("http://example.com/\uD83D\uDC35", "http://example.com/%F0%9F%90%B5"),
+
+            // IDN
+            new TestURL("http://ジェーピーニック.jp", "http://xn--hckqz9bzb1cyrb.jp/"),
+            new TestURL("http://☃.com/", "http://xn--n3h.com/"),
+            new TestURL("http://☃☃☃.com/", "http://xn--n3haa.com/"),
+            new TestURL("http://\uD83D\uDC35.com/", "http://xn--9o8h.com/"),
 
             // tilde
             new TestURL("http://example.com/~user"),
@@ -176,9 +183,6 @@ public class URLParserTest {
 
             // data:
             new TestURL("data:foo"),
-
-            // IDN
-            new TestURL("http://ジェーピーニック.jp", "http://xn--hckqz9bzb1cyrb.jp/"),
 
             // Uncommon schemes
 
