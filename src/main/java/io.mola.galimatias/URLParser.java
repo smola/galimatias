@@ -203,7 +203,7 @@ class URLParser {
                 break;
             }
 
-            log.debug("STATE: {} | IDX: {} | C: {} | {}", state.name(), idx, c, new String(Character.toChars(c)));
+            //log.trace("STATE: {} | IDX: {} | C: {} | {}", state.name(), idx, c, new String(Character.toChars(c)));
 
             switch (state) {
 
