@@ -12,11 +12,12 @@
     <description>
         galimatias is a library for URL parsing, canonicalization and manipulation.
     </description>
-    <url>http://galimatias.mola.io</url>
+    <url>http://github.io/smola/galimatias</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <github.global.server>github</github.global.server>
     </properties>
 
     <licenses>
@@ -28,9 +29,9 @@
     </licenses>
 
     <scm>
-        <developerConnection>https://github.com/smola/galimatias.git</developerConnection>
+        <developerConnection>scm:git:git@github.com:smola/galimatias.git</developerConnection>
         <url>https://github.com/smola/galimatias.git</url>
-        <connection>git://github.com/smola/galimatias.git</connection>
+        <connection>scm:git:git://github.com/smola/galimatias.git</connection>
     </scm>
 
     <issueManagement>
@@ -116,6 +117,24 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>2.9.1</version>
+            </plugin>
+            <plugin>
+                <groupId>com.github.github</groupId>
+                <artifactId>site-maven-plugin</artifactId>
+                <version>0.8</version>
+                <configuration>
+                    <message>Creating site for ${project.version}</message>
+                    <repositoryOwner>smola</repositoryOwner>
+                    <repositoryName>galimatias</repositoryName>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>site</goal>
+                        </goals>
+                        <phase>site</phase>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
