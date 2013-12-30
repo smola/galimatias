@@ -22,11 +22,9 @@
 
 package io.mola.galimatias;
 
-import org.junit.Test;
+import org.junit.experimental.theories.Theories;
+import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -34,57 +32,64 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
 
+import static io.mola.galimatias.TestURL.TestURLs;
 import static org.fest.assertions.Assertions.assertThat;
+import static org.junit.Assume.assumeTrue;
 
-@RunWith(JUnit4.class)
+@RunWith(Theories.class)
 public class URLTest {
 
-    private static final Logger log = LoggerFactory.getLogger(URLTest.class);
-
-    @Test
-    public void withScheme() throws MalformedURLException {
-        for (final URLParserTest.TestURL testURL : URLParserTest.TEST_URLS) {
-            log.debug("TESTING: {}, {}", testURL.original, testURL.base);
-            final URL originalURL = URL.parse((testURL.base == null)? null : URL.parse(testURL.base), testURL.original);
-            if (originalURL.relativeFlag()) {
-                for (final String scheme : new String[] { "http", "https", "ws", "wss", "ftp", "file" }) {
-                    assertThat(originalURL.withScheme(scheme).toString()).startsWith(scheme + ":");
-                }
-
-            } else {
-                for (final String scheme : new String[] { "data", "foobar" }) {
-                    assertThat(originalURL.withScheme(scheme).toString()).startsWith(scheme + ":");
-                }
-            }
-        }
+    @Theory
+    public void parseURL(final @TestURLs TestURL testURL) throws MalformedURLException {
+        final URL url = URL.parse(testURL.base(), testURL.original());
+        assertThat(url.toString()).isEqualTo(testURL.result());
     }
 
-    @Test
-    public void testEquals() throws MalformedURLException {
-        for (final URLParserTest.TestURL testURL : URLParserTest.TEST_URLS) {
-            log.debug("TESTING: {}, {}", testURL.original, testURL.base);
-            final URL originalURL = URL.parse((testURL.base == null)? null : URL.parse(testURL.base), testURL.original);
-            final URL resultURL = URL.parse(testURL.result);
-            assertThat(originalURL).isEqualTo(resultURL);
-            assertThat(originalURL).isEqualTo(originalURL);
-            assertThat(originalURL.hashCode()).isEqualTo(resultURL.hashCode());
-        }
-    }
 
-    @Test
-    public void toFromJavaURI() throws MalformedURLException, URISyntaxException {
+    @Theory
+    public void parseURLAsRFC2396(final @TestURLs TestURL testURL) throws MalformedURLException {
         final URLParsingSettings settings = URLParsingSettings.create()
                 .withStandard(URLParsingSettings.Standard.RFC_2396);
-        for (final URLParserTest.TestURL testURL : URLParserTest.TEST_URLS) {
-            log.debug("TESTING: {}, {}", testURL.original, testURL.base);
-            if (!testURL.validURI) {
-                log.debug("Skipping, invalid URI.");
-                continue;
+
+        final URL url = URL.parse(settings, testURL.base(), testURL.original());
+        assertThat(url.toString()).isEqualTo(testURL.resultForRFC2396());
+    }
+
+    @Theory
+    public void withScheme(final @TestURLs TestURL testURL) throws MalformedURLException {
+        final URL originalURL = URL.parse(testURL.base(), testURL.original());
+        if (originalURL.relativeFlag()) {
+            for (final String scheme : new String[] { "http", "https", "ws", "wss", "ftp", "file" }) {
+                assertThat(originalURL.withScheme(scheme).toString()).startsWith(scheme + ":");
             }
-            final URL originalURL = URL.parse(settings, testURL.resultForRFC2396);
-            final URI toURI = originalURL.toJavaURI();
-            assertThat(originalURL).isEqualTo(URL.fromJavaURI(toURI));
+
+        } else {
+            for (final String scheme : new String[] { "data", "foobar" }) {
+                assertThat(originalURL.withScheme(scheme).toString()).startsWith(scheme + ":");
+            }
         }
+    }
+
+    @Theory
+    public void equality(final @TestURLs TestURL testURL) throws MalformedURLException {
+        final URL originalURL = URL.parse(testURL.base(), testURL.original());
+        final URL resultURL = URL.parse(testURL.result());
+        assertThat(originalURL).isEqualTo(resultURL);
+        assertThat(originalURL).isEqualTo(originalURL);
+        assertThat(originalURL).isEqualTo(originalURL);
+        assertThat(originalURL.hashCode()).isEqualTo(resultURL.hashCode());
+    }
+
+    @Theory
+    public void toFromJavaURI(final @TestURLs TestURL testURL) throws MalformedURLException, URISyntaxException {
+        assumeTrue(testURL.isValidURI());
+
+        final URLParsingSettings settings = URLParsingSettings.create()
+                .withStandard(URLParsingSettings.Standard.RFC_2396);
+
+        final URL originalURL = URL.parse(settings, testURL.base(), testURL.original());
+        final URI toURI = originalURL.toJavaURI();
+        assertThat(originalURL).isEqualTo(URL.fromJavaURI(toURI));
     }
 
 
@@ -92,18 +97,14 @@ public class URLTest {
             "http", "https", "ftp", "file", "jar"
     );
 
-    @Test
-    public void toFromJavaURL() throws MalformedURLException {
-        for (final URLParserTest.TestURL testURL : URLParserTest.TEST_URLS) {
-            log.debug("TESTING: {}, {}", testURL.original, testURL.base);
-            final URL originalURL = URL.parse(testURL.result);
-            if (!JAVA_URL_PROTOCOLS.contains(originalURL.scheme())) {
-                log.debug("Skipping unsupported java.net.URL scheme");
-                continue;
-            }
-            final java.net.URL toURL = originalURL.toJavaURL();
-            assertThat(originalURL).isEqualTo(URL.fromJavaURL(toURL));
-        }
+    @Theory
+    public void toFromJavaURL(final @TestURLs TestURL testURL) throws MalformedURLException {
+        final URL originalURL = URL.parse(testURL.base(), testURL.original());
+
+        assumeTrue(JAVA_URL_PROTOCOLS.contains(originalURL.scheme()));
+
+        final java.net.URL toURL = originalURL.toJavaURL();
+        assertThat(originalURL).isEqualTo(URL.fromJavaURL(toURL));
     }
 
 }

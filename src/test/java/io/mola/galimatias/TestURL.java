@@ -22,79 +22,117 @@
 
 package io.mola.galimatias;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.experimental.theories.ParameterSignature;
+import org.junit.experimental.theories.ParameterSupplier;
+import org.junit.experimental.theories.ParametersSuppliedBy;
+import org.junit.experimental.theories.PotentialAssignment;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.List;
 
-import static org.fest.assertions.Assertions.assertThat;
+public class TestURL {
 
-@RunWith(JUnit4.class)
-public class URLParserTest {
+    private String original;
+    private String result;
+    private String base;
+    private boolean validURI;
+    private String resultForRFC3986;
+    private String resultForRFC2396;
 
-    private static final Logger log = LoggerFactory.getLogger(URLParserTest.class);
-
-    @Test(expected = NullPointerException.class)
-    public void parseNullURL() throws MalformedURLException {
-        URL.parse(null);
+    TestURL(String original) {
+        this(null, original, original);
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseEmptyURL() throws MalformedURLException {
-        URL.parse("");
+    TestURL(String original, String result) {
+        this(null, original, result);
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseURLwithoutScheme() throws MalformedURLException {
-        URL.parse("//scheme-relative-stuff");
+    TestURL(String base, String original, String result) {
+        this.base = base;
+        this.original = original;
+        this.result = result;
+        this.resultForRFC2396 = null;
+        this.resultForRFC3986 = null;
+        this.validURI = true;
     }
 
-    static class TestURL {
-        String original;
-        String result;
-        String base;
-        boolean validURI;
-        String resultForRFC3986;
-        String resultForRFC2396;
+    String original() {
+        return original;
+    }
 
-        TestURL(String original) {
-            this(null, original, original);
-        }
+    String result() {
+        return result;
+    }
 
-        TestURL(String original, String result) {
-            this(null, original, result);
+    URL base() throws MalformedURLException {
+        if (base == null) {
+            return null;
         }
+        return URL.parse(base);
+    }
 
-        TestURL(String base, String original, String result) {
-            this.base = base;
-            this.original = original;
-            this.result = result;
-            this.resultForRFC2396 = result;
-            this.resultForRFC3986 = result;
-            this.validURI = true;
-        }
+    boolean isValidURI() {
+        return validURI;
+    }
 
-        TestURL validURI(boolean validURI) {
-            this.validURI = validURI;
-            return this;
-        }
+    TestURL validURI(boolean validURI) {
+        this.validURI = validURI;
+        return this;
+    }
 
-        TestURL resultForRFC2396(String result) {
-            this.resultForRFC2396 = result;
-            return this;
-        }
+    TestURL resultForRFC2396(String result) {
+        this.resultForRFC2396 = result;
+        return this;
+    }
 
-        TestURL resultForRFC3986(String result) {
-            this.resultForRFC3986 = result;
-            return this;
+    String resultForRFC2396() {
+        return nvl(resultForRFC2396, resultForRFC3986, result);
+    }
+
+    TestURL resultForRFC3986(String result) {
+        this.resultForRFC3986 = result;
+        return this;
+    }
+
+    String resultForRFC3986() {
+        return nvl(resultForRFC3986, result);
+    }
+
+    private static String nvl(String... values) {
+        for (final String value : values) {
+            if (value != null) {
+                return value;
+            }
         }
+        return null;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("TestURL(original='%s', base='%s'", result, base);
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @ParametersSuppliedBy(TestURLSupplier.class)
+    public static @interface TestURLs {
 
     }
 
-    static final TestURL[] TEST_URLS = new TestURL[] {
+    public static class TestURLSupplier extends ParameterSupplier {
+        @Override
+        public List<PotentialAssignment> getValueSources(ParameterSignature sig) {
+            List<PotentialAssignment> values = new ArrayList<PotentialAssignment>();
+            for (final TestURL testURL : TEST_URLS) {
+                values.add(PotentialAssignment.forValue(testURL.toString(), testURL));
+            }
+            return values;
+        }
+    }
+
+    public static final TestURL[] TEST_URLS = new TestURL[] {
             // basic
             new TestURL("http://example.com/"),
             new TestURL("http://example.com", "http://example.com/"),
@@ -178,7 +216,7 @@ public class URLParserTest {
             new TestURL("file:///c|/WINDOWS/clock.avi", "file:///c:/WINDOWS/clock.avi")
                     .resultForRFC2396("file:///c%7C/WINDOWS/clock.avi"), //FIXME: This is not consistent with the previous case
             new TestURL("file://localhost/c|/WINDOWS/clock.avi", "file://localhost/c:/WINDOWS/clock.avi")
-                .resultForRFC2396("file://localhost/c%7C/WINDOWS/clock.avi"), //XXX: Not sure this is correct
+                    .resultForRFC2396("file://localhost/c%7C/WINDOWS/clock.avi"), //XXX: Not sure this is correct
             new TestURL("file://localhost/c:/WINDOWS/clock.avi", "file://localhost/c:/WINDOWS/clock.avi"),
 
             // data:
@@ -202,48 +240,5 @@ public class URLParserTest {
 
             new TestURL("chrome-extension://ognampngfcbddbfemdapefohjiobgbdl/monitor.html?tabId=41&browserId=0")
     };
-
-    @Test
-    public void parseURL() throws MalformedURLException {
-        for (final TestURL testURL : TEST_URLS) {
-            log.debug("TESTING: {}, {}", testURL.original, testURL.base);
-            final URL url = URL.parse((testURL.base == null)? null : URL.parse(testURL.base), testURL.original);
-            assertThat(url.toString()).isEqualTo(testURL.result);
-        }
-    }
-
-    @Test
-    public void parseURLAsRFC2396() throws MalformedURLException {
-        final URLParsingSettings settings = URLParsingSettings.create()
-                .withStandard(URLParsingSettings.Standard.RFC_2396);
-        for (final TestURL testURL : TEST_URLS) {
-            log.debug("TESTING: {}, {}", testURL.original, testURL.base);
-            final URL url = URL.parse(settings,
-                    (testURL.base == null)? null : URL.parse(settings, testURL.base),
-                    testURL.original);
-            assertThat(url.toString()).isEqualTo(testURL.resultForRFC2396);
-        }
-    }
-
-    @Test(expected = MalformedURLException.class)
-    public void parseOneToken() throws MalformedURLException {
-        URL.parse("http");
-    }
-
-    @Test(expected = MalformedURLException.class)
-    public void parseURLWithBadBase() throws MalformedURLException {
-        URL.parse(URL.parse("mailto:user@example.com"), "/relative");
-    }
-
-    @Test(expected = MalformedURLException.class)
-    public void parseURLWithMalformedScheme() throws MalformedURLException {
-        URL.parse("+http://example.com");
-    }
-
-    @Test
-    public void parseURLWithErrors() throws MalformedURLException {
-        //TODO: Check errors
-        assertThat(URL.parse("http://example.com\\foo\\bar").toString()).isEqualTo("http://example.com/foo/bar");
-    }
 
 }
