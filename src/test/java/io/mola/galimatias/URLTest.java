@@ -34,6 +34,7 @@ import java.util.List;
 
 import static io.mola.galimatias.TestURL.TestURLs;
 import static org.fest.assertions.Assertions.assertThat;
+import static org.junit.Assume.assumeNotNull;
 import static org.junit.Assume.assumeTrue;
 
 @RunWith(Theories.class)
@@ -53,6 +54,29 @@ public class URLTest {
 
         final URL url = URL.parse(settings, testURL.base(), testURL.original());
         assertThat(url.toString()).isEqualTo(testURL.resultForRFC2396());
+    }
+
+    @Theory
+    public void userInfoWithUsernameAndPassword(final @TestURLs TestURL testURL) throws MalformedURLException {
+        URL url = URL.parse(testURL.base(), testURL.original());
+        assumeNotNull(url.username(), url.password());
+        assertThat(url.userInfo()).isEqualTo(String.format("%s:%s", url.username(), url.password()));
+    }
+
+    @Theory
+    public void userInfoWithUsernameOnly(final @TestURLs TestURL testURL) throws MalformedURLException {
+        URL url = URL.parse(testURL.base(), testURL.original());
+        assumeNotNull(url.username());
+        assumeTrue(url.password() == null);
+        assertThat(url.userInfo()).isEqualTo(url.username());
+    }
+
+    @Theory
+    public void userInfoWithPasswordOnly(final @TestURLs TestURL testURL) throws MalformedURLException {
+        URL url = URL.parse(testURL.base(), testURL.original());
+        assumeNotNull(url.password());
+        assumeTrue(url.username() == null || url.username().isEmpty());
+        assertThat(url.userInfo()).isEqualTo(String.format(":%s", url.password()));
     }
 
     @Theory
@@ -78,6 +102,7 @@ public class URLTest {
         assertThat(originalURL).isEqualTo(originalURL);
         assertThat(originalURL).isEqualTo(originalURL);
         assertThat(originalURL.hashCode()).isEqualTo(resultURL.hashCode());
+        assertThat(originalURL).isNotEqualTo("other");
     }
 
     @Theory

@@ -100,6 +100,12 @@ public class IPv6AddressTest {
     }
 
     @Test(expected = MalformedURLException.class)
+    public void parseIllegalCharacter() throws MalformedURLException {
+        IPv6Address.parseIPv6Address("1::x:1");
+    }
+
+
+    @Test(expected = MalformedURLException.class)
     public void parseTooLongAddress() throws MalformedURLException {
         IPv6Address.parseIPv6Address("0:0:0:0:0:0:0:1:2");
     }

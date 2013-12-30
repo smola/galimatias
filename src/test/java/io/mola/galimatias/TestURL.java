@@ -152,6 +152,7 @@ public class TestURL {
             new TestURL("http://user:pass@example.com/"),
             new TestURL("http://user@example.com/"),
             new TestURL("http://user:@example.com/"),
+            new TestURL("http://:pass@example.com/"),
             new TestURL("http://:@example.com/"),
 
             // path

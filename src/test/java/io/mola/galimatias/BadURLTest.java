@@ -24,31 +24,33 @@ package io.mola.galimatias;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.theories.Theories;
+import org.junit.experimental.theories.Theory;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
 
+import static io.mola.galimatias.TestURL.TestURLs;
 import static org.fest.assertions.Assertions.assertThat;
 
-@RunWith(JUnit4.class)
+@RunWith(Theories.class)
 public class BadURLTest {
-
-    private static final Logger log = LoggerFactory.getLogger(BadURLTest.class);
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void parseNullURL() throws MalformedURLException {
+        thrown.expect(NullPointerException.class);
+        thrown.expectMessage("null input");
         URL.parse(null);
     }
 
-    @Test(expected = MalformedURLException.class)
+    @Test
     public void parseEmptyURL() throws MalformedURLException {
+        thrown.expect(MalformedURLException.class);
+        thrown.expectMessage("empty input");
         URL.parse("");
     }
 
@@ -76,6 +78,20 @@ public class BadURLTest {
     public void parseURLWithErrors() throws MalformedURLException {
         //TODO: Check errors
         assertThat(URL.parse("http://example.com\\foo\\bar").toString()).isEqualTo("http://example.com/foo/bar");
+    }
+
+    @Theory
+    public void withNullScheme(final @TestURLs TestURL testURL) throws MalformedURLException {
+        final URL url = URL.parse(testURL.base(), testURL.original());
+        thrown.expect(NullPointerException.class);
+        url.withScheme(null);
+    }
+
+    @Theory
+    public void withEmptyScheme(final @TestURLs TestURL testURL) throws MalformedURLException {
+        final URL url = URL.parse(testURL.base(), testURL.original());
+        thrown.expect(MalformedURLException.class);
+        url.withScheme("");
     }
 
 }

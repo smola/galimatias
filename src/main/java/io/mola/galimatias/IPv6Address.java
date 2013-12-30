@@ -232,7 +232,7 @@ public class IPv6Address extends Host {
             return InetAddress.getByAddress(bytes);
         } catch (UnknownHostException e) {
             // Can't happen if we pass the right amount of bytes
-            throw new RuntimeException(e);
+            throw new RuntimeException("BUG", e);
         }
     }
 

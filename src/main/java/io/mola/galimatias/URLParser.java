@@ -158,11 +158,11 @@ class URLParser {
     public URL parse() throws MalformedURLException {
 
         if (input == null) {
-            throw new NullPointerException("urlString");
+            throw new NullPointerException("null input");
         }
 
         if (input.isEmpty()) {
-            throw new MalformedURLException("urlString is empty");
+            throw new MalformedURLException("empty input");
         }
 
         final StringBuilder buffer = new StringBuilder(input.length()*2);
