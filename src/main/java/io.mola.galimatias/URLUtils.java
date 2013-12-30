@@ -23,7 +23,6 @@
 package io.mola.galimatias;
 
 import java.net.IDN;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,7 +33,7 @@ import java.util.List;
  * Not to be confused with the URLUtils from the WHATWG URL spec.
  *
  */
-public final class URLUtils {
+class URLUtils {
 
     private URLUtils() {
 
