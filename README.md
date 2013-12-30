@@ -1,20 +1,15 @@
 galimatias
 ==========
 
-galimatias is a URL parsing and normalizing library written in Java.
+galimatias is a URL parsing and normalization library written in Java.
 
 Design goals:
 
-- Parse URLs as browsers do.
-- Stay as close as possible to WHATWG's [URL Standard](http://url.spec.whatwg.org/). In fact, the aprser is largely based on it.
+- Parse URLs as browsers do, with optional normalization to RFC 3986 or RFC 2396.
+- Stay as close as possible to WHATWG's [URL Standard](http://url.spec.whatwg.org/). In fact, the parser is largely based on it.
 - Convenient fluent API with immutable URL objects.
-- Convert to and from java.net.URL and java.net.URI without any error.
+- Interoperable with java.net.URL and java.net.URI.
 - Zero dependencies.
-
-Non-goals:
-
-- Be nit-picky about standards if that conflicts with the first goal.
-- Provide networking capabilities.
 
 But, why?
 ---------
@@ -23,7 +18,7 @@ galimatias started out of frustration with java.net.URL and java.net.URI. Both o
 
 - **[java.net.URL.equals() is broken.](http://stackoverflow.com/a/3771123/205607)**
 
-- **java.net.URI follows strict parsing rules.** URLs containing special characters (e.g. `^`) will throw an exception if passed to `URI.create`.
+- **java.net.URI can pase only RFC 2396 URI syntax.** `java.net.URI` will only parse a URI if it's strictly compliant with RFC 2396. Most URLs found in the wild do not comply with any syntax standard, and RFC 2396 is outdated anyway.
 
 - **java.net.URI is not protocol-aware.** `http://example.com`, `http://example.com/` and `http://example.com:80` are different entities.
 
