@@ -206,17 +206,25 @@ public class URL implements Serializable {
     /**
      * Converts to {@link java.net.URI}.
      *
-     * FIXME: This will throw an exception for ed2k links.
+     * Conversion to {@link java.net.URI} will throw
+     * {@link java.net.URISyntaxException} if the URL contains
+     * unescaped unsafe characters as defined in RFC 2396.
+     * In order to prevent this, force RFC 2396 compliance when
+     * parsing the URL. For example:
+     *
+     * <pre>
+     * <code>
+     * URLParsingSettings settings = URLParsingSettings.create()
+     *     .withStandard(URLParsingSettings.Standard.RFC_2396);
+     * URL url = URI.parse(settings, url);
+     * java.net.URI uri = url.toJavaURI();
+     * </code>
+     * </pre>
      *
      * @return
      */
-    public java.net.URI toJavaURI() {
-        try {
-            return new URI(toString());
-        } catch (URISyntaxException e) {
-            // This should not happen
-            throw new RuntimeException("BUG", e);
-        }
+    public java.net.URI toJavaURI() throws URISyntaxException {
+        return new URI(toString());
     }
 
     /**

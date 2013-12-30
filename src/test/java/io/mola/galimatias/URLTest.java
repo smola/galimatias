@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -71,7 +72,7 @@ public class URLTest {
     }
 
     @Test
-    public void toFromJavaURI() throws MalformedURLException {
+    public void toFromJavaURI() throws MalformedURLException, URISyntaxException {
         final URLParsingSettings settings = URLParsingSettings.create()
                 .withStandard(URLParsingSettings.Standard.RFC_2396);
         for (final URLParserTest.TestURL testURL : URLParserTest.TEST_URLS) {
