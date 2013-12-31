@@ -32,18 +32,18 @@ galimatias started out of frustration with java.net.URL and java.net.URI. Both o
 Setup
 -----
 
-## Using Maven
+### Using Maven
 
 TODO
 
-## Standalone
+### Standalone
 
 TODO
 
 Getting started
 ---------------
 
-## Parse a URL
+### Parse a URL
 
 ```java
 // Parse
@@ -56,7 +56,7 @@ try {
 }
 ```
 
-## Convert to java.net.URL
+### Convert to java.net.URL
 
 ```java
 URL url = //...
@@ -68,7 +68,7 @@ try {
 }
 ```
 
-## Convert to java.net.URI
+### Convert to java.net.URI
 
 ```java
 URL url = //...
@@ -90,7 +90,7 @@ URLParsingSettings settings = URLParsingSettings.create()
 URL url = URL.parse(settings, urlString);
 ```
 
-## Parse a URL with strict error handling
+### Parse a URL with strict error handling
 
 You can use a strict error handler that will throw an exception
 on any invalid URL, even if it's a recovarable error.
