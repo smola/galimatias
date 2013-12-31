@@ -32,31 +32,6 @@ import java.util.Locale;
 
 import static io.mola.galimatias.URLUtils.*;
 
-/**
- *  http://url.spec.whatwg.org/
- *
- *  NOTES:
- *
- *  - Lowercase percent-encoded bytes are not uppercased, although
- *    it's good practice to uppercase then. Is this work for the canonicalizer
- *    or the parser itself? Google Chrome does not normalize here.
- *
- *  - Why utf-8 percent-encoding in fragment and only percent-encoding in query?
- *
- * - See  http://mxr.mozilla.org/mozilla-central/source/netwerk/base/src/nsURLParsers.cpp
- *
- *  TODO: This still does not perform percent-decoding of unreserved characters
- *       on parsing. It seems WebKit does decode while Gecko does not (or does in
- *       a limited fashion).
- *       https://www.w3.org/Bugs/Public/show_bug.cgi?id=24164
- *
- *  TODO: Unsafe characters are not percent-encoded: ^, {, }, [, ], |... the URL
- *       Spec does not specify their encoding, but WebKit/Gecko encodes them,
- *       which is aligned with relevant RFCs and common practices.
- *       https://www.w3.org/Bugs/Public/show_bug.cgi?id=24163
- *       Add info about java.net.URI
- *       and Nutch https://github.com/apache/nutch/blob/2.1/src/java/org/apache/nutch/parse/OutlinkExtractor.java
- */
 class URLParser {
 
     private static final Logger log = LoggerFactory.getLogger(URLParser.class);
@@ -314,10 +289,17 @@ class URLParser {
                             log.error("Parse error");
                         }
 
-                        // WHATWG URL: If c is "%" and remaining does not start with two ASCII hex digits, parse error.
-                        if (c == '%' && (!isASCIIHexDigit(at(idx+1)) || !isASCIIHexDigit(at(idx+2)))) {
-                            log.error("Parse error");
-
+                        if (c == '%') {
+                            // WHATWG URL: If c is "%" and remaining does not start with two ASCII hex digits, parse error.
+                            if (!isASCIIHexDigit(at(idx+1)) || !isASCIIHexDigit(at(idx+2))) {
+                                log.error("Parse error");
+                            } else {
+                                schemeData.append((char)c)
+                                        .append(Character.toUpperCase(input.charAt(idx+1)))
+                                        .append(Character.toUpperCase(input.charAt(idx+2)));
+                                setIdx(idx+2);
+                                break;
+                            }
                         }
 
                         // WHATWG URL: If c is none of EOF code point, U+0009, U+000A, and U+000D, utf-8 percent encode
@@ -484,8 +466,11 @@ class URLParser {
                                 log.error("Parse error");
                             }
                             if (otherChar == '%') {
-                                if (i + 2 >= buffer.length() || !isASCIIHexDigit(buffer.charAt(i+1)) || !isASCIIHexDigit(buffer.charAt(idx+2))) {
+                                if (i + 2 >= buffer.length() || !isASCIIHexDigit(buffer.charAt(i+1)) || !isASCIIHexDigit(buffer.charAt(i+2))) {
                                     log.error("Parse error");
+                                } else if (isASCIIHexDigit(buffer.charAt(i+1)) && isASCIIHexDigit(buffer.charAt(i+2))) {
+                                    buffer.setCharAt(i + 1, Character.toUpperCase(buffer.charAt(i + 1)));
+                                    buffer.setCharAt(i + 2, Character.toUpperCase(buffer.charAt(i + 2)));
                                 }
                             }
                             if (otherChar == ':' && passwordBuffer == null) {
@@ -679,8 +664,16 @@ class URLParser {
                             log.error("Parse error");
                         }
 
-                        if (c == '%' && (!isASCIIHexDigit(at(idx+1)) || !isASCIIHexDigit(at(idx+2)))) {
+                        if (c == '%') {
+                            if (!isASCIIHexDigit(at(idx+1)) || !isASCIIHexDigit(at(idx+2))) {
                                 log.error("Parse error");
+                            } else {
+                                buffer.append((char)c)
+                                        .append(Character.toUpperCase(input.charAt(idx+1)))
+                                        .append(Character.toUpperCase(input.charAt(idx+2)));
+                                setIdx(idx+2);
+                                break;
+                            }
                         }
 
                         utf8PercentEncode(c, EncodeSet.DEFAULT, buffer);
@@ -718,8 +711,16 @@ class URLParser {
                         if (!isURLCodePoint(c) && c != '%') {
                             log.error("Parse error");
                         }
-                        if (c == '%' && (!isASCIIHexDigit(at(idx+1)) || !isASCIIHexDigit(at(idx+2)))) {
-                            log.error("Parse error");
+                        if (c == '%') {
+                            if (!isASCIIHexDigit(at(idx+1)) || !isASCIIHexDigit(at(idx+2))) {
+                                log.error("Parse error");
+                            } else {
+                                buffer.append((char)c)
+                                        .append(Character.toUpperCase(input.charAt(idx+1)))
+                                        .append(Character.toUpperCase(input.charAt(idx+2)));
+                                setIdx(idx+2);
+                                break;
+                            }
                         }
                         buffer.appendCodePoint(c);
                     }
@@ -735,8 +736,16 @@ class URLParser {
                         if (!isURLCodePoint(c) && c != '%') {
                             log.error("Parse error");
                         }
-                        if (c == '%' && (!isASCIIHexDigit(at(idx+1)) || !isASCIIHexDigit(at(idx+2)))) {
-                            log.error("Parse error");
+                        if (c == '%') {
+                            if (!isASCIIHexDigit(at(idx+1)) || !isASCIIHexDigit(at(idx+2))) {
+                                log.error("Parse error");
+                            } else {
+                                fragment.append((char)c)
+                                        .append(Character.toUpperCase(input.charAt(idx+1)))
+                                        .append(Character.toUpperCase(input.charAt(idx+2)));
+                                setIdx(idx+2);
+                                break;
+                            }
                         }
                         if (isFragmentChar(c) ||
                                 (c == '%' && isASCIIHexDigit(at(idx + 1)) && isASCIIHexDigit(at(idx+1)))) {
@@ -855,12 +864,12 @@ class URLParser {
     private boolean isInDefaultEncodeSet(final int c) {
         switch (settings.standard()) {
             case WHATWG:
-                return isInSimpleEncodeSet(c) || c == '"' || c == '#' || c == '<' || c == '>' || c == '?' || c == '`';
+                return isInSimpleEncodeSet(c) || c == ' ' || c == '"' || c == '#' || c == '<' || c == '>' || c == '?' || c == '`';
             case RFC_3986: //TODO: Check
-                return isInSimpleEncodeSet(c) || c == '"' || c == '#' || c == '<' || c == '>' || c == '?' || c == '`';
+                return isInSimpleEncodeSet(c) || c == ' ' || c == '"' || c == '#' || c == '<' || c == '>' || c == '?' || c == '`';
             case RFC_2396:
             default:
-                return isInSimpleEncodeSet(c) || c == '"' || c == '#' || c == '<' || c == '>' || c == '?' || c == '`'
+                return isInSimpleEncodeSet(c) || c == ' ' || c == '"' || c == '#' || c == '<' || c == '>' || c == '?' || c == '`'
                         || c == '|' || c == '[' || c == ']' || c == '{' || c == '}' || c == '^';
 
         }

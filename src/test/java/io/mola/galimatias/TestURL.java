@@ -151,8 +151,11 @@ public class TestURL {
             // user info
             new TestURL("http://user:pass@example.com/"),
             new TestURL("http://user@example.com/"),
+            new TestURL("http://us er@example.com/", "http://us%20er@example.com/"),
+            new TestURL("http://us%2aer@example.com/", "http://us%2Aer@example.com/"),
             new TestURL("http://user:@example.com/"),
             new TestURL("http://:pass@example.com/"),
+            new TestURL("http://:pa%2ass@example.com/", "http://:pa%2Ass@example.com/"),
             new TestURL("http://:@example.com/"),
 
             // path
@@ -166,14 +169,14 @@ public class TestURL {
 
             // query
             new TestURL("http://example.com/?foo=1"),
-            new TestURL("http://example.com/?foo%c3%9f", "http://example.com/?foo%c3%9f"),
+            new TestURL("http://example.com/?foo%c3%9f", "http://example.com/?foo%C3%9F"),
             new TestURL("http://example.com/?fooß", "http://example.com/?foo%C3%9F"),
 
             // fragment
             new TestURL("http://example.com/#foo"),
             new TestURL("http://example.com/?foo=1#foo"),
             new TestURL("http://example.com/?foo=1#"),
-            new TestURL("http://example.com/#foo%c3%9f", "http://example.com/#foo%c3%9f"),
+            new TestURL("http://example.com/#foo%c3%9f", "http://example.com/#foo%C3%9F"),
             new TestURL("http://example.com/#fooß", "http://example.com/#foo%C3%9F"),
 
             // Relative to base
@@ -222,6 +225,7 @@ public class TestURL {
 
             // data:
             new TestURL("data:foo"),
+            new TestURL("data:%6a", "data:%6A"),
 
             // Uncommon schemes
 
