@@ -32,22 +32,84 @@ galimatias started out of frustration with java.net.URL and java.net.URI. Both o
 Setup
 -----
 
+## Using Maven
+
+TODO
+
+## Standalone
+
 TODO
 
 Getting started
 ---------------
 
-TODO
+## Parse a URL
+
+```java
+// Parse
+String urlString = //...
+URL url;
+try {
+  url = URL.parse(urlString);
+} catch (GalimatiasParseException ex) {
+  // Do something with non-recoverable parsing error
+}
+```
+
+## Convert to java.net.URL
+
+```java
+URL url = //...
+java.net.URL javaURL;
+try {
+  javaURL = url.toJavaURL();
+} catch (MalformedURLException ex) {
+  // This can happen if scheme is not http, https, ftp, file or jar.
+}
+```
+
+## Convert to java.net.URI
+
+```java
+URL url = //...
+java.net.URI javaURI;
+try {
+  javaURI = url.toJavaURI();
+} catch (URISyntaxException ex) {
+  // This will happen if the URL contains unsafe characters (e.g. {}).
+}
+```
+
+You can also parse a URL and convert it to java.net.URI without
+any exception by forcing RFC 2396 compliance.
+
+```java
+String urlString = //...
+URLParsingSettings settings = URLParsingSettings.create()
+  .withStandard(URLParsingSettings.Standard.RFC_2396);
+URL url = URL.parse(settings, urlString);
+```
+
+## Parse a URL with strict error handling
+
+You can use a strict error handler that will throw an exception
+on any invalid URL, even if it's a recovarable error.
+
+```java
+URLParsingSettings settings = URLParsingSettings.create()
+  .withErrorHandler(StrictErrorHandler.getInstance());
+URL url = URL.parse(settings, urlString);
+```
 
 Documentation
 -------------
 
-TODO
+Check our [API docs](http://mola.io/galimatias/site/0.0.1-SNAPSHOT/apidocs/index.html).
 
 Contribute
 ----------
 
-Did you find a bug? Report it on GitHub.
+Did you find a bug? [Report it on GitHub](https://github.com/smola/galimatias/issues).
 
 Did you write a patch? Send a pull request.
 
