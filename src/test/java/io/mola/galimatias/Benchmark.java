@@ -36,7 +36,7 @@ public class Benchmark extends AbstractBenchmark {
     private static final int COUNT = 5000;
 
     @Test
-    public void benchParseURL() throws MalformedURLException{
+    public void benchParseURL() throws GalimatiasParseException{
         for (int i = 0; i < COUNT; i++) {
             URL.parse(testURL);
         }

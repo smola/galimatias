@@ -23,7 +23,6 @@
 package io.mola.galimatias;
 
 import java.net.InetAddress;
-import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 
@@ -37,7 +36,7 @@ public class IPv6Address extends Host {
         this.pieces = Arrays.copyOf(pieces, pieces.length);
     }
 
-    public static IPv6Address parseIPv6Address(final String ipString) throws MalformedURLException {
+    public static IPv6Address parseIPv6Address(final String ipString) throws GalimatiasParseException {
         // See also Mozilla's IPv6 parser:
         //  http://bonsai.mozilla.org/cvsblame.cgi?file=/mozilla/nsprpub/pr/src/misc/prnetdb.c&rev=3.54&mark=1561#1561
 
@@ -45,7 +44,7 @@ public class IPv6Address extends Host {
             throw new NullPointerException("Argument is null");
         }
         if (ipString.isEmpty()) {
-            throw new MalformedURLException("Empty string");
+            throw new GalimatiasParseException("empty string");
         }
 
         final short[] address = new short[8];
@@ -59,7 +58,7 @@ public class IPv6Address extends Host {
 
         if (c == ':') {
             if (idx + 1 >= input.length || input[idx+1] != ':') {
-                throw new MalformedURLException("IPv6 address starting with ':' is not followed by a second ':'.");
+                throw new GalimatiasParseException("IPv6 address starting with ':' is not followed by a second ':'.");
             }
             idx += 2;
             piecePointer = 1;
@@ -74,11 +73,11 @@ public class IPv6Address extends Host {
             c = (isEOF)? 0x00 : input[idx];
 
             if (piecePointer == 8) {
-                throw new MalformedURLException("Address too long");
+                throw new GalimatiasParseException("Address too long");
             }
             if (c == ':') {
                 if (compressPointer != null) {
-                    throw new MalformedURLException("Zero-compression can be used only once.");
+                    throw new GalimatiasParseException("Zero-compression can be used only once.");
                 }
                 idx++;
                 isEOF = idx >= input.length;
@@ -101,7 +100,7 @@ public class IPv6Address extends Host {
 
             if (c == '.') {
                 if (length == 0) {
-                    throw new MalformedURLException("':' cannot be followed by '.'");
+                    throw new GalimatiasParseException("':' cannot be followed by '.'");
                 }
                 idx -= length;
                 isEOF = idx >= input.length;
@@ -112,10 +111,10 @@ public class IPv6Address extends Host {
                 idx++;
                 isEOF = idx >= input.length;
                 if (isEOF) {
-                    throw new MalformedURLException("Cannot end with ':'");
+                    throw new GalimatiasParseException("Cannot end with ':'");
                 }
             } else if (!isEOF) {
-                throw new MalformedURLException("Illegal character");
+                throw new GalimatiasParseException("Illegal character");
             }
 
             address[piecePointer] = (short)value;
@@ -133,7 +132,7 @@ public class IPv6Address extends Host {
         if (!jumpToFinale) {
             // Step 8 IPv4
             if (piecePointer > 6) {
-                throw new MalformedURLException("Not enough room for a IPv4-mapped address");
+                throw new GalimatiasParseException("Not enough room for a IPv4-mapped address");
             }
         }
 
@@ -148,7 +147,7 @@ public class IPv6Address extends Host {
 
                 // Step 10.2
                 if (!isASCIIDigit(c)) {
-                    throw new MalformedURLException("Non-digit character in IPv4-mapped address");
+                    throw new GalimatiasParseException("Non-digit character in IPv4-mapped address");
                 }
 
                 // Step 10.3
@@ -161,12 +160,12 @@ public class IPv6Address extends Host {
 
                 // Step 10.4
                 if (value > 255) {
-                    throw new MalformedURLException("Invalid value for IPv4-mapped address");
+                    throw new GalimatiasParseException("Invalid value for IPv4-mapped address");
                 }
 
                 // Step 10.5
                 if (dotsSeen < 3 && c != '.') {
-                    throw new MalformedURLException("Illegal character in IPv4-mapped address");
+                    throw new GalimatiasParseException("Illegal character in IPv4-mapped address");
                 }
 
                 // Step 10.6
@@ -184,7 +183,7 @@ public class IPv6Address extends Host {
 
                 // Step 10.9
                 if (dotsSeen == 3 && !isEOF) {
-                    throw new MalformedURLException("Too long IPv4-mapped address");
+                    throw new GalimatiasParseException("Too long IPv4-mapped address");
                 }
 
                 // Step 10.10
@@ -210,7 +209,7 @@ public class IPv6Address extends Host {
         }
         // Step 12
         else if (piecePointer != 8) {
-            throw new MalformedURLException("Address too short");
+            throw new GalimatiasParseException("Address too short");
         }
 
         return new IPv6Address(address);

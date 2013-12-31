@@ -34,23 +34,23 @@ import static org.fest.assertions.Assertions.assertThat;
 public class HostTest {
 
     @Test
-    public void parseTest() throws MalformedURLException {
+    public void parseTest() throws GalimatiasParseException {
         assertThat(Host.parseHost("example.com")).isInstanceOf(Domain.class);
         assertThat(Host.parseHost("[2001:0db8:85a3:08d3:1319:8a2e:0370:7334]")).isInstanceOf(IPv6Address.class);
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseHostWithUnmatchedBracket() throws MalformedURLException {
+    @Test(expected = GalimatiasParseException.class)
+    public void parseHostWithUnmatchedBracket() throws GalimatiasParseException {
         Host.parseHost("[2001:0db8:85a3:08d3:1319:8a2e:0370:7334");
     }
 
     @Test(expected = NullPointerException.class)
-    public void parseNullHost() throws MalformedURLException {
+    public void parseNullHost() throws GalimatiasParseException {
         Host.parseHost(null);
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseEmptyHost() throws MalformedURLException {
+    @Test(expected = GalimatiasParseException.class)
+    public void parseEmptyHost() throws GalimatiasParseException {
         Host.parseHost("");
     }
 

@@ -23,52 +23,32 @@
 package io.mola.galimatias;
 
 /**
- * Provides settings for URL parsing.
- *
- * This class is immutable and all its attributes are immutable
- * by default too.
+ * Exception thrown by parsers.
  */
-public final class URLParsingSettings {
+public class GalimatiasParseException extends Exception {
 
-    private static URLParsingSettings DEFAULT = new URLParsingSettings();
+    private int position;
 
-    public static enum Standard {
-        RFC_2396,
-        RFC_3986,
-        WHATWG
+    private GalimatiasParseException() {
+
     }
 
-    private Standard standard;
-
-    private ErrorHandler errorHandler;
-
-    private URLParsingSettings() {
-        this(Standard.WHATWG, DefaultErrorHandler.getInstance());
+    public GalimatiasParseException(final String message) {
+        this(message, -1);
     }
 
-    private URLParsingSettings(final Standard standard, final ErrorHandler errorHandler) {
-        this.standard = standard;
-        this.errorHandler = errorHandler;
+    public GalimatiasParseException(final String message, final int position) {
+        super(message);
+        this.position = position;
     }
 
-    public Standard standard() {
-        return this.standard;
+    public GalimatiasParseException(final String message, final int position, final Throwable exception) {
+        super(message, exception);
+        this.position = position;
     }
 
-    public ErrorHandler errorHandler() {
-        return this.errorHandler;
-    }
-
-    public static URLParsingSettings create() {
-        return DEFAULT;
-    }
-
-    public URLParsingSettings withStandard(final Standard standard) {
-        return new URLParsingSettings(standard, this.errorHandler);
-    }
-
-    public URLParsingSettings withErrorHandler(final ErrorHandler errorHandler) {
-        return new URLParsingSettings(this.standard, errorHandler);
+    public int getPosition() {
+        return position;
     }
 
 }

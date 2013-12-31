@@ -172,30 +172,30 @@ public class URL implements Serializable {
      *
      * @param input
      * @return
-     * @throws MalformedURLException
+     * @throws GalimatiasParseException
      */
-    public static URL parse(final String input) throws MalformedURLException {
+    public static URL parse(final String input) throws GalimatiasParseException {
         return new URLParser(input).parse();
     }
 
-    public static URL parse(final URL base, final String input) throws MalformedURLException {
+    public static URL parse(final URL base, final String input) throws GalimatiasParseException {
         return new URLParser(base, input).parse();
     }
 
-    public static URL parse(final URLParsingSettings settings, final String input) throws MalformedURLException {
+    public static URL parse(final URLParsingSettings settings, final String input) throws GalimatiasParseException {
         return new URLParser(input).settings(settings).parse();
     }
 
-    public static URL parse(final URLParsingSettings settings, final URL base, final String input) throws MalformedURLException {
+    public static URL parse(final URLParsingSettings settings, final URL base, final String input) throws GalimatiasParseException {
         return new URLParser(base, input).settings(settings).parse();
     }
 
-    public URL withScheme(final String scheme) throws MalformedURLException {
+    public URL withScheme(final String scheme) throws GalimatiasParseException {
         if (scheme == null) {
             throw new NullPointerException("null scheme");
         }
         if (scheme.isEmpty()) {
-            throw new MalformedURLException("empty scheme");
+            throw new GalimatiasParseException("empty scheme");
         }
         if (URLUtils.isRelativeScheme(scheme) && URLUtils.isRelativeScheme(this.scheme)) {
             return new URLParser(scheme + ":", this, URLParser.ParseURLState.SCHEME_START).parse();
@@ -252,7 +252,7 @@ public class URL implements Serializable {
         //TODO: Let's do this more efficient.
         try {
             return new URLParser(uri.toString()).parse();
-        } catch (MalformedURLException e) {
+        } catch (GalimatiasParseException e) {
             // This should not happen.
             throw new RuntimeException("BUG", e);
         }
@@ -268,7 +268,7 @@ public class URL implements Serializable {
         //TODO: Let's do this more efficient.
         try {
             return new URLParser(url.toString()).parse();
-        } catch (MalformedURLException e) {
+        } catch (GalimatiasParseException e) {
             // This should not happen.
             throw new RuntimeException("BUG", e);
         }

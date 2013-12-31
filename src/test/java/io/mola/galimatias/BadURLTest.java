@@ -41,56 +41,62 @@ public class BadURLTest {
     public ExpectedException thrown = ExpectedException.none();
 
     @Test
-    public void parseNullURL() throws MalformedURLException {
+    public void parseNullURL() throws GalimatiasParseException {
         thrown.expect(NullPointerException.class);
         thrown.expectMessage("null input");
         URL.parse(null);
     }
 
     @Test
-    public void parseEmptyURL() throws MalformedURLException {
-        thrown.expect(MalformedURLException.class);
+    public void parseEmptyURL() throws GalimatiasParseException {
+        thrown.expect(GalimatiasParseException.class);
         thrown.expectMessage("empty input");
         URL.parse("");
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseURLwithoutScheme() throws MalformedURLException {
+    @Test(expected = GalimatiasParseException.class)
+    public void parseURLwithoutScheme() throws GalimatiasParseException {
         URL.parse("//scheme-relative-stuff");
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseOneToken() throws MalformedURLException {
+    @Test(expected = GalimatiasParseException.class)
+    public void parseOneToken() throws GalimatiasParseException {
         URL.parse("http");
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseURLWithBadBase() throws MalformedURLException {
+    @Test(expected = GalimatiasParseException.class)
+    public void parseURLWithBadBase() throws GalimatiasParseException {
         URL.parse(URL.parse("mailto:user@example.com"), "/relative");
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseURLWithMalformedScheme() throws MalformedURLException {
+    @Test(expected = GalimatiasParseException.class)
+    public void parseURLWithMalformedScheme() throws GalimatiasParseException {
         URL.parse("+http://example.com");
     }
 
     @Test
-    public void parseURLWithErrors() throws MalformedURLException {
-        //TODO: Check errors
+    public void parseURLWithErrors() throws GalimatiasParseException {
         assertThat(URL.parse("http://example.com\\foo\\bar").toString()).isEqualTo("http://example.com/foo/bar");
     }
 
+    @Test(expected = GalimatiasParseException.class)
+    public void parseURLWithErrorsStrict() throws GalimatiasParseException {
+        final URLParsingSettings settings = URLParsingSettings.create()
+                .withErrorHandler(StrictErrorHandler.getInstance());
+        assertThat(URL.parse(settings, "http://example.com\\foo\\bar").toString()).isEqualTo("http://example.com/foo/bar");
+    }
+
     @Theory
-    public void withNullScheme(final @TestURLs TestURL testURL) throws MalformedURLException {
+    public void withNullScheme(final @TestURLs TestURL testURL) throws GalimatiasParseException {
         final URL url = URL.parse(testURL.base(), testURL.original());
         thrown.expect(NullPointerException.class);
         url.withScheme(null);
     }
 
     @Theory
-    public void withEmptyScheme(final @TestURLs TestURL testURL) throws MalformedURLException {
+    public void withEmptyScheme(final @TestURLs TestURL testURL) throws GalimatiasParseException {
         final URL url = URL.parse(testURL.base(), testURL.original());
-        thrown.expect(MalformedURLException.class);
+        thrown.expect(GalimatiasParseException.class);
         url.withScheme("");
     }
 

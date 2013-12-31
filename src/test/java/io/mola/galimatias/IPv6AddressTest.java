@@ -53,7 +53,7 @@ public class IPv6AddressTest {
     };
 
     @Test
-    public void parseIPv6Address() throws MalformedURLException {
+    public void parseIPv6Address() throws GalimatiasParseException {
         for (final String[] testAddress : TEST_ADDRESSES) {
             final String origin = testAddress[0];
             log.debug("TESTING: {}", origin);
@@ -64,7 +64,7 @@ public class IPv6AddressTest {
     }
 
     @Test
-    public void equals() throws MalformedURLException {
+    public void equals() throws GalimatiasParseException {
         for (final String[] testAddress : TEST_ADDRESSES) {
             final IPv6Address original = IPv6Address.parseIPv6Address(testAddress[0]);
             final IPv6Address result = IPv6Address.parseIPv6Address(testAddress[testAddress.length > 1? 1 : 0]);
@@ -79,84 +79,84 @@ public class IPv6AddressTest {
 
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseInvalidPrefix1() throws MalformedURLException {
+    @Test(expected = GalimatiasParseException.class)
+    public void parseInvalidPrefix1() throws GalimatiasParseException {
         IPv6Address.parseIPv6Address(":1");
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseInvalidPrefix2() throws MalformedURLException {
+    @Test(expected = GalimatiasParseException.class)
+    public void parseInvalidPrefix2() throws GalimatiasParseException {
         IPv6Address.parseIPv6Address(":");
     }
 
     @Test(expected = NullPointerException.class)
-    public void parseNullAddress() throws MalformedURLException {
+    public void parseNullAddress() throws GalimatiasParseException {
         IPv6Address.parseIPv6Address(null);
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseEmptyAddress() throws MalformedURLException {
+    @Test(expected = GalimatiasParseException.class)
+    public void parseEmptyAddress() throws GalimatiasParseException {
         IPv6Address.parseIPv6Address("");
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseIllegalCharacter() throws MalformedURLException {
+    @Test(expected = GalimatiasParseException.class)
+    public void parseIllegalCharacter() throws GalimatiasParseException {
         IPv6Address.parseIPv6Address("1::x:1");
     }
 
 
-    @Test(expected = MalformedURLException.class)
-    public void parseTooLongAddress() throws MalformedURLException {
+    @Test(expected = GalimatiasParseException.class)
+    public void parseTooLongAddress() throws GalimatiasParseException {
         IPv6Address.parseIPv6Address("0:0:0:0:0:0:0:1:2");
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseAddressWithFinalColon() throws MalformedURLException {
+    @Test(expected = GalimatiasParseException.class)
+    public void parseAddressWithFinalColon() throws GalimatiasParseException {
         IPv6Address.parseIPv6Address("0:0:0:0:0:0:0:1:");
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseTooLongIPv4MappedAddress() throws MalformedURLException {
+    @Test(expected = GalimatiasParseException.class)
+    public void parseTooLongIPv4MappedAddress() throws GalimatiasParseException {
         IPv6Address.parseIPv6Address("0:0:0:0:0:0:0:192.168.1.1");
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseTooShortAddress() throws MalformedURLException {
+    @Test(expected = GalimatiasParseException.class)
+    public void parseTooShortAddress() throws GalimatiasParseException {
         IPv6Address.parseIPv6Address("0:0:0:0:0:1");
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseDoubleCompressedAddress() throws MalformedURLException {
+    @Test(expected = GalimatiasParseException.class)
+    public void parseDoubleCompressedAddress() throws GalimatiasParseException {
         IPv6Address.parseIPv6Address("1::2::3");
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseTooLongIPv4Mapped() throws MalformedURLException {
+    @Test(expected = GalimatiasParseException.class)
+    public void parseTooLongIPv4Mapped() throws GalimatiasParseException {
         IPv6Address.parseIPv6Address("::192.168.1.1.5");
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseMalformedIPv4Mapped() throws MalformedURLException {
+    @Test(expected = GalimatiasParseException.class)
+    public void parseMalformedIPv4Mapped() throws GalimatiasParseException {
         IPv6Address.parseIPv6Address("::192.168.1a.1");
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseMalformedIPv4Mapped2() throws MalformedURLException {
+    @Test(expected = GalimatiasParseException.class)
+    public void parseMalformedIPv4Mapped2() throws GalimatiasParseException {
         IPv6Address.parseIPv6Address("::192.168.a1.1");
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseMalformedIPv4Mapped3() throws MalformedURLException {
+    @Test(expected = GalimatiasParseException.class)
+    public void parseMalformedIPv4Mapped3() throws GalimatiasParseException {
         IPv6Address.parseIPv6Address("::.192.168.1.1");
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseHighValueIPv4Mapped() throws MalformedURLException {
+    @Test(expected = GalimatiasParseException.class)
+    public void parseHighValueIPv4Mapped() throws GalimatiasParseException {
         IPv6Address.parseIPv6Address("::192.168.1.256");
     }
 
     @Test
-    public void toInetAddress() throws UnknownHostException, MalformedURLException {
+    public void toInetAddress() throws UnknownHostException, GalimatiasParseException {
         for (final String[] testAddress : TEST_ADDRESSES) {
             final String origin = testAddress[0];
             log.debug("TESTING: {}", origin);

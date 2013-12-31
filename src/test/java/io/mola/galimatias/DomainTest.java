@@ -34,22 +34,22 @@ import static org.fest.assertions.Assertions.assertThat;
 public class DomainTest {
 
     @Test
-    public void parseDomainIDNA() throws MalformedURLException {
+    public void parseDomainIDNA() throws GalimatiasParseException {
         assertThat(Domain.parseDomain("ジェーピーニック.jp").toString()).isEqualTo("xn--hckqz9bzb1cyrb.jp");
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseDomainEmpty() throws MalformedURLException {
+    @Test(expected = GalimatiasParseException.class)
+    public void parseDomainEmpty() throws GalimatiasParseException {
         Domain.parseDomain("");
     }
 
     @Test(expected = NullPointerException.class)
-    public void parseDomainNull() throws MalformedURLException {
+    public void parseDomainNull() throws GalimatiasParseException {
         Domain.parseDomain(null);
     }
 
-    @Test(expected = MalformedURLException.class)
-    public void parseDomainDot() throws MalformedURLException {
+    @Test(expected = GalimatiasParseException.class)
+    public void parseDomainDot() throws GalimatiasParseException {
         Domain.parseDomain(".");
     }
 

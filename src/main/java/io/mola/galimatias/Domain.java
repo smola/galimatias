@@ -22,7 +22,6 @@
 
 package io.mola.galimatias;
 
-import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.StringTokenizer;
 
@@ -34,12 +33,12 @@ public class Domain extends Host {
         this.labels = labels;
     }
 
-    public static Domain parseDomain(final String input) throws MalformedURLException {
+    public static Domain parseDomain(final String input) throws GalimatiasParseException {
         if (input == null) {
             throw new NullPointerException();
         }
         if (input.isEmpty()) {
-            throw new MalformedURLException("input is empty");
+            throw new GalimatiasParseException("input is empty");
         }
 
         //TODO: Let host be the result of running utf-8's decoder on the percent decoding of input.
@@ -49,7 +48,7 @@ public class Domain extends Host {
             domain[i] = st.nextToken();
         }
         if (domain.length == 0) {
-            throw new MalformedURLException("Zero domain labels found");
+            throw new GalimatiasParseException("Zero domain labels found");
         }
         return new Domain(URLUtils.domainToASCII(domain));
     }

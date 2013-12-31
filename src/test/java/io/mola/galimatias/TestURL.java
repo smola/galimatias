@@ -67,7 +67,7 @@ public class TestURL {
         return result;
     }
 
-    URL base() throws MalformedURLException {
+    URL base() throws GalimatiasParseException {
         if (base == null) {
             return null;
         }

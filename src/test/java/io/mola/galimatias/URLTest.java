@@ -41,14 +41,14 @@ import static org.junit.Assume.assumeTrue;
 public class URLTest {
 
     @Theory
-    public void parseURL(final @TestURLs TestURL testURL) throws MalformedURLException {
+    public void parseURL(final @TestURLs TestURL testURL) throws GalimatiasParseException {
         final URL url = URL.parse(testURL.base(), testURL.original());
         assertThat(url.toString()).isEqualTo(testURL.result());
     }
 
 
     @Theory
-    public void parseURLAsRFC2396(final @TestURLs TestURL testURL) throws MalformedURLException {
+    public void parseURLAsRFC2396(final @TestURLs TestURL testURL) throws GalimatiasParseException {
         final URLParsingSettings settings = URLParsingSettings.create()
                 .withStandard(URLParsingSettings.Standard.RFC_2396);
 
@@ -57,14 +57,14 @@ public class URLTest {
     }
 
     @Theory
-    public void userInfoWithUsernameAndPassword(final @TestURLs TestURL testURL) throws MalformedURLException {
+    public void userInfoWithUsernameAndPassword(final @TestURLs TestURL testURL) throws GalimatiasParseException {
         URL url = URL.parse(testURL.base(), testURL.original());
         assumeNotNull(url.username(), url.password());
         assertThat(url.userInfo()).isEqualTo(String.format("%s:%s", url.username(), url.password()));
     }
 
     @Theory
-    public void userInfoWithUsernameOnly(final @TestURLs TestURL testURL) throws MalformedURLException {
+    public void userInfoWithUsernameOnly(final @TestURLs TestURL testURL) throws GalimatiasParseException {
         URL url = URL.parse(testURL.base(), testURL.original());
         assumeNotNull(url.username());
         assumeTrue(url.password() == null);
@@ -72,7 +72,7 @@ public class URLTest {
     }
 
     @Theory
-    public void userInfoWithPasswordOnly(final @TestURLs TestURL testURL) throws MalformedURLException {
+    public void userInfoWithPasswordOnly(final @TestURLs TestURL testURL) throws GalimatiasParseException {
         URL url = URL.parse(testURL.base(), testURL.original());
         assumeNotNull(url.password());
         assumeTrue(url.username() == null || url.username().isEmpty());
@@ -80,7 +80,7 @@ public class URLTest {
     }
 
     @Theory
-    public void withScheme(final @TestURLs TestURL testURL) throws MalformedURLException {
+    public void withScheme(final @TestURLs TestURL testURL) throws GalimatiasParseException {
         final URL originalURL = URL.parse(testURL.base(), testURL.original());
         if (originalURL.relativeFlag()) {
             for (final String scheme : new String[] { "http", "https", "ws", "wss", "ftp", "file" }) {
@@ -95,7 +95,7 @@ public class URLTest {
     }
 
     @Theory
-    public void equality(final @TestURLs TestURL testURL) throws MalformedURLException {
+    public void equality(final @TestURLs TestURL testURL) throws GalimatiasParseException {
         final URL originalURL = URL.parse(testURL.base(), testURL.original());
         final URL resultURL = URL.parse(testURL.result());
         assertThat(originalURL).isEqualTo(resultURL);
@@ -106,7 +106,7 @@ public class URLTest {
     }
 
     @Theory
-    public void toFromJavaURI(final @TestURLs TestURL testURL) throws MalformedURLException, URISyntaxException {
+    public void toFromJavaURI(final @TestURLs TestURL testURL) throws GalimatiasParseException, URISyntaxException {
         assumeTrue(testURL.isValidURI());
 
         final URLParsingSettings settings = URLParsingSettings.create()
@@ -123,7 +123,7 @@ public class URLTest {
     );
 
     @Theory
-    public void toFromJavaURL(final @TestURLs TestURL testURL) throws MalformedURLException {
+    public void toFromJavaURL(final @TestURLs TestURL testURL) throws GalimatiasParseException, MalformedURLException {
         final URL originalURL = URL.parse(testURL.base(), testURL.original());
 
         assumeTrue(JAVA_URL_PROTOCOLS.contains(originalURL.scheme()));

@@ -32,9 +32,7 @@ import java.util.Locale;
 
 import static io.mola.galimatias.URLUtils.*;
 
-class URLParser {
-
-    private static final Logger log = LoggerFactory.getLogger(URLParser.class);
+final class URLParser {
 
     private static final Charset UTF_8 = Charset.forName("UTF-8");
 
@@ -127,17 +125,33 @@ class URLParser {
         return input.charAt(i);
     }
 
+    private void error(final String message, final int pos) throws GalimatiasParseException {
+        this.settings.errorHandler().error(new GalimatiasParseException(message, pos));
+    }
+
+    private void fatalError(final String message, final int pos) throws GalimatiasParseException {
+        final GalimatiasParseException exception = new GalimatiasParseException(message, pos);
+        this.settings.errorHandler().fatalError(exception);
+        throw exception;
+    }
+
+    private void fatalError(final String message, final int pos, final Exception cause) throws GalimatiasParseException {
+        final GalimatiasParseException exception = new GalimatiasParseException(message, pos, cause);
+        this.settings.errorHandler().fatalError(exception);
+        throw exception;
+    }
+
     // Based on http://src.chromium.org/viewvc/chrome/trunk/src/url/third_party/mozilla/url_parse.cc
     // http://url.spec.whatwg.org/#parsing
     //
-    public URL parse() throws MalformedURLException {
+    public URL parse() throws GalimatiasParseException {
 
         if (input == null) {
             throw new NullPointerException("null input");
         }
 
         if (input.isEmpty()) {
-            throw new MalformedURLException("empty input");
+            fatalError("empty input", -1);
         }
 
         final StringBuilder buffer = new StringBuilder(input.length()*2);
@@ -195,7 +209,7 @@ class URLParser {
                             state = ParseURLState.NO_SCHEME;
                             decrIdx();
                         } else {
-                            throw new MalformedURLException("Scheme must start with alpha character.");
+                            fatalError("Scheme must start with alpha character.", idx);
                         }
                     }
                     break;
@@ -263,7 +277,7 @@ class URLParser {
 
                     // WHATWG URL: Otherwise, parse error, terminate this algorithm.
                     else {
-                        throw new MalformedURLException("Schema could not be parsed");
+                        fatalError("Scheme could not be parsed.", idx);
                     }
 
                     break;
@@ -286,13 +300,13 @@ class URLParser {
 
                         // WHATWG URL: If c is not the EOF code point, not a URL code point, and not "%", parse error.
                         if (!isEOF && c != '%' && !isURLCodePoint(c)) {
-                            log.error("Parse error");
+                            error("PARSE ERROR", idx);
                         }
 
                         if (c == '%') {
                             // WHATWG URL: If c is "%" and remaining does not start with two ASCII hex digits, parse error.
                             if (!isASCIIHexDigit(at(idx+1)) || !isASCIIHexDigit(at(idx+2))) {
-                                log.error("Parse error");
+                                error("PARSE ERROR", idx);
                             } else {
                                 schemeData.append((char)c)
                                         .append(Character.toUpperCase(input.charAt(idx+1)))
@@ -315,7 +329,7 @@ class URLParser {
 
                 case NO_SCHEME: {
                     if (base == null || !isRelativeScheme(base.scheme())) {
-                        throw new MalformedURLException("Cannot build URL without scheme");
+                        fatalError("Cannot build URL without scheme.", idx);
                     }
                     state = ParseURLState.RELATIVE;
                     idx--;
@@ -327,7 +341,7 @@ class URLParser {
                         state = ParseURLState.AUTHORITY_IGNORE_SLASHES;
                         idx++;
                     } else {
-                        log.error("Parse error");
+                        error("PARSE ERROR", idx);
                         state = ParseURLState.RELATIVE;
                         idx--;
                     }
@@ -348,7 +362,7 @@ class URLParser {
                         query = (base == null)? null : new StringBuilder(base.query());
                     } else if (c == '/' || c == '\\') {
                         if (c == '\\') {
-                            log.error("Parse error");
+                            error("PARSE ERROR", idx);
                         }
                         state = ParseURLState.RELATIVE_SLASH;
                     } else if (c == '?') {
@@ -390,7 +404,7 @@ class URLParser {
                 case RELATIVE_SLASH: {
                     if (c == '/' || c == '\\') {
                         if (c == '\\') {
-                            log.error("Parse error");
+                            error("PARSE ERROR", idx);
                         }
                         if ("file".equals(scheme)) {
                             state = ParseURLState.FILE_HOST;
@@ -412,7 +426,7 @@ class URLParser {
                     if (c == '/') {
                         state = ParseURLState.AUTHORITY_SECOND_SLASH;
                     } else {
-                        log.error("Parse error");
+                        error("PARSE ERROR", idx);
                         state = ParseURLState.AUTHORITY_IGNORE_SLASHES;
                         idx--;
                     }
@@ -423,7 +437,7 @@ class URLParser {
                     if (c == '/') {
                         state = ParseURLState.AUTHORITY_IGNORE_SLASHES;
                     } else {
-                        log.error("Parse error");
+                        error("PARSE ERROR", idx);
                         state = ParseURLState.AUTHORITY_IGNORE_SLASHES;
                         idx--;
                     }
@@ -435,7 +449,7 @@ class URLParser {
                         state = ParseURLState.AUTHORITY;
                         decrIdx();
                     } else {
-                        log.error("Parse error");
+                        error("PARSE ERROR", idx);
                     }
                     break;
                 }
@@ -444,7 +458,7 @@ class URLParser {
                     // If c is "@", run these substeps:
                     if (c == '@') {
                         if (atFlag) {
-                            log.error("Parse error");
+                            error("PARSE ERROR", idx);
                             buffer.insert(0, "%40");
                         }
                         atFlag = true;
@@ -459,15 +473,15 @@ class URLParser {
                                     otherChar == 0x000A ||
                                     otherChar == 0x000D
                                 ) {
-                                log.error("Parse error");
+                                error("PARSE ERROR", idx);
                                 continue;
                             }
                             if (!isURLCodePoint(otherChar) && otherChar != '%') {
-                                log.error("Parse error");
+                                error("PARSE ERROR", idx);
                             }
                             if (otherChar == '%') {
                                 if (i + 2 >= buffer.length() || !isASCIIHexDigit(buffer.charAt(i+1)) || !isASCIIHexDigit(buffer.charAt(i+2))) {
-                                    log.error("Parse error");
+                                    error("PARSE ERROR", idx);
                                 } else if (isASCIIHexDigit(buffer.charAt(i+1)) && isASCIIHexDigit(buffer.charAt(i+2))) {
                                     buffer.setCharAt(i + 1, Character.toUpperCase(buffer.charAt(i + 1)));
                                     buffer.setCharAt(i + 2, Character.toUpperCase(buffer.charAt(i + 2)));
@@ -511,16 +525,16 @@ class URLParser {
                         } else if (buffer.length() == 0) {
                             state = ParseURLState.RELATIVE_PATH_START;
                         } else {
-                            host = Host.parseHost(buffer.toString());
-                            if (host == null) {
-                                log.error("Parse error - Invalid host");
-                                return null;
+                            try {
+                                host = Host.parseHost(buffer.toString());
+                            } catch (GalimatiasParseException ex) {
+                                fatalError("Invalid host", idx, ex);
                             }
                             buffer.setLength(0);
                             state = ParseURLState.RELATIVE_PATH_START;
                         }
                     } else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
-                        log.error("Parse error");
+                        error("PARSE ERROR", idx);
                     } else {
                         buffer.appendCodePoint(c);
                     }
@@ -530,10 +544,10 @@ class URLParser {
                 case HOST:
                 case HOSTNAME: {
                     if (c == ':' && !bracketsFlag) {
-                        host = Host.parseHost(buffer.toString());
-                        if (host == null) {
-                            log.error("Parse error");
-                            return null;
+                        try {
+                            host = Host.parseHost(buffer.toString());
+                        } catch (GalimatiasParseException ex) {
+                            fatalError("Invalid host", idx, ex);
                         }
                         buffer.setLength(0);
                         state = ParseURLState.PORT;
@@ -541,10 +555,10 @@ class URLParser {
                             terminate = true;
                         }
                     } else if (isEOF || c == '/' || c == '\\' || c == '?' || c == '#') {
-                        host = Host.parseHost(buffer.toString());
-                        if (host == null) {
-                            log.error("Parse error");
-                            return null;
+                        try {
+                            host = Host.parseHost(buffer.toString());
+                        } catch (GalimatiasParseException ex) {
+                            fatalError("Invalid host", idx, ex);
                         }
                         buffer.setLength(0);
                         state = ParseURLState.RELATIVE_PATH_START;
@@ -552,7 +566,7 @@ class URLParser {
                             terminate = true;
                         }
                     } else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
-                        log.error("Parse error");
+                        error("PARSE ERROR", idx);
                     } else {
                         if (c == '[') {
                             bracketsFlag = true;
@@ -588,7 +602,7 @@ class URLParser {
                             idx--;
                         }
                     } else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
-                        log.error("Parse error");
+                        error("PARSE ERROR", idx);
                     } else {
                         buffer.appendCodePoint(c);
                     }
@@ -597,7 +611,7 @@ class URLParser {
 
                 case RELATIVE_PATH_START: {
                     if (c == '\\') {
-                        log.error("Parse error");
+                        error("PARSE ERROR", idx);
                     } else {
                         state = ParseURLState.RELATIVE_PATH;
                         if (c != '/' && c != '\\') {
@@ -610,7 +624,7 @@ class URLParser {
                 case RELATIVE_PATH: {
                     if (isEOF || c == '/' || c == '\\' || (stateOverride == null && (c == '?' || c == '#'))) {
                         if (c == '\\') {
-                            log.error("Parse error");
+                            error("PARSE ERROR", idx);
                         }
                         final String lowerCasedBuffer = buffer.toString().toLowerCase(Locale.ENGLISH);
                         if ("%2e".equals(lowerCasedBuffer)) {
@@ -658,15 +672,15 @@ class URLParser {
                         }
 
                     } else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
-                        log.error("Parse error");
+                        error("PARSE ERROR", idx);
                     } else {
                         if (!isURLCodePoint(c) && c != '%') {
-                            log.error("Parse error");
+                            error("PARSE ERROR", idx);
                         }
 
                         if (c == '%') {
                             if (!isASCIIHexDigit(at(idx+1)) || !isASCIIHexDigit(at(idx+2))) {
-                                log.error("Parse error");
+                                error("PARSE ERROR", idx);
                             } else {
                                 buffer.append((char)c)
                                         .append(Character.toUpperCase(input.charAt(idx+1)))
@@ -706,14 +720,14 @@ class URLParser {
                             state = ParseURLState.FRAGMENT;
                         }
                     }  else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
-                        log.error("Parse error");
+                        error("PARSE ERROR", idx);
                     } else {
                         if (!isURLCodePoint(c) && c != '%') {
-                            log.error("Parse error");
+                            error("PARSE ERROR", idx);
                         }
                         if (c == '%') {
                             if (!isASCIIHexDigit(at(idx+1)) || !isASCIIHexDigit(at(idx+2))) {
-                                log.error("Parse error");
+                                error("PARSE ERROR", idx);
                             } else {
                                 buffer.append((char)c)
                                         .append(Character.toUpperCase(input.charAt(idx+1)))
@@ -731,14 +745,14 @@ class URLParser {
                     if (isEOF) {
                         // Do nothing
                     } else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
-                        log.error("Parse error");
+                        error("PARSE ERROR", idx);
                     } else {
                         if (!isURLCodePoint(c) && c != '%') {
-                            log.error("Parse error");
+                            error("PARSE ERROR", idx);
                         }
                         if (c == '%') {
                             if (!isASCIIHexDigit(at(idx+1)) || !isASCIIHexDigit(at(idx+2))) {
-                                log.error("Parse error");
+                                error("PARSE ERROR", idx);
                             } else {
                                 fragment.append((char)c)
                                         .append(Character.toUpperCase(input.charAt(idx+1)))

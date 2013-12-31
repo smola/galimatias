@@ -22,37 +22,13 @@
 
 package io.mola.galimatias;
 
-import java.io.Serializable;
-import java.net.MalformedURLException;
+/**
+ * Handler for parse errors.
+ */
+public interface ErrorHandler {
 
-public abstract class Host implements Serializable {
+    public void error(GalimatiasParseException error) throws GalimatiasParseException;
 
-    @Override
-    public abstract String toString();
-
-    /**
-     *
-     * TODO: Generate IPv4Address instead of Domain when relevant?
-     *
-     * @param input
-     * @return
-     * @throws GalimatiasParseException
-     */
-    public static Host parseHost(final String input) throws GalimatiasParseException {
-        if (input == null) {
-            throw new NullPointerException("null host");
-        }
-        if (input.isEmpty()) {
-            throw new GalimatiasParseException("empty host", -1);
-        }
-        if (input.charAt(0) == '[') {
-            if (input.charAt(input.length() - 1) != ']') {
-                throw new GalimatiasParseException("Unmatched '['", -1);
-            }
-            return IPv6Address.parseIPv6Address(input.substring(1, input.length() - 1));
-        }
-
-        return Domain.parseDomain(input);
-    }
+    public void fatalError(GalimatiasParseException error);
 
 }
