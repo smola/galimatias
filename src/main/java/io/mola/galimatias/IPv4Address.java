@@ -22,6 +22,9 @@
 
 package io.mola.galimatias;
 
+/**
+ * TODO: Not implemented yet.
+ */
 public class IPv4Address extends Host {
 
     IPv4Address() {
