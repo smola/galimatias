@@ -27,8 +27,7 @@ galimatias started out of frustration with java.net.URL and java.net.URI. Both o
 
 - **Manipulation is a pain.** I haven't seen any URL manipulation code using `java.net.URL` or `java.net.URI` that is simple and concise.
 
-- **Not IDN ready.** Java has IDN support with `java.net.IDN`, but this does not apply to `java.net.URL` or `java.net.URI`. `URI.create("http://ß.com").toASCIIString()` will return `http://%C3%9F.com`, but the correct result would be `http://xn--pda.com/`.
-
+- **Not IDN ready.** Java has IDN support with `java.net.IDN`, but this does not apply to `java.net.URL` or `java.net.URI`.
 
 Setup
 -----

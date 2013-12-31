@@ -197,6 +197,7 @@ public class TestURL {
 
             // IDN
             new TestURL("http://ジェーピーニック.jp", "http://xn--hckqz9bzb1cyrb.jp/"),
+            new TestURL("http://ß.com/", "http://ss.com/"),
             new TestURL("http://☃.com/", "http://xn--n3h.com/"),
             new TestURL("http://☃☃☃.com/", "http://xn--n3haa.com/"),
             new TestURL("http://\uD83D\uDC35.com/", "http://xn--9o8h.com/"),
