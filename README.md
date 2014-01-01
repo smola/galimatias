@@ -13,6 +13,7 @@ Design goals:
 - Convenient fluent API with immutable URL objects.
 - Interoperable with java.net.URL and java.net.URI.
 - Zero dependencies.
+- **I have not decided on the scope of galimatias with respect to non-HTTP(S) URIs. [I would like to read about your use cases here](https://github.com/smola/galimatias/issues/8).**
 
 But, why?
 ---------
