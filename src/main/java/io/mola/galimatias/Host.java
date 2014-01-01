@@ -51,8 +51,11 @@ public abstract class Host implements Serializable {
             }
             return IPv6Address.parseIPv6Address(input.substring(1, input.length() - 1));
         }
-
-        return Domain.parseDomain(input);
+        try {
+            return IPv4Address.parseIPv4Address(input);
+        } catch (GalimatiasParseException e) {
+            return Domain.parseDomain(input);
+        }
     }
 
 }
