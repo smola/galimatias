@@ -33,13 +33,36 @@ galimatias started out of frustration with java.net.URL and java.net.URI. Both o
 Setup
 -----
 
+There are **no stable releases** of galimatias yet. But you can get the latest development version. If you do, please, let me know about your experience or any problem you find.
+
 ### Using Maven
 
-TODO
+Add to your pom.xml `<dependencies>` section:
+
+```xml
+<dependency>
+  <groupId>io.mola</groupId>
+  <artifactId>galimatias</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+</dependency>
+```
+
+You will also need to add the Sonatype OSS Snapshots repository to your `<repositories>` section:
+
+
+```xml
+<repository>
+	<id>sonatype-oss-snapshots</id>
+	<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+	<snapshots>
+		<enabled>true</enabled>
+	</snapshots>		
+</repository>
+```
 
 ### Standalone
 
-TODO
+Download the latest jar [from Sonatype OSS](https://oss.sonatype.org/content/groups/public/io/mola/galimatias/0.0.1-SNAPSHOT/) and drop it into your classpath.
 
 Getting started
 ---------------
