@@ -110,8 +110,34 @@ public class URL implements Serializable {
         return host;
     }
 
+    public String authority() {
+        if (!relativeFlag) {
+            return null;
+        }
+        if (host == null) {
+            return null;
+        }
+        StringBuilder output = new StringBuilder();
+        if (username != null || password != null) {
+            output.append(userInfo()).append('@');
+        }
+        output.append(host.toString());
+        if (port != null) {
+            output.append(':').append(port);
+        }
+        return output.toString();
+    }
+
     public Integer port() {
         return port;
+    }
+
+    public Integer defaultPort() {
+        String defaultPort = URLUtils.getDefaultPortForScheme(scheme);
+        if (defaultPort == null) {
+            return null;
+        }
+        return Integer.parseInt(defaultPort);
     }
 
     public String[] path() {
@@ -156,9 +182,6 @@ public class URL implements Serializable {
         }
         if (query != null) {
             output.append('?').append(query);
-        }
-        if (fragment != null) {
-            output.append('#').append(fragment);
         }
         return output.toString();
     }

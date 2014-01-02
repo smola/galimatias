@@ -26,6 +26,7 @@ import java.net.IDN;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Utils for parsing and serializing URLs.
@@ -85,7 +86,10 @@ class URLUtils {
     static String[] domainToASCII(final String[] domainLabels) {
         final List<String> asciiLabels = new ArrayList<String>();
         for (final String domainLabel : domainLabels) {
-            asciiLabels.add(domainLabelToASCII(domainLabel));
+            //XXX: The lowercasing is added here as it's the most sane thing to do
+            //     and browsers do it. However, WHATWG URL does not specify this.
+            //     See https://www.w3.org/Bugs/Public/show_bug.cgi?id=24187
+            asciiLabels.add(domainLabelToASCII(domainLabel).toLowerCase(Locale.ENGLISH));
         }
         final String[] result = new String[asciiLabels.size()];
         return asciiLabels.toArray(result);

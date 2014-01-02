@@ -71,6 +71,9 @@ public class IPv4Address extends Host {
             dotsSeen++;
             i++;
         }
+        if (dotsSeen != 4) {
+            throw new GalimatiasParseException("Malformed IPv4 address");
+        }
         return new IPv4Address(addr);
     }
 

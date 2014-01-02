@@ -50,7 +50,7 @@ public class BadURLTest {
     @Test
     public void parseEmptyURL() throws GalimatiasParseException {
         thrown.expect(GalimatiasParseException.class);
-        thrown.expectMessage("empty input");
+        thrown.expectMessage("Cannot build URL without scheme.");
         URL.parse("");
     }
 

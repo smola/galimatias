@@ -150,10 +150,6 @@ final class URLParser {
             throw new NullPointerException("null input");
         }
 
-        if (input.isEmpty()) {
-            fatalError("empty input", -1);
-        }
-
         final StringBuilder buffer = new StringBuilder(input.length()*2);
 
         String encodingOverride = "utf-8";
@@ -169,6 +165,9 @@ final class URLParser {
         String[] path = (url == null)? new String[0] : url.path();
         StringBuilder query = (url == null || url.query() == null)? null : new StringBuilder(url.query());
         StringBuilder fragment = (url == null || url.fragment() == null)? null : new StringBuilder(url.fragment());
+
+        final StringBuilder usernameBuffer = new StringBuilder(buffer.length());
+        StringBuilder passwordBuffer = null;
 
         setIdx(0);
 
@@ -359,7 +358,7 @@ final class URLParser {
                         host = (base == null)? null : base.host();
                         port = (base == null)? null : base.port();
                         path = (base == null)? null : base.path();
-                        query = (base == null)? null : new StringBuilder(base.query());
+                        query = (base == null || base.query() == null)? null : new StringBuilder(base.query());
                     } else if (c == '/' || c == '\\') {
                         if (c == '\\') {
                             error("PARSE ERROR", idx);
@@ -387,9 +386,9 @@ final class URLParser {
                                     at(idx+2) != '/' && at(idx+2) != '\\' && at(idx+2) != '?' && at(idx+2) != '#')
                                 ) {
 
-                            host = base.host();
-                            port = base.port();
-                            path = base.path();
+                            host = (base == null)? null : base.host();
+                            port = (base == null)? null : base.port();
+                            path = (base == null)? new String[0] : base.path();
                             // Pop path
                             if (path.length > 0) {
                                 path = Arrays.copyOf(path, path.length - 1);
@@ -428,7 +427,7 @@ final class URLParser {
                     } else {
                         error("PARSE ERROR", idx);
                         state = ParseURLState.AUTHORITY_IGNORE_SLASHES;
-                        idx--;
+                        decrIdx();
                     }
                     break;
                 }
@@ -439,7 +438,7 @@ final class URLParser {
                     } else {
                         error("PARSE ERROR", idx);
                         state = ParseURLState.AUTHORITY_IGNORE_SLASHES;
-                        idx--;
+                        decrIdx();
                     }
                     break;
                 }
@@ -462,9 +461,6 @@ final class URLParser {
                             buffer.insert(0, "%40");
                         }
                         atFlag = true;
-
-                        final StringBuilder usernameBuffer = new StringBuilder(buffer.length());
-                        StringBuilder passwordBuffer = null;
 
                         for (int i = 0; i < buffer.length(); i++) {
                             final char otherChar = buffer.charAt(i);
@@ -498,15 +494,16 @@ final class URLParser {
                             }
                         }
 
-                        username = usernameBuffer.toString();
-                        if (passwordBuffer != null) {
-                            password = passwordBuffer.toString();
-                        }
-
                         buffer.setLength(0);
 
                     } else if (isEOF || c == '/' || c == '\\' || c == '?' || c == '#') {
                         setIdx(idx - buffer.length() - 1);
+                        if (atFlag) {
+                            username = usernameBuffer.toString();
+                            if (passwordBuffer != null) {
+                                password = passwordBuffer.toString();
+                            }
+                        }
                         buffer.setLength(0);
                         state = ParseURLState.HOST;
                     } else {
@@ -555,6 +552,7 @@ final class URLParser {
                             terminate = true;
                         }
                     } else if (isEOF || c == '/' || c == '\\' || c == '?' || c == '#') {
+                        decrIdx();
                         try {
                             host = Host.parseHost(buffer.toString());
                         } catch (GalimatiasParseException ex) {
@@ -583,7 +581,7 @@ final class URLParser {
                         buffer.appendCodePoint(c);
                     } else if (isEOF || c == '/' || c == '\\' || c == '?' || c == '#') {
                         // Remove leading zeroes
-                        while (buffer.charAt(0) == 0x0030 && buffer.length() > 1) {
+                        while (buffer.length() > 0 && buffer.charAt(0) == 0x0030 && buffer.length() > 1) {
                             buffer.deleteCharAt(0);
                         }
                         if (buffer.toString().equals(getDefaultPortForScheme(scheme))) {
@@ -604,7 +602,7 @@ final class URLParser {
                     } else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
                         error("PARSE ERROR", idx);
                     } else {
-                        buffer.appendCodePoint(c);
+                        fatalError("Illegal character in port", idx);
                     }
                     break;
                 }
