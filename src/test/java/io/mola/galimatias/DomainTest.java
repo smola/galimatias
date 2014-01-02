@@ -34,6 +34,18 @@ import static org.fest.assertions.Assertions.assertThat;
 public class DomainTest {
 
     @Test
+    public void equals() throws GalimatiasParseException {
+        final Domain sameDomain = Domain.parseDomain("example.com");
+        assertThat(sameDomain).isEqualTo(sameDomain);
+        assertThat(sameDomain).isEqualTo(Domain.parseDomain("example.com"));
+        assertThat(sameDomain).isEqualTo(Domain.parseDomain("EXAMPLE.COM"));
+        assertThat(sameDomain).isNotEqualTo(Domain.parseDomain("other.com"));
+        assertThat(sameDomain).isNotEqualTo(Domain.parseDomain("other.example.com"));
+        assertThat(sameDomain).isNotEqualTo("foo");
+        assertThat(sameDomain).isNotEqualTo(null);
+    }
+
+    @Test
     public void parseDomainIDNA() throws GalimatiasParseException {
         assertThat(Domain.parseDomain("ジェーピーニック.jp").toString()).isEqualTo("xn--hckqz9bzb1cyrb.jp");
     }

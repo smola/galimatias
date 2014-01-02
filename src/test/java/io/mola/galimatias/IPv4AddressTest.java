@@ -51,6 +51,16 @@ public class IPv4AddressTest {
         }
     }
 
+    @Test
+    public void equals() throws GalimatiasParseException {
+        final IPv4Address ip = IPv4Address.parseIPv4Address("127.0.0.1");
+        assertThat(ip).isEqualTo(ip);
+        assertThat(ip).isEqualTo(IPv4Address.parseIPv4Address("127.0.0.1"));
+        assertThat(ip).isNotEqualTo(IPv4Address.parseIPv4Address("127.0.0.2"));
+        assertThat(ip).isNotEqualTo("foo");
+        assertThat(ip).isNotEqualTo(null);
+    }
+
     @Test(expected = NullPointerException.class)
     public void parseNullAddress() throws GalimatiasParseException {
         IPv4Address.parseIPv4Address(null);
@@ -84,7 +94,7 @@ public class IPv4AddressTest {
 
     @Test(expected = GalimatiasParseException.class)
     public void parseHighValueIPv4Mapped() throws GalimatiasParseException {
-        IPv6Address.parseIPv6Address("192.168.1.256");
+        IPv4Address.parseIPv4Address("192.168.1.256");
     }
 
     @Test
