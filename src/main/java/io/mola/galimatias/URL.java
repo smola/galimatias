@@ -367,7 +367,8 @@ public class URL implements Serializable {
                 ((password == null)? other.password == null : password.equals(other.password)) &&
                 ((host == null)? other.host == null : host.equals(other.host)) &&
                 ((port == null)? other.port == null : port.equals(other.port)) &&
-                ((fragment == null)? other.fragment == null : fragment.equals(fragment)) &&
+                ((fragment == null)? other.fragment == null : fragment.equals(other.fragment)) &&
+                ((query == null)? other.query == null : query.equals(other.query)) &&
                 arrayEquals(path, other.path)
                 ;
     }

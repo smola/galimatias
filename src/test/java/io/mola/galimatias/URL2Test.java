@@ -67,21 +67,14 @@ public final class URL2Test extends TestCase {
     public void testEqualsCaseMapping() throws Exception {
         assertEquals(URL.parse("HTTP://localhost/foo?bar=baz#quux"),
                 URL.parse("HTTP://localhost/foo?bar=baz#quux"));
-        assertTrue(URL.parse("http://localhost/foo?bar=baz#quux").equals(
-                URL.parse("http://LOCALHOST/foo?bar=baz#quux")));
-        // XXX: Android does the following normalizations
-        //       but it's not standard and it breaks existing URLs
-        //       (e.g. http://en.wikipedia.org/wiki/Transnistrian_ruble
-        //        vs.  http://en.wikipedia.org/wiki/Transnistrian_rublE
-        //       They belong to an optional canonicalization filter?
-        /*
+        assertEquals(URL.parse("http://localhost/foo?bar=baz#quux"),
+                URL.parse("http://LOCALHOST/foo?bar=baz#quux"));
         assertFalse(URL.parse("http://localhost/foo?bar=baz#quux").equals(
                 URL.parse("http://localhost/FOO?bar=baz#quux")));
         assertFalse(URL.parse("http://localhost/foo?bar=baz#quux").equals(
                 URL.parse("http://localhost/foo?BAR=BAZ#quux")));
         assertFalse(URL.parse("http://localhost/foo?bar=baz#quux").equals(
                 URL.parse("http://localhost/foo?bar=baz#QUUX")));
-        */
     }
 
     /* TODO 

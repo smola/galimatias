@@ -166,11 +166,13 @@ public class TestURL {
             new TestURL("http://example.com/foo/%2E./bar", "http://example.com/bar"),
             new TestURL("http://example.com/foo/./bar", "http://example.com/foo/bar"),
             new TestURL("http://example.com/./bar", "http://example.com/bar"),
+            new TestURL("http://example.com/FOO"),
 
             // query
             new TestURL("http://example.com/?foo=1"),
             new TestURL("http://example.com/?foo%c3%9f", "http://example.com/?foo%C3%9F"),
             new TestURL("http://example.com/?fooß", "http://example.com/?foo%C3%9F"),
+            new TestURL("http://example.com/?FOO"),
 
             // fragment
             new TestURL("http://example.com/#foo"),
@@ -178,6 +180,7 @@ public class TestURL {
             new TestURL("http://example.com/?foo=1#"),
             new TestURL("http://example.com/#foo%c3%9f", "http://example.com/#foo%C3%9F"),
             new TestURL("http://example.com/#fooß", "http://example.com/#foo%C3%9F"),
+            new TestURL("http://example.com/#FOO"),
 
             // Relative to base
             new TestURL("http://example.com", "/foo", "http://example.com/foo"),
