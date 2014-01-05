@@ -22,10 +22,6 @@
 
 package io.mola.galimatias;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.net.MalformedURLException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Locale;
@@ -158,13 +154,13 @@ final class URLParser {
         String username = (url == null || url.username() == null)? null : url.username();
         String password = (url == null || url.password() == null)? null : url.password();
         Host host = (url == null)? null : url.host();
-        Integer port = (url == null)? null : url.port();
-        boolean relativeFlag = (url != null) && url.relativeFlag();
+        int port = (url == null)? -1 : url.port();
+        boolean relativeFlag = (url != null) && url.isHierarchical();
         boolean atFlag = false; // @-flag
         boolean bracketsFlag = false; // []-flag
-        String[] path = (url == null)? new String[0] : url.path();
-        StringBuilder query = (url == null || url.query() == null)? null : new StringBuilder(url.query());
-        StringBuilder fragment = (url == null || url.fragment() == null)? null : new StringBuilder(url.fragment());
+        String[] path = (url == null || stateOverride == ParseURLState.RELATIVE_PATH_START)? new String[0] : url.path();
+        StringBuilder query = (url == null || url.query() == null || stateOverride == ParseURLState.QUERY)? null : new StringBuilder(url.query());
+        StringBuilder fragment = (url == null || url.fragment() == null|| stateOverride == ParseURLState.FRAGMENT)? null : new StringBuilder(url.fragment());
 
         final StringBuilder usernameBuffer = new StringBuilder(buffer.length());
         StringBuilder passwordBuffer = null;
@@ -356,7 +352,7 @@ final class URLParser {
 
                     if (isEOF) {
                         host = (base == null)? null : base.host();
-                        port = (base == null)? null : base.port();
+                        port = (base == null || base.port() == base.defaultPort())? -1 : base.port();
                         path = (base == null)? null : base.path();
                         query = (base == null || base.query() == null)? null : new StringBuilder(base.query());
                     } else if (c == '/' || c == '\\') {
@@ -366,13 +362,13 @@ final class URLParser {
                         state = ParseURLState.RELATIVE_SLASH;
                     } else if (c == '?') {
                         host = (base == null)? null : base.host();
-                        port = (base == null)? null : base.port();
+                        port = (base == null || base.port() == base.defaultPort())? -1 : base.port();
                         path = (base == null)? null : base.path();
                         query = new StringBuilder();
                         state = ParseURLState.QUERY;
                     } else if (c == '#') {
                         host = (base == null)? null : base.host();
-                        port = (base == null)? null : base.port();
+                        port = (base == null || base.port() == base.defaultPort())? -1 : base.port();
                         path = (base == null)? null : base.path();
                         query = (base == null)? null : new StringBuilder(base.query());
                         fragment = new StringBuilder();
@@ -387,7 +383,7 @@ final class URLParser {
                                 ) {
 
                             host = (base == null)? null : base.host();
-                            port = (base == null)? null : base.port();
+                            port = (base == null || base.port() == base.defaultPort())? -1 : base.port();
                             path = (base == null)? new String[0] : base.path();
                             // Pop path
                             if (path.length > 0) {
@@ -412,8 +408,8 @@ final class URLParser {
                         }
                     } else {
                         if (!"file".equals(scheme)) {
-                            host = base.host();
-                            port = base.port();
+                            host = (base == null)? null : base.host();
+                            port = (base == null || base.port() == base.defaultPort())? -1 : base.port();
                         }
                         state = ParseURLState.RELATIVE_PATH;
                         idx--;
@@ -588,9 +584,9 @@ final class URLParser {
                             buffer.setLength(0);
                         }
                         if (buffer.length() == 0) {
-                            port = null;
+                            port = -1;
                         } else {
-                            port = Integer.valueOf(buffer.toString());
+                            port = Integer.parseInt(buffer.toString());
                         }
                         if (stateOverride != null) {
                             terminate = true;
@@ -694,6 +690,12 @@ final class URLParser {
                 }
 
                 case QUERY: {
+
+                    //XXX: When we come from stateOverride, query buffer is null
+                    if (query == null) {
+                        query = new StringBuilder();
+                    }
+
                     if (isEOF || (stateOverride == null && c == '#')) {
                         if (relativeFlag) {
                             encodingOverride = "utf-8";
@@ -740,6 +742,12 @@ final class URLParser {
                 }
 
                 case FRAGMENT: {
+
+                    //XXX: When we come from stateOverride, fragment buffer is null
+                    if (fragment == null) {
+                        fragment = new StringBuilder();
+                    }
+
                     if (isEOF) {
                         // Do nothing
                     } else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
@@ -786,6 +794,26 @@ final class URLParser {
                 (fragment == null)? null : fragment.toString(),
                 relativeFlag);
 
+    }
+
+    String parseUsername() {
+        StringBuilder buffer = new StringBuilder(input.length() * 2);
+        setIdx(0);
+        while (!isEOF) {
+            utf8PercentEncode(c, EncodeSet.USERNAME, buffer);
+            incIdx();
+        }
+        return buffer.toString();
+    }
+
+    String parsePassword() {
+        StringBuilder buffer = new StringBuilder(input.length() * 2);
+        setIdx(0);
+        while (!isEOF) {
+            utf8PercentEncode(c, EncodeSet.PASSWORD, buffer);
+            incIdx();
+        }
+        return buffer.toString();
     }
 
     private static enum EncodeSet {

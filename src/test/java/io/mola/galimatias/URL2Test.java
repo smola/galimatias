@@ -32,8 +32,8 @@ public final class URL2Test extends TestCase {
         assertEquals("username:password@host:8080", url.authority());
         assertEquals("username:password", url.userInfo());
         assertEquals("host", url.host().toString());
-        assertEquals((Integer)8080, url.port());
-        assertEquals((Integer)80, url.defaultPort());
+        assertEquals(8080, url.port());
+        assertEquals(80, url.defaultPort());
         assertEquals("/directory/file?query", url.file());
         assertEquals("/directory/file", url.pathString());
         assertEquals("query", url.query());
@@ -43,7 +43,7 @@ public final class URL2Test extends TestCase {
     public void testExplicitPort() throws Exception {
         URL url = URL.parse("http://www.google.com:80/example?language[id]=2");
         assertEquals("www.google.com", url.host().toString());
-        assertEquals(null, url.port()); // Android returns null
+        assertEquals(80, url.port()); // Android returns null
     }
 
     /**
@@ -154,8 +154,8 @@ public final class URL2Test extends TestCase {
         assertEquals("path", url.authority()); // Android will be null
         assertEquals(null, url.userInfo());
         assertEquals("path", url.host().toString()); // Android will be null
-        assertEquals(null, url.port());
-        assertEquals((Integer)80, url.defaultPort());
+        assertEquals(80, url.port());
+        assertEquals(80, url.defaultPort());
         assertEquals("/", url.file()); // Android will be "/path"
         assertEquals("/", url.pathString()); // Android will be "/path"
         assertEquals(null, url.query());
@@ -211,7 +211,7 @@ public final class URL2Test extends TestCase {
         assertEquals("user@host:8080", url.authority());
         assertEquals("user", url.userInfo());
         assertEquals("host", url.host().toString());
-        assertEquals((Integer)8080, url.port());
+        assertEquals(8080, url.port());
     }
 
     public void testUserPasswordHostPort() throws Exception {
@@ -219,7 +219,7 @@ public final class URL2Test extends TestCase {
         assertEquals("user:password@host:8080", url.authority());
         assertEquals("user:password", url.userInfo());
         assertEquals("host", url.host().toString());
-        assertEquals((Integer)8080, url.port());
+        assertEquals(8080, url.port());
     }
 
     public void testUserPasswordEmptyHostPort() throws Exception {
@@ -309,7 +309,7 @@ public final class URL2Test extends TestCase {
         URL url = URL.parse("http://host/file#fragment:80");
         assertEquals("/file", url.file());
         assertEquals("/file", url.pathString());
-        assertEquals(null, url.port());
+        assertEquals(80, url.port());
         assertEquals("fragment:80", url.fragment());
     }
 
@@ -338,7 +338,7 @@ public final class URL2Test extends TestCase {
 
     public void testEmptyPort() throws Exception {
         URL url = URL.parse("http://host:/");
-        assertEquals(null, url.port());
+        assertEquals(80, url.port());
     }
 
     public void testNonNumericPort() throws Exception {
@@ -658,7 +658,7 @@ public final class URL2Test extends TestCase {
     public void testIpv6WithSquareBrackets() throws Exception {
         URL url = URL.parse("http://[::1]:2/");
         assertEquals("::1", url.host().toString()); // returns [::1] on Android
-        assertEquals((Integer)2, url.port());
+        assertEquals(2, url.port());
     }
 
     public void testEqualityWithNoPath() throws Exception {
