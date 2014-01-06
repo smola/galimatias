@@ -41,8 +41,9 @@ public class Domain extends Host {
             throw new GalimatiasParseException("input is empty");
         }
 
-        //TODO: Let host be the result of running utf-8's decoder on the percent decoding of input.
-        final StringTokenizer st = new StringTokenizer(input, "\u002E\u3002\uFF0E\uFF61");
+        final String host = URLUtils.percentDecode(input);
+
+        final StringTokenizer st = new StringTokenizer(host, "\u002E\u3002\uFF0E\uFF61");
         final String[] domain = new String[st.countTokens()];
         for (int i = 0; i < domain.length; i++) {
             domain[i] = st.nextToken();

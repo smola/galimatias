@@ -205,6 +205,9 @@ public class TestURL {
             new TestURL("http://☃☃☃.com/", "http://xn--n3haa.com/"),
             new TestURL("http://\uD83D\uDC35.com/", "http://xn--9o8h.com/"),
 
+            // IDN + percent-encoding
+            new TestURL("http://%C3%9F.com/", "http://ss.com/"),
+
             // tilde
             new TestURL("http://example.com/~user"),
 

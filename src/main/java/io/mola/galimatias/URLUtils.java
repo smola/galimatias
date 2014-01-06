@@ -22,7 +22,12 @@
 
 package io.mola.galimatias;
 
+import java.awt.image.ImagingOpException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.IDN;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -36,41 +41,50 @@ import java.util.Locale;
  */
 class URLUtils {
 
+    private static final Charset UTF_8 = Charset.forName("UTF-8");
+
     private URLUtils() {
 
     }
 
     public static String percentDecode(final String input) {
-        char[] inputChars = input.toCharArray();
-        int idx = 0;
-        final StringBuilder sb = new StringBuilder(inputChars.length);
-        while (idx <= input.length()) {
+        if (input.isEmpty()) {
+            return input;
+        }
+        try {
+            final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            int idx = 0;
+            while (idx < input.length()) {
 
-            boolean isEOF = idx >= input.length();
-            char c = (!isEOF)? input.charAt(idx) : 0;
+                boolean isEOF = idx >= input.length();
+                int c = (isEOF)? 0x00 : input.codePointAt(idx);
 
-            while (!isEOF && c != '%') {
-                sb.append(c);
-                idx++;
-                isEOF = idx >= input.length();
-                c = (!isEOF)? input.charAt(idx) : 0;
-            }
+                while (!isEOF && c != '%') {
+                    bytes.write(new String(Character.toChars(c)).getBytes(UTF_8));
+                    idx += Character.charCount(c);
+                    isEOF = idx >= input.length();
+                    c = (isEOF)? 0x00 : input.codePointAt(idx);
+                }
 
-            if (!hasRemainingPercentEncoded(inputChars, idx)) {
-                sb.append(c);
-            } else {
-                while (hasRemainingPercentEncoded(inputChars, idx)) {
-                    sb.append(_hexDecode(inputChars[idx+1], inputChars[idx+2]));
-                    idx += 3;
+                if (c == '%' && (input.length() <= idx + 2 ||
+                        !isASCIIHexDigit(input.charAt(idx + 1)) ||
+                        !isASCIIHexDigit(input.charAt(idx + 2)))) {
+                    bytes.write(new String(Character.toChars(c)).getBytes(UTF_8));
+                    idx += Character.charCount(c);
+                } else {
+                    while (c == '%' && input.length() > idx + 2 &&
+                            isASCIIHexDigit(input.charAt(idx + 1)) &&
+                            isASCIIHexDigit(input.charAt(idx + 2))) {
+                        bytes.write(_hexDecode(input.charAt(idx + 1), input.charAt(idx + 2)));
+                        idx += 3;
+                        c = (input.length() <= idx)? 0x00 : input.codePointAt(idx);
+                    }
                 }
             }
+            return new String(bytes.toByteArray(), UTF_8);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
         }
-        return sb.toString();
-    }
-
-    static boolean hasRemainingPercentEncoded(final char[] input, int idx) {
-        return input.length > idx + 2 && input[idx] == '%' &&
-                isASCIIHexDigit(input[idx+1]) && isASCIIHexDigit(input[idx+2]);
     }
 
     /**
