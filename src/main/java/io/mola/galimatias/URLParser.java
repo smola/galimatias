@@ -23,7 +23,9 @@
 package io.mola.galimatias;
 
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 
 import static io.mola.galimatias.URLUtils.*;
@@ -158,7 +160,7 @@ final class URLParser {
         boolean relativeFlag = (url != null) && url.isHierarchical();
         boolean atFlag = false; // @-flag
         boolean bracketsFlag = false; // []-flag
-        String[] path = (url == null || stateOverride == ParseURLState.RELATIVE_PATH_START)? new String[0] : url.path();
+        List<String> pathSegments = (url == null || stateOverride == ParseURLState.RELATIVE_PATH_START)? new ArrayList<String>() : url.pathSegments();
         StringBuilder query = (url == null || url.query() == null || stateOverride == ParseURLState.QUERY)? null : new StringBuilder(url.query());
         StringBuilder fragment = (url == null || url.fragment() == null|| stateOverride == ParseURLState.FRAGMENT)? null : new StringBuilder(url.fragment());
 
@@ -353,7 +355,7 @@ final class URLParser {
                     if (isEOF) {
                         host = (base == null)? null : base.host();
                         port = (base == null || base.port() == base.defaultPort())? -1 : base.port();
-                        path = (base == null)? null : base.path();
+                        pathSegments = (base == null)? null : base.pathSegments();
                         query = (base == null || base.query() == null)? null : new StringBuilder(base.query());
                     } else if (c == '/' || c == '\\') {
                         if (c == '\\') {
@@ -363,13 +365,13 @@ final class URLParser {
                     } else if (c == '?') {
                         host = (base == null)? null : base.host();
                         port = (base == null || base.port() == base.defaultPort())? -1 : base.port();
-                        path = (base == null)? null : base.path();
+                        pathSegments = (base == null)? null : base.pathSegments();
                         query = new StringBuilder();
                         state = ParseURLState.QUERY;
                     } else if (c == '#') {
                         host = (base == null)? null : base.host();
                         port = (base == null || base.port() == base.defaultPort())? -1 : base.port();
-                        path = (base == null)? null : base.path();
+                        pathSegments = (base == null)? null : base.pathSegments();
                         query = (base == null)? null : new StringBuilder(base.query());
                         fragment = new StringBuilder();
                         state = ParseURLState.FRAGMENT;
@@ -384,10 +386,10 @@ final class URLParser {
 
                             host = (base == null)? null : base.host();
                             port = (base == null || base.port() == base.defaultPort())? -1 : base.port();
-                            path = (base == null)? new String[0] : base.path();
+                            pathSegments = (base == null)? new ArrayList<String>() : base.pathSegments();
                             // Pop path
-                            if (path.length > 0) {
-                                path = Arrays.copyOf(path, path.length - 1);
+                            if (!pathSegments.isEmpty()) {
+                                pathSegments.remove(pathSegments.size() - 1);
                             }
                         }
                         state = ParseURLState.RELATIVE_PATH;
@@ -634,27 +636,23 @@ final class URLParser {
                         }
                         if ("..".equals(buffer.toString())) {
                             // Pop path
-                            if (path.length > 0) {
-                                path = Arrays.copyOf(path, path.length - 1);
+                            if (!pathSegments.isEmpty()) {
+                                pathSegments.remove(pathSegments.size() - 1);
                             }
                             if (c != '/' && c != '\\') {
-                                path = Arrays.copyOf(path, path.length + 1);
-                                path[path.length - 1] = "";
+                                pathSegments.add("");
                             }
-                            //FIX: It is not clear in the spec how a path should be pop'd
 
                         } else if (".".equals(buffer.toString()) && c != '/' && c != '\\') {
-                            path = Arrays.copyOf(path, path.length + 1);
-                            path[path.length - 1] = "";
+                            pathSegments.add("");
                         } else if (!".".equals(buffer.toString())) {
-                            if ("file".equals(scheme) && path.length == 0 &&
+                            if ("file".equals(scheme) && pathSegments.isEmpty() &&
                                     buffer.length() == 2 &&
                                     isASCIIAlpha(buffer.charAt(0)) &&
                                     buffer.charAt(1) == '|') {
                                 buffer.setCharAt(1, ':');
                             }
-                            path = Arrays.copyOf(path, path.length + 1);
-                            path[path.length - 1] = buffer.toString();
+                            pathSegments.add(buffer.toString());
                         }
                         buffer.setLength(0);
                         if (c == '?') {
@@ -789,7 +787,7 @@ final class URLParser {
 
         return new URL(scheme, schemeData.toString(),
                 username, password,
-                host, port, path,
+                host, port, pathSegments,
                 (query == null)? null : query.toString(),
                 (fragment == null)? null : fragment.toString(),
                 relativeFlag);

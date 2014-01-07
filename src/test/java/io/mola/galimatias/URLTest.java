@@ -192,7 +192,7 @@ public class URLTest {
     public void withPath(final @TestURLs TestURL testURL) throws GalimatiasParseException {
         final URL originalURL = URL.parse(testURL.base(), testURL.original());
         assumeTrue(originalURL.isHierarchical());
-        assertThat(originalURL.withPath("/foo/bar").pathString()).isEqualTo("/foo/bar");
+        assertThat(originalURL.withPath("/foo/bar").path()).isEqualTo("/foo/bar");
     }
 
     @Theory

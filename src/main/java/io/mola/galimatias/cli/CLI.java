@@ -59,8 +59,8 @@ public class CLI {
         if (url.port() != -1) {
             System.out.println("\t\tPort: " + url.port());
         }
-        if (url.pathString() != null) {
-            System.out.println("\t\tPath: " + url.pathString());
+        if (url.path() != null) {
+            System.out.println("\t\tPath: " + url.path());
         }
         if (url.query() != null) {
             System.out.println("\t\tQuery: " + url.query());

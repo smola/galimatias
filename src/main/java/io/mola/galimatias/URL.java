@@ -26,7 +26,9 @@ import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * A parsed URL. Immutable.
@@ -39,24 +41,32 @@ import java.util.Arrays;
  */
 public class URL implements Serializable {
 
-    private static final String[] EMPTY_PATH = new String[0];
-
     private final String scheme;
     private final String schemeData;
     private final String username;
     private final String password;
     private final Host host;
     private final int port;
-    private final String[] path;
+    private final String path;
     private final String query;
     private final String fragment;
 
     private final boolean isHierarchical;
 
     URL(final String scheme, final String schemeData,
+        final String username, final String password,
+        final Host host, final int port,
+        final Iterable<String> pathSegments,
+        final String query, final String fragment,
+        final boolean isHierarchical) {
+        this(scheme, schemeData, username, password, host, port, pathSegmentsToString(pathSegments),
+                query, fragment, isHierarchical);
+    }
+
+    URL(final String scheme, final String schemeData,
             final String username, final String password,
             final Host host, final int port,
-            final String[] path,
+            final String path,
             final String query, final String fragment,
             final boolean isHierarchical) {
         this.scheme = scheme;
@@ -65,11 +75,7 @@ public class URL implements Serializable {
         this.password = password;
         this.host = host;
         this.port = port;
-        if (path != null && path.length > 0 && (path.length > 1 || !path[0].equals(""))) {
-            this.path = Arrays.copyOf(path, path.length);
-        } else {
-            this.path = EMPTY_PATH;
-        }
+        this.path = path;
         this.query = query;
         this.fragment = fragment;
         this.isHierarchical = isHierarchical;
@@ -140,23 +146,15 @@ public class URL implements Serializable {
         return Integer.parseInt(defaultPort);
     }
 
-    public String[] path() {
-        return Arrays.copyOf(path, path.length);
+    public String path() {
+        return path;
     }
 
-    public String pathString() {
+    public List<String> pathSegments() {
         if (!isHierarchical) {
             return null;
         }
-        StringBuilder output = new StringBuilder();
-        output.append('/');
-        if (path.length > 0) {
-            output.append(path[0]);
-            for (int i = 1; i < path.length; i++) {
-                output.append('/').append(path[i]);
-            }
-        }
-        return output.toString();
+        return pathStringToSegments(path);
     }
 
     public String query() {
@@ -167,18 +165,16 @@ public class URL implements Serializable {
         return fragment;
     }
 
-    protected String file() {
-        final String pathString = pathString();
-        if (pathString == null && query == null && fragment == null) {
+    public String file() {
+        if (path == null && query == null) {
             return "";
         }
         final StringBuilder output = new StringBuilder(
-                ((pathString != null)? pathString.length() : 0) +
-                ((query != null)? query.length() + 1 : 0) +
-                ((fragment != null)? fragment.length() + 1 : 0)
+                ((path != null)? path.length() : 0) +
+                ((query != null)? query.length() + 1 : 0)
                 );
-        if (pathString != null) {
-            output.append(pathString);
+        if (path != null) {
+            output.append(path);
         }
         if (query != null) {
             output.append('?').append(query);
@@ -192,6 +188,37 @@ public class URL implements Serializable {
 
     public boolean isOpaque() {
         return !isHierarchical;
+    }
+
+    private static String pathSegmentsToString(final Iterable<String> segments) {
+        if (segments == null) {
+            return null;
+        }
+        final StringBuilder output = new StringBuilder();
+        for (final String segment : segments) {
+            output.append('/').append(segment);
+        }
+        if (output.length() == 0) {
+            return "/";
+        }
+        return output.toString();
+    }
+
+    private static List<String> pathStringToSegments(String path) {
+        if (path == null) {
+            return new ArrayList<String>();
+        }
+        if (path.startsWith("/")) {
+            path = path.substring(1);
+        }
+        final String[] segments = path.split("/", -1);
+        final List<String> result = new ArrayList<String>(segments.length + 1);
+        if (segments.length == 0) {
+            result.add("");
+            return result;
+        }
+        result.addAll(Arrays.asList(segments));
+        return result;
     }
 
     /**
@@ -471,12 +498,8 @@ public class URL implements Serializable {
             if (port != -1) {
                 output.append(':').append(port);
             }
-            output.append('/');
-            if (path.length > 0) {
-                output.append(path[0]);
-                for (int i = 1; i < path.length; i++) {
-                    output.append('/').append(path[i]);
-                }
+            if (path != null) {
+                output.append(path);
             }
         } else {
             output.append(schemeData);
@@ -508,25 +531,10 @@ public class URL implements Serializable {
                 ((password == null)? other.password == null : password.equals(other.password)) &&
                 ((host == null)? other.host == null : host.equals(other.host)) &&
                 port == other.port &&
+                ((path == null)? other.host == null : path.equals(other.path)) &&
                 ((fragment == null)? other.fragment == null : fragment.equals(other.fragment)) &&
-                ((query == null)? other.query == null : query.equals(other.query)) &&
-                arrayEquals(path, other.path)
+                ((query == null)? other.query == null : query.equals(other.query))
                 ;
-    }
-
-    private static boolean arrayEquals(final String[] one, final String[] other) {
-        if (one == other) {
-            return true;
-        }
-        if (one.length != other.length) {
-            return false;
-        }
-        for (int i = 0; i < one.length; i++) {
-            if (!one[i].equals(other[i])) {
-                return false;
-            }
-        }
-        return true;
     }
 
     @Override
@@ -537,7 +545,7 @@ public class URL implements Serializable {
         result = 31 * result + (password != null ? password.hashCode() : 0);
         result = 31 * result + (host != null ? host.hashCode() : 0);
         result = 31 * result + (port != -1 ? port : 0);
-        result = 31 * result + Arrays.hashCode(path);
+        result = 31 * result + (path != null? path.hashCode() : 0);
         result = 31 * result + (query != null ? query.hashCode() : 0);
         result = 31 * result + (fragment != null ? fragment.hashCode() : 0);
         result = 31 * result + (isHierarchical ? 1 : 0);
