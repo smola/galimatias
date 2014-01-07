@@ -37,7 +37,7 @@ galimatias is available at Maven Central. Just add to your pom.xml `<dependencie
 
 ```xml
 <dependency>
-  <groupId>io.mola</groupId>
+  <groupId>io.mola.galimatias</groupId>
   <artifactId>galimatias</artifactId>
   <version>0.0.1</version>
 </dependency>
