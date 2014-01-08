@@ -274,7 +274,7 @@ final class URLParser {
 
                     // WHATWG URL: Otherwise, parse error, terminate this algorithm.
                     else {
-                        fatalError("Scheme could not be parsed.", idx);
+                        fatalError("Illegal character in scheme", idx);
                     }
 
                     break;
@@ -297,13 +297,13 @@ final class URLParser {
 
                         // WHATWG URL: If c is not the EOF code point, not a URL code point, and not "%", parse error.
                         if (!isEOF && c != '%' && !isURLCodePoint(c)) {
-                            error("PARSE ERROR", idx);
+                            error("Illegal character in scheme data: not a URL code point", idx);
                         }
 
                         if (c == '%') {
                             // WHATWG URL: If c is "%" and remaining does not start with two ASCII hex digits, parse error.
                             if (!isASCIIHexDigit(at(idx+1)) || !isASCIIHexDigit(at(idx+2))) {
-                                error("PARSE ERROR", idx);
+                                error("Percentage (\"%\") is not followed by two hexadecimal digits", idx);
                             } else {
                                 schemeData.append((char)c)
                                         .append(Character.toUpperCase(input.charAt(idx+1)))
@@ -326,7 +326,7 @@ final class URLParser {
 
                 case NO_SCHEME: {
                     if (base == null || !isRelativeScheme(base.scheme())) {
-                        fatalError("Cannot build URL without scheme.", idx);
+                        fatalError("Missing scheme", idx);
                     }
                     state = ParseURLState.RELATIVE;
                     idx--;
@@ -338,7 +338,7 @@ final class URLParser {
                         state = ParseURLState.AUTHORITY_IGNORE_SLASHES;
                         idx++;
                     } else {
-                        error("PARSE ERROR", idx);
+                        error("Relative scheme (" + scheme + ") is not followed by \"://\"", idx);
                         state = ParseURLState.RELATIVE;
                         idx--;
                     }
@@ -359,7 +359,7 @@ final class URLParser {
                         query = (base == null || base.query() == null)? null : new StringBuilder(base.query());
                     } else if (c == '/' || c == '\\') {
                         if (c == '\\') {
-                            error("PARSE ERROR", idx);
+                            error("Backslash (\"\\\") used as path segment delimiter", idx);
                         }
                         state = ParseURLState.RELATIVE_SLASH;
                     } else if (c == '?') {
@@ -401,7 +401,7 @@ final class URLParser {
                 case RELATIVE_SLASH: {
                     if (c == '/' || c == '\\') {
                         if (c == '\\') {
-                            error("PARSE ERROR", idx);
+                            error("Backslash (\"\\\") used as path segment delimiter", idx);
                         }
                         if ("file".equals(scheme)) {
                             state = ParseURLState.FILE_HOST;
@@ -423,7 +423,7 @@ final class URLParser {
                     if (c == '/') {
                         state = ParseURLState.AUTHORITY_SECOND_SLASH;
                     } else {
-                        error("PARSE ERROR", idx);
+                        error("Expected a slash (\"/\")", idx);
                         state = ParseURLState.AUTHORITY_IGNORE_SLASHES;
                         decrIdx();
                     }
@@ -434,7 +434,7 @@ final class URLParser {
                     if (c == '/') {
                         state = ParseURLState.AUTHORITY_IGNORE_SLASHES;
                     } else {
-                        error("PARSE ERROR", idx);
+                        error("Expected a slash (\"/\")", idx);
                         state = ParseURLState.AUTHORITY_IGNORE_SLASHES;
                         decrIdx();
                     }
@@ -446,7 +446,7 @@ final class URLParser {
                         state = ParseURLState.AUTHORITY;
                         decrIdx();
                     } else {
-                        error("PARSE ERROR", idx);
+                        error("Unexpected slash or backslash", idx);
                     }
                     break;
                 }
@@ -455,7 +455,7 @@ final class URLParser {
                     // If c is "@", run these substeps:
                     if (c == '@') {
                         if (atFlag) {
-                            error("PARSE ERROR", idx);
+                            error("User or password contains an at symbol (\"@\") not percent-encoded", idx);
                             buffer.insert(0, "%40");
                         }
                         atFlag = true;
@@ -467,15 +467,15 @@ final class URLParser {
                                     otherChar == 0x000A ||
                                     otherChar == 0x000D
                                 ) {
-                                error("PARSE ERROR", idx);
+                                error("Tab, new line or carriage return found", idx);
                                 continue;
                             }
                             if (!isURLCodePoint(otherChar) && otherChar != '%') {
-                                error("PARSE ERROR", idx);
+                                error("Illegal character in user or password: not a URL code point", idx);
                             }
                             if (otherChar == '%') {
                                 if (i + 2 >= buffer.length() || !isASCIIHexDigit(buffer.charAt(i+1)) || !isASCIIHexDigit(buffer.charAt(i+2))) {
-                                    error("PARSE ERROR", idx);
+                                    error("Percentage (\"%\") is not followed by two hexadecimal digits", idx);
                                 } else if (isASCIIHexDigit(buffer.charAt(i+1)) && isASCIIHexDigit(buffer.charAt(i+2))) {
                                     buffer.setCharAt(i + 1, Character.toUpperCase(buffer.charAt(i + 1)));
                                     buffer.setCharAt(i + 2, Character.toUpperCase(buffer.charAt(i + 2)));
@@ -523,13 +523,13 @@ final class URLParser {
                             try {
                                 host = Host.parseHost(buffer.toString());
                             } catch (GalimatiasParseException ex) {
-                                fatalError("Invalid host", idx, ex);
+                                fatalError("Invalid host: " + ex.getMessage(), idx, ex);
                             }
                             buffer.setLength(0);
                             state = ParseURLState.RELATIVE_PATH_START;
                         }
                     } else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
-                        error("PARSE ERROR", idx);
+                        error("Tab, new line or carriage return found", idx);
                     } else {
                         buffer.appendCodePoint(c);
                     }
@@ -542,7 +542,7 @@ final class URLParser {
                         try {
                             host = Host.parseHost(buffer.toString());
                         } catch (GalimatiasParseException ex) {
-                            fatalError("Invalid host", idx, ex);
+                            fatalError("Invalid host: " + ex.getMessage(), idx, ex);
                         }
                         buffer.setLength(0);
                         state = ParseURLState.PORT;
@@ -554,7 +554,7 @@ final class URLParser {
                         try {
                             host = Host.parseHost(buffer.toString());
                         } catch (GalimatiasParseException ex) {
-                            fatalError("Invalid host", idx, ex);
+                            fatalError("Invalid host: " + ex.getMessage(), idx, ex);
                         }
                         buffer.setLength(0);
                         state = ParseURLState.RELATIVE_PATH_START;
@@ -562,7 +562,7 @@ final class URLParser {
                             terminate = true;
                         }
                     } else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
-                        error("PARSE ERROR", idx);
+                        error("Tab, new line or carriage return found", idx);
                     } else {
                         if (c == '[') {
                             bracketsFlag = true;
@@ -598,7 +598,7 @@ final class URLParser {
                             idx--;
                         }
                     } else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
-                        error("PARSE ERROR", idx);
+                        error("Tab, new line or carriage return found", idx);
                     } else {
                         fatalError("Illegal character in port", idx);
                     }
@@ -607,7 +607,7 @@ final class URLParser {
 
                 case RELATIVE_PATH_START: {
                     if (c == '\\') {
-                        error("PARSE ERROR", idx);
+                        error("Backslash (\"\\\") used as path segment delimiter", idx);
                     } else {
                         state = ParseURLState.RELATIVE_PATH;
                         if (c != '/' && c != '\\') {
@@ -620,7 +620,7 @@ final class URLParser {
                 case RELATIVE_PATH: {
                     if (isEOF || c == '/' || c == '\\' || (stateOverride == null && (c == '?' || c == '#'))) {
                         if (c == '\\') {
-                            error("PARSE ERROR", idx);
+                            error("Backslash (\"\\\") used as path segment delimiter", idx);
                         }
                         final String lowerCasedBuffer = buffer.toString().toLowerCase(Locale.ENGLISH);
                         if ("%2e".equals(lowerCasedBuffer)) {
@@ -664,15 +664,15 @@ final class URLParser {
                         }
 
                     } else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
-                        error("PARSE ERROR", idx);
+                        error("Tab, new line or carriage return found", idx);
                     } else {
                         if (!isURLCodePoint(c) && c != '%') {
-                            error("PARSE ERROR", idx);
+                            error("Illegal character in path segment: not a URL code point", idx);
                         }
 
                         if (c == '%') {
                             if (!isASCIIHexDigit(at(idx+1)) || !isASCIIHexDigit(at(idx+2))) {
-                                error("PARSE ERROR", idx);
+                                error("Percentage (\"%\") is not followed by two hexadecimal digits", idx);
                             } else {
                                 buffer.append((char)c)
                                         .append(Character.toUpperCase(input.charAt(idx+1)))
@@ -718,14 +718,14 @@ final class URLParser {
                             state = ParseURLState.FRAGMENT;
                         }
                     }  else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
-                        error("PARSE ERROR", idx);
+                        error("Tab, new line or carriage return found", idx);
                     } else {
                         if (!isURLCodePoint(c) && c != '%') {
-                            error("PARSE ERROR", idx);
+                            error("Illegal character in query: not a URL code point", idx);
                         }
                         if (c == '%') {
                             if (!isASCIIHexDigit(at(idx+1)) || !isASCIIHexDigit(at(idx+2))) {
-                                error("PARSE ERROR", idx);
+                                error("Percentage (\"%\") is not followed by two hexadecimal digits", idx);
                             } else {
                                 buffer.append((char)c)
                                         .append(Character.toUpperCase(input.charAt(idx+1)))
@@ -749,14 +749,14 @@ final class URLParser {
                     if (isEOF) {
                         // Do nothing
                     } else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
-                        error("PARSE ERROR", idx);
+                        error("Tab, new line or carriage return found", idx);
                     } else {
                         if (!isURLCodePoint(c) && c != '%') {
-                            error("PARSE ERROR", idx);
+                            error("Illegal character in fragment: not a URL code point", idx);
                         }
                         if (c == '%') {
                             if (!isASCIIHexDigit(at(idx+1)) || !isASCIIHexDigit(at(idx+2))) {
-                                error("PARSE ERROR", idx);
+                                error("Percentage (\"%\") is not followed by two hexadecimal digits", idx);
                             } else {
                                 fragment.append((char)c)
                                         .append(Character.toUpperCase(input.charAt(idx+1)))
