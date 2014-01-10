@@ -137,8 +137,8 @@ public class TestURL {
             new TestURL("http://example.com/"),
             new TestURL("http://example.com", "http://example.com/"),
 
-            // leading spaces
-            new TestURL("  http://example.com/", "http://example.com/"),
+            // leading and trailing spaces
+            new TestURL("  http://example.com/   ", "http://example.com/"),
 
             // ip host
             new TestURL("http://1.1.1.1/"),
