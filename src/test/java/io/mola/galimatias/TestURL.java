@@ -181,6 +181,9 @@ public class TestURL {
             new TestURL("http://example.com/#foo%c3%9f", "http://example.com/#foo%C3%9F"),
             new TestURL("http://example.com/#fooß", "http://example.com/#foo%C3%9F"),
             new TestURL("http://example.com/#FOO"),
+            new TestURL("http://example.com/#foo bar", "http://example.com/#foo bar")
+                .resultForRFC3986("http://example.com/#foo%20bar"),
+            new TestURL("http://example.com/#foo%20bar", "http://example.com/#foo%20bar"),
 
             // Relative to base
             new TestURL("http://example.com", "/foo", "http://example.com/foo"),
