@@ -97,13 +97,35 @@ class URLUtils {
      * @param domainLabels
      * @return
      */
-    static String[] domainToASCII(final String[] domainLabels) {
+    static String[] domainToASCII(final String[] domainLabels) throws GalimatiasParseException {
         final List<String> asciiLabels = new ArrayList<String>();
         for (final String domainLabel : domainLabels) {
-            //XXX: The lowercasing is added here as it's the most sane thing to do
-            //     and browsers do it. However, WHATWG URL does not specify this.
-            //     See https://www.w3.org/Bugs/Public/show_bug.cgi?id=24187
-            asciiLabels.add(domainLabelToASCII(domainLabel).toLowerCase(Locale.ENGLISH));
+            // XXX: The lowercasing is added here as it's the most sane thing to do
+            //      and browsers do it. However, WHATWG URL does not specify this.
+            //      See https://www.w3.org/Bugs/Public/show_bug.cgi?id=24187
+            //
+            // XXX: Fail on spaces.
+            //      https://www.w3.org/Bugs/Public/show_bug.cgi?id=24191
+            //
+            // XXX: See http://src.chromium.org/viewvc/chrome/trunk/src/url/url_canon_host.cc
+            //      DoIDNHost function for the behaviour implemented here.
+            //      See also http://src.chromium.org/viewvc/chrome/trunk/src/url/url_canon_icu.cc
+            //
+            try {
+                String asciiLabel = domainLabelToASCII(domainLabel).toLowerCase(Locale.ENGLISH);
+                asciiLabel = percentDecode(asciiLabel);
+                if (asciiLabel.contains("%")) {
+                    throw new GalimatiasParseException("Invalid percent-escaped character");
+                }
+
+
+                if (asciiLabel.contains(" ")) {
+                    throw new GalimatiasParseException("Spaces are illegal in host");
+                }
+                asciiLabels.add(asciiLabel);
+            } catch (IllegalArgumentException ex) {
+                throw new GalimatiasParseException("Could not convert domain to ASCII", -1, ex);
+            }
         }
         final String[] result = new String[asciiLabels.size()];
         return asciiLabels.toArray(result);

@@ -40,6 +40,8 @@ final class URLParser {
     private final ParseURLState stateOverride;
     private URLParsingSettings settings;
 
+    private int startIdx;
+    private int endIdx;
     private int idx;
     private boolean isEOF;
     private int c;
@@ -98,8 +100,8 @@ final class URLParser {
 
     private void setIdx(final int i) {
         this.idx = i;
-        this.isEOF = i >= input.length();
-        this.c = (isEOF || idx < 0)? 0x00 : input.codePointAt(i);
+        this.isEOF = i >= endIdx;
+        this.c = (isEOF || idx < startIdx)? 0x00 : input.codePointAt(i);
     }
 
     private void incIdx() {
@@ -108,7 +110,7 @@ final class URLParser {
     }
 
     private void decrIdx() {
-        if (idx <= 0) {
+        if (idx <= startIdx) {
             setIdx(idx - 1);
             return;
         }
@@ -117,7 +119,7 @@ final class URLParser {
     }
 
     private char at(final int i) {
-        if (i >= input.length()) {
+        if (i >= endIdx) {
             return 0x00;
         }
         return input.charAt(i);
@@ -167,16 +169,17 @@ final class URLParser {
         final StringBuilder usernameBuffer = new StringBuilder(buffer.length());
         StringBuilder passwordBuffer = null;
 
-        setIdx(0);
+        endIdx = input.length();
+        setIdx(startIdx);
 
-        // Skip leading spaces
-        // This is not defined in WHATWG URL spec, but it's sane to do it. Chromium does it too (on space, tabs and \n.
-        // We do it on all Java whitespace.
+        // Skip leading and trailing spaces
         while (Character.isWhitespace(c)) {
             incIdx();
+            startIdx++;
         }
-
-        // TODO: Skip traling spaces
+        while (endIdx > startIdx && Character.isWhitespace(input.charAt(endIdx - 1))) {
+            endIdx--;
+        }
 
         ParseURLState state = (stateOverride == null)? ParseURLState.SCHEME_START : stateOverride;
 
@@ -185,7 +188,7 @@ final class URLParser {
         boolean terminate = false;
         while (!terminate) {
 
-            if (idx > input.length()) {
+            if (idx > endIdx) {
                 break;
             }
 
@@ -235,9 +238,10 @@ final class URLParser {
                         //XXX: This is a deviation from the URL Specification in its current form, in favour of
                         //     URIs as specified in RFC 3986. That is, if we find scheme://, we expect a hierarchical URI.
                         //     See https://www.w3.org/Bugs/Public/show_bug.cgi?id=24170
-                        if (!relativeFlag) {
-                            relativeFlag = input.regionMatches(idx + 1, "//", 0, 2);
-                        }
+                        //TODO: We left this out to pass W3C's web-platform-tests. It should probably be back for old RFCs?
+                        //if (!relativeFlag) {
+                        //    relativeFlag = input.regionMatches(idx + 1, "//", 0, 2);
+                        //}
 
                         // WHATWG URL .3: If url's scheme is "file", set state to relative state.
                         if ("file".equals(scheme)) {
@@ -318,6 +322,7 @@ final class URLParser {
                         if (!isEOF && c != 0x0009 && c != 0x000A && c != 0x000D) {
                             utf8PercentEncode(c, EncodeSet.SIMPLE, schemeData);
                         }
+                        //TODO: Shouldn't the "else" clause give parse error?
 
                     }
 
@@ -379,8 +384,8 @@ final class URLParser {
                         if (!"file".equals(scheme) ||
                             !isASCIIAlpha(c) ||
                             (at(idx+1) != ':' && at(idx+1) != '|') ||
-                            (idx + 1 == input.length() - 1) ||
-                            (idx + 2 < input.length() &&
+                            (idx + 1 == endIdx - 1) ||
+                            (idx + 2 < endIdx &&
                                     at(idx+2) != '/' && at(idx+2) != '\\' && at(idx+2) != '?' && at(idx+2) != '#')
                                 ) {
 
@@ -608,11 +613,10 @@ final class URLParser {
                 case RELATIVE_PATH_START: {
                     if (c == '\\') {
                         error("Backslash (\"\\\") used as path segment delimiter", idx);
-                    } else {
-                        state = ParseURLState.RELATIVE_PATH;
-                        if (c != '/' && c != '\\') {
-                            decrIdx();
-                        }
+                    }
+                    state = ParseURLState.RELATIVE_PATH;
+                    if (c != '/' && c != '\\') {
+                        decrIdx();
                     }
                     break;
                 }
@@ -765,8 +769,10 @@ final class URLParser {
                                 break;
                             }
                         }
-                        if (isFragmentChar(c) ||
-                                (c == '%' && isASCIIHexDigit(at(idx + 1)) && isASCIIHexDigit(at(idx+1)))) {
+
+                        if (URLParsingSettings.Standard.WHATWG == settings.standard()) {
+                            utf8PercentEncode(c, EncodeSet.SIMPLE, fragment);
+                        } else if (isFragmentChar(c)) {
                             fragment.appendCodePoint(c);
                         } else {
                             utf8PercentEncode(c, null, fragment);
@@ -778,7 +784,7 @@ final class URLParser {
             }
 
             if (idx == -1) {
-                setIdx(0);
+                setIdx(startIdx);
             } else {
                 incIdx();
             }
@@ -796,6 +802,8 @@ final class URLParser {
 
     String parseUsername() {
         StringBuilder buffer = new StringBuilder(input.length() * 2);
+        startIdx = 0;
+        endIdx = input.length();
         setIdx(0);
         while (!isEOF) {
             utf8PercentEncode(c, EncodeSet.USERNAME, buffer);
@@ -806,6 +814,8 @@ final class URLParser {
 
     String parsePassword() {
         StringBuilder buffer = new StringBuilder(input.length() * 2);
+        startIdx = 0;
+        endIdx = input.length();
         setIdx(0);
         while (!isEOF) {
             utf8PercentEncode(c, EncodeSet.PASSWORD, buffer);

@@ -152,7 +152,7 @@ public final class URL2Test extends TestCase {
         URL url = URL.parse("http:/path");
         assertEquals("http", url.scheme());
         assertEquals("path", url.authority()); // Android will be null
-        assertEquals(null, url.userInfo());
+        assertEquals("", url.userInfo()); // Android will be null
         assertEquals("path", url.host().toString()); // Android will be null
         assertEquals(80, url.port());
         assertEquals(80, url.defaultPort());
@@ -260,7 +260,7 @@ public final class URL2Test extends TestCase {
         URL url = URL.parse("http://host/file@foo");
         assertEquals("/file@foo", url.file());
         assertEquals("/file@foo", url.path());
-        assertEquals(null, url.userInfo());
+        assertEquals("", url.userInfo()); // Null on Android
     }
 
     public void testColonInPath() throws Exception {
@@ -725,11 +725,12 @@ public final class URL2Test extends TestCase {
             fail();
         } catch (GalimatiasParseException expected) {
         }
-        assertEquals("user%20name", URL.parse("http://user name@host/").userInfo());
-        //FIXME: The following is actually a bug?
-        //       Gecko gets it as a Malformed URI. WebKit uses "ho%20st" as host.
-        //       See https://www.w3.org/Bugs/Public/show_bug.cgi?id=24191
-        assertEquals("ho st", URL.parse("http://ho st/").host().toString());
+        assertEquals("user%20name", URL.parse("http://user name@host/").username());
+        try {
+            URL.parse("http://ho st/");
+            fail();
+        } catch (GalimatiasParseException expected) {
+        }
         try {
             URL.parse("http://host:80 80/");
             fail();

@@ -69,13 +69,21 @@ public class URL implements Serializable {
             final String path,
             final String query, final String fragment,
             final boolean isHierarchical) {
-        this.scheme = scheme;
-        this.schemeData = schemeData;
-        this.username = username;
-        this.password = password;
-        this.host = host;
-        this.port = port;
-        this.path = path;
+        this.scheme = (scheme == null)? "" : scheme;
+        this.schemeData = (schemeData == null)? "" : schemeData;
+        if (isHierarchical) {
+            this.username = (username == null)? "" : username;
+            this.password = password;
+            this.host = host;
+            this.port = port;
+            this.path = path;
+        } else {
+            this.username = "";
+            this.password = null;
+            this.host = null;
+            this.port = -1;
+            this.path = null;
+        }
         this.query = query;
         this.fragment = fragment;
         this.isHierarchical = isHierarchical;
@@ -103,9 +111,6 @@ public class URL implements Serializable {
      * @return
      */
     public String userInfo() {
-        if (username == null) {
-            return null;
-        }
         if (password == null) {
             return username;
         }
@@ -124,7 +129,8 @@ public class URL implements Serializable {
             return null;
         }
         StringBuilder output = new StringBuilder();
-        if (username != null || password != null) {
+        final String userInfo = userInfo();
+        if (!userInfo.isEmpty()) {
             output.append(userInfo()).append('@');
         }
         output.append(host.toString());
@@ -296,10 +302,10 @@ public class URL implements Serializable {
         if (!isHierarchical) {
             throw new GalimatiasParseException("Cannot set username on opaque URL");
         }
-        if (this.username != null && this.username.equals(username)) {
+        final String newUsername = (username == null)? "" : new URLParser(username).parseUsername();
+        if (this.username.equals(newUsername)) {
             return this;
         }
-        final String newUsername = (username == null)? null : new URLParser(username).parseUsername();
         return new URL(this.scheme, this.schemeData, newUsername, this.password, this.host, this.port, this.path, this.query, this.fragment, true);
     }
 
@@ -479,14 +485,9 @@ public class URL implements Serializable {
 
         if (isHierarchical) {
             output.append("//");
-            if (username != null || password != null) {
-                if (username != null) {
-                    output.append(username);
-                }
-                if (password != null) {
-                   output.append(':').append(password);
-                }
-                output.append('@');
+            final String userInfo = userInfo();
+            if (!userInfo.isEmpty()) {
+                output.append(userInfo).append('@');
             }
             if (host != null) {
                 if (host instanceof IPv6Address) {
@@ -527,6 +528,7 @@ public class URL implements Serializable {
         final URL other = (URL) obj;
         return  isHierarchical == other.isHierarchical &&
                 ((scheme == null)? other.scheme == null : scheme.equals(other.scheme)) &&
+                ((schemeData == null)? other.schemeData == null : schemeData.equals(other.schemeData)) &&
                 ((username == null)? other.username == null : username.equals(other.username)) &&
                 ((password == null)? other.password == null : password.equals(other.password)) &&
                 ((host == null)? other.host == null : host.equals(other.host)) &&

@@ -36,9 +36,7 @@ import java.util.List;
 
 import static io.mola.galimatias.TestURL.TestURLs;
 import static org.fest.assertions.Assertions.assertThat;
-import static org.junit.Assume.assumeFalse;
-import static org.junit.Assume.assumeNotNull;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.Assume.*;
 
 @RunWith(Theories.class)
 public class URLTest {
@@ -52,6 +50,48 @@ public class URLTest {
         assertThat(url.toString()).isEqualTo(testURL.result());
     }
 
+    @Theory
+    public void parse_url_whatwg(final @TestURL3.TestURLs(dataset = TestURL3.DATASETS.WHATWG)
+                                     TestURL3 testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        final URL parsedURL = URL.parse(testURL.parsedBaseURL, testURL.rawURL);
+        assertThat(parsedURL).isEqualTo(testURL.parsedURL);
+        assertThat(parsedURL.scheme()).isEqualTo(testURL.parsedURL.scheme());
+        assertThat(parsedURL.schemeData()).isEqualTo(testURL.parsedURL.schemeData());
+        assertThat(parsedURL.username()).isEqualTo(testURL.parsedURL.username());
+        assertThat(parsedURL.password()).isEqualTo(testURL.parsedURL.password());
+        assertThat(parsedURL.host()).isEqualTo(testURL.parsedURL.host());
+        assertThat(parsedURL.port()).isEqualTo(testURL.parsedURL.port());
+        assertThat(parsedURL.path()).isEqualTo(testURL.parsedURL.path());
+        assertThat(parsedURL.query()).isEqualTo(testURL.parsedURL.query());
+        assertThat(parsedURL.fragment()).isEqualTo(testURL.parsedURL.fragment());
+        assertThat(parsedURL.isHierarchical()).isEqualTo(testURL.parsedURL.isHierarchical());
+        assertThat(parsedURL.isOpaque()).isEqualTo(testURL.parsedURL.isOpaque());
+    }
+
+    @Theory
+    public void parse_url_bad_whatwg(final @TestURL3.TestURLs(dataset = TestURL3.DATASETS.WHATWG)
+                                 TestURL3 testURL) throws GalimatiasParseException {
+        assumeTrue(testURL.parsedURL == null);
+        thrown.expect(GalimatiasParseException.class);
+        URL.parse(testURL.parsedBaseURL, testURL.rawURL);
+    }
+
+    @Theory
+    public void parse_url_host_whatwg(final @TestURL3.TestURLs(dataset = TestURL3.DATASETS.HOST_WHATWG)
+                                 TestURL3 testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        final URL parsedURL = URL.parse(testURL.parsedBaseURL, testURL.rawURL);
+        assertThat(parsedURL.host()).isEqualTo(testURL.parsedURL.host());
+    }
+
+    @Theory
+    public void parse_url_bad_host_whatwg(final @TestURL3.TestURLs(dataset = TestURL3.DATASETS.HOST_WHATWG)
+                                      TestURL3 testURL) throws GalimatiasParseException {
+        assumeTrue(testURL.parsedURL == null);
+        thrown.expect(GalimatiasParseException.class);
+        URL.parse(testURL.parsedBaseURL, testURL.rawURL);
+    }
 
     @Theory
     public void parseURLAsRFC2396(final @TestURLs TestURL testURL) throws GalimatiasParseException {
@@ -122,7 +162,7 @@ public class URLTest {
         final URL originalURL = URL.parse(testURL.base(), testURL.original());
         assumeTrue(originalURL.isHierarchical());
         assertThat(originalURL.withUsername("user").username()).isEqualTo("user");
-        assertThat(originalURL.withUsername(null).username()).isNull();
+        assertThat(originalURL.withUsername(null).username()).isEqualTo("");
     }
 
     @Theory

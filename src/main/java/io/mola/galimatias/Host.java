@@ -31,8 +31,8 @@ public abstract class Host implements Serializable {
     public abstract String toString();
 
     /**
-     *
-     * TODO: Generate IPv4Address instead of Domain when relevant?
+     * Parses a host as found in URLs. IPv6 literals are expected
+     * enclosed in square brackets (i.e. [ipv6-literal]).
      *
      * @param input
      * @return
@@ -51,10 +51,11 @@ public abstract class Host implements Serializable {
             }
             return IPv6Address.parseIPv6Address(input.substring(1, input.length() - 1));
         }
+        final Domain domain = Domain.parseDomain(input);
         try {
-            return IPv4Address.parseIPv4Address(input);
+            return IPv4Address.parseIPv4Address(domain.toString());
         } catch (GalimatiasParseException e) {
-            return Domain.parseDomain(input);
+            return domain;
         }
     }
 
