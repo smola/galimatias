@@ -26,57 +26,6 @@ import java.net.InetAddress;
  */
 public final class URL2Test extends TestCase {
 
-    public void testUrlParts() throws Exception {
-        URL url = URL.parse("http://username:password@host:8080/directory/file?query#ref");
-        assertEquals("http", url.scheme());
-        assertEquals("username:password@host:8080", url.authority());
-        assertEquals("username:password", url.userInfo());
-        assertEquals("host", url.host().toString());
-        assertEquals(8080, url.port());
-        assertEquals(80, url.defaultPort());
-        assertEquals("/directory/file?query", url.file());
-        assertEquals("/directory/file", url.path());
-        assertEquals("query", url.query());
-        assertEquals("ref", url.fragment());
-    }
-    // http://code.google.com/p/android/issues/detail?id=12724
-    public void testExplicitPort() throws Exception {
-        URL url = URL.parse("http://www.google.com:80/example?language[id]=2");
-        assertEquals("www.google.com", url.host().toString());
-        assertEquals(80, url.port()); // Android returns null
-    }
-
-    /**
-     * Android's URL.equals() works as if the network is down. This is different
-     * from the RI, which does potentially slow and inconsistent DNS lookups in
-     * URL.equals.
-     */
-    public void testEqualsDoesNotDoHostnameResolution() throws Exception {
-        for (InetAddress inetAddress : InetAddress.getAllByName("localhost")) {
-            String address = inetAddress.getHostAddress();
-            if (inetAddress instanceof Inet6Address) {
-                address = "[" + address + "]";
-            }
-            URL urlByHostName = URL.parse("http://localhost/foo?bar=baz#quux");
-            URL urlByAddress = URL.parse("http://" + address + "/foo?bar=baz#quux");
-            assertFalse("Expected " + urlByHostName + " to not equal " + urlByAddress,
-                    urlByHostName.equals(urlByAddress)); // fails on RI, which does DNS
-        }
-    }
-
-    public void testEqualsCaseMapping() throws Exception {
-        assertEquals(URL.parse("HTTP://localhost/foo?bar=baz#quux"),
-                URL.parse("HTTP://localhost/foo?bar=baz#quux"));
-        assertEquals(URL.parse("http://localhost/foo?bar=baz#quux"),
-                URL.parse("http://LOCALHOST/foo?bar=baz#quux"));
-        assertFalse(URL.parse("http://localhost/foo?bar=baz#quux").equals(
-                URL.parse("http://localhost/FOO?bar=baz#quux")));
-        assertFalse(URL.parse("http://localhost/foo?bar=baz#quux").equals(
-                URL.parse("http://localhost/foo?BAR=BAZ#quux")));
-        assertFalse(URL.parse("http://localhost/foo?bar=baz#quux").equals(
-                URL.parse("http://localhost/foo?bar=baz#QUUX")));
-    }
-
     /* TODO 
     public void testFileEqualsWithEmptyHost() throws Exception {
         assertEquals(new URL("file", "", -1, "/a/"), new URL("file:/a/"));

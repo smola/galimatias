@@ -245,3 +245,19 @@ http://example.com/#hello,\sworld  s:http h:example.com p:/ f:hello,\sworld
 # TODO: http://example.com/#\xc2\xa9
 # TODO: http://example.com/#\ud800\udf00ss  s:http h:example.com p:/ f:\ud800\udf00ss
 # TODO: to be continued...
+
+
+#
+# Based on Android's libcore.java.net.URLTest
+#
+
+# http://code.google.com/p/android/issues/detail?id=12724
+http://www.google.com:80/example?language[id]=2  s:http h:www.google.com port:80 p:/example q:language[id]=2
+
+# Case mapping
+HTTP://localhost/foo?bar=baz#quux  s:http h:localhost p:/foo q:bar=baz f:quux
+http://LOCALHOST/foo?bar=baz#quux  s:http h:localhost p:/foo q:bar=baz f:quux
+http://localhost/FOO?bar=baz#quux  s:http h:localhost p:/FOO q:bar=baz f:quux
+http://localhost/foo?BAR=BAZ#quux  s:http h:localhost p:/foo q:BAR=BAZ f:quux
+http://localhost/foo?bar=baz#QUUX  s:http h:localhost p:/foo q:bar=baz f:QUUX
+

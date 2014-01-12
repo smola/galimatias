@@ -157,6 +157,11 @@ public class TestURLLoader {
                 if (!isHierarchical) {
                     schemeData = path;
                     path = null;
+                } else {
+                    final String defaultPortString = URLUtils.getDefaultPortForScheme(scheme);
+                    if (defaultPortString != null && port == Integer.parseInt(defaultPortString)) {
+                        port = -1;
+                    }
                 }
 
                 testURL.parsedURL = new URL(scheme, schemeData, username, password,
