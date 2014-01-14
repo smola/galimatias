@@ -6,14 +6,17 @@ galimatias
 
 galimatias is a URL parsing and normalization library written in Java.
 
-Design goals:
+### Design goals
 
-- Parse URLs as browsers do, with optional normalization to RFC 3986 or RFC 2396.
-- Stay as close as possible to WHATWG's [URL Standard](http://url.spec.whatwg.org/). In fact, the parser is largely based on it.
+- Parse URLs as browsers do, optionally enforcing compliance with old standards (i.e. RFC 3986,  RFC 2396).
+- Stay as close as possible to WHATWG's [URL Standard](http://url.spec.whatwg.org/).
 - Convenient fluent API with immutable URL objects.
 - Interoperable with java.net.URL and java.net.URI.
 - Zero dependencies.
-- **I have not decided on the scope of galimatias with respect to non-HTTP(S) URIs. [I would like to read about your use cases here](https://github.com/smola/galimatias/issues/8).**
+
+### Gotchas 
+
+galimatias is not a generic URI parser. It can parse any URI, but only schemes defined in the URL Standard (i.e. http, https, ftp, ws, wss, gopher, file) will be parsed as hierarchical URIs. For example, in `git://github.com/smola/galimatias.git` you'll be able to extract scheme (i.e. `git`) and scheme data (i.e. `//github.com/smola/galimatias.git`), but not host (i.e. `github.com`). **This is intended.** We cannot guarantee that applying a set of generic rules won't break certain kind of URIs, so we do not try with them. **I will consider adding further support for other schemes if enough people provides solid use cases and testing. [You can check this issue](https://github.com/smola/galimatias/issues/8) if you are interested.**
 
 But, why?
 ---------
@@ -39,7 +42,7 @@ galimatias is available at Maven Central. Just add to your pom.xml `<dependencie
 <dependency>
   <groupId>io.mola.galimatias</groupId>
   <artifactId>galimatias</artifactId>
-  <version>0.0.1</version>
+  <version>0.0.2</version>
 </dependency>
 ```
 
@@ -109,7 +112,7 @@ URL url = URL.parse(settings, urlString);
 Documentation
 -------------
 
-Check our [API docs](http://mola.io/galimatias/site/0.0.1-SNAPSHOT/apidocs/index.html).
+Check our [API docs](http://mola.io/galimatias/site/0.0.1-SNAPSHOT/apidocs/index.html) [THESE MIGHT BE OUTDATED].
 
 Contribute
 ----------
