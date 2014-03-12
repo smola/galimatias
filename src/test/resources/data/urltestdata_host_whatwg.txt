@@ -32,12 +32,14 @@ http://%ef%b7%90zyx.com
 # IDN-ized. This is "Go" in fullwidth UTF-8/UTF-16.
 http://\uff27\uff4f.com  s:http p:/ h:go.com
 
-# Test that fullwidth escaped values are properly name-prepped,
-# then converted or rejected.
-# ...%41 in fullwidth = 'A' (also as escaped UTF-8 input)
-# TODO: https://www.w3.org/Bugs/Public/show_bug.cgi?id=24257
-#http://\uff05\uff14\uff11.com  s:http p:/ h:a.com
-#http://%ef%bc%85%ef%bc%94%ef%bc%91.com  s:http p:/ h:a.com
+# WEBKIT: Test that fullwidth escaped values are properly name-prepped,
+# WEBKIT: then converted or rejected.
+# WEBKIT: ...%41 in fullwidth = 'A' (also as escaped UTF-8 input)
+#
+# WHATWG: URL spec forbids this:
+# WHATWG: https://www.w3.org/Bugs/Public/show_bug.cgi?id=24257
+http://\uff05\uff14\uff11.com
+http://%ef%bc%85%ef%bc%94%ef%bc%91.com
 
 # ...%00 in fullwidth should fail (also as escaped UTF-8 input)
 # TODO

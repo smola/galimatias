@@ -34,6 +34,10 @@ public class Domain extends Host {
     }
 
     public static Domain parseDomain(final String input) throws GalimatiasParseException {
+        return parseDomain(input, false);
+    }
+
+    public static Domain parseDomain(final String input, final boolean unicode) throws GalimatiasParseException {
         if (input == null) {
             throw new NullPointerException();
         }
@@ -41,17 +45,35 @@ public class Domain extends Host {
             throw new GalimatiasParseException("input is empty");
         }
 
+        // WHATWG says: Let host be the result of running utf-8's decoder on the percent decoding of running utf-8 encode on input.
         final String host = URLUtils.percentDecode(input);
 
-        final StringTokenizer st = new StringTokenizer(host, "\u002E\u3002\uFF0E\uFF61");
-        final String[] domain = new String[st.countTokens()];
-        for (int i = 0; i < domain.length; i++) {
-            domain[i] = st.nextToken();
-        }
+        // WHATWG says: Let domain be the result of splitting host on any domain label separators.
+        final String[] domain = host.split("[\u002E\u3002\uFF0E\uFF61]");
         if (domain.length == 0) {
             throw new GalimatiasParseException("Zero domain labels found");
         }
-        return new Domain(URLUtils.domainToASCII(domain));
+
+        final String[] asciiDomain = URLUtils.domainToASCII(domain);
+
+        for (int i = 0; i < asciiDomain.length; i++) {
+            final char[] labelChars = asciiDomain[i].toCharArray();
+            for (int j = 0; j < labelChars.length; j++) {
+                final char c = labelChars[j];
+                if (URLUtils.isASCIIAlpha(c)) {
+                    labelChars[j] = Character.toLowerCase(c);
+                } else if (c == 0x000 || c == 0x0009 ||c == 0x000A || c == 0x000D || c == 0x0020 || c == '#' || c == '%' || c == '/' || c == ':' || c == '?' || c == '@' || c == '\\') {
+                    throw new GalimatiasParseException("Illegal character in host", i);
+                }
+            }
+            asciiDomain[i] = new String(labelChars);
+        }
+
+        if (!unicode) {
+            return new Domain(asciiDomain);
+        }
+
+        return new Domain(URLUtils.domainToUnicode(asciiDomain));
     }
 
     @Override
