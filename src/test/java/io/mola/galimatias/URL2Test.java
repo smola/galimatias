@@ -381,6 +381,11 @@ public final class URL2Test extends TestCase {
         assertEquals("http://host/", URL.parse(base, "http:/").toString());
     }
 
+    public void testRelativeFragmentOnly() throws Exception {
+        URL base = URL.parse("http://host/a/b/c");
+        assertEquals("http://host/a/b/c#", URL.parse(base, "#").toString());
+    }
+
     public void testMalformedUrlsRefusedByFirefoxAndChrome() throws Exception {
         URL base = URL.parse("http://host/a/b/c");
         // All these are Ok in android, not in galimatias
