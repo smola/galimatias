@@ -377,7 +377,7 @@ final class URLParser {
                         host = (base == null)? null : base.host();
                         port = (base == null || base.port() == base.defaultPort())? -1 : base.port();
                         pathSegments = (base == null)? null : base.pathSegments();
-                        query = (base == null)? null : new StringBuilder(base.query());
+                        query = (base == null || base.query() == null)? null : new StringBuilder(base.query());
                         fragment = new StringBuilder();
                         state = ParseURLState.FRAGMENT;
                     } else {
