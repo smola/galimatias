@@ -107,10 +107,17 @@ public class CLI {
 
         boolean parseErrors;
 
+        URL base = null;
+        try {
+            base = URL.parse("http://example.org/foo/bar");
+        } catch (GalimatiasParseException ex) {
+            assert false; // shouldn't get in here unless serious bug
+        }
+
         try {
             System.out.println("Parsing with WHATWG rules...");
             settings = settings.withStandard(URLParsingSettings.Standard.WHATWG);
-            url = URL.parse(settings, input);
+            url = URL.parse(settings, base, input);
             whatwgUrlSerialized = url.toString();
             printResult(url);
         } catch (GalimatiasParseException ex) {
@@ -121,7 +128,7 @@ public class CLI {
         try {
             System.out.println("Parsing with RFC 3986 rules...");
             settings = settings.withStandard(URLParsingSettings.Standard.RFC_3986);
-            url = URL.parse(settings, input);
+            url = URL.parse(settings, base, input);
             rfc3986UrlSerialized = url.toString();
             if (whatwgUrlSerialized.equals(url.toString())) {
                 System.out.println("\tResult identical to WHATWG rules");
@@ -136,7 +143,7 @@ public class CLI {
         try {
             System.out.println("Parsing with RFC 2396 rules...");
             settings = settings.withStandard(URLParsingSettings.Standard.RFC_2396);
-            url = URL.parse(settings, input);
+            url = URL.parse(settings, base, input);
             if (rfc3986UrlSerialized.equals(url.toString())) {
                 System.out.println("\tResult identical to RFC 3986 rules");
             } else {
