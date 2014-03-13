@@ -18,9 +18,6 @@ package io.mola.galimatias;
 
 import junit.framework.TestCase;
 
-import java.net.Inet6Address;
-import java.net.InetAddress;
-
 /**
  * URL tests imported from Android's libcore.java.net.URLTest.
  */

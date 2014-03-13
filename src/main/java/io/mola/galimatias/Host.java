@@ -23,7 +23,6 @@
 package io.mola.galimatias;
 
 import java.io.Serializable;
-import java.net.MalformedURLException;
 
 public abstract class Host implements Serializable {
 

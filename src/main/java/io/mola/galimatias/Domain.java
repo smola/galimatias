@@ -23,7 +23,6 @@
 package io.mola.galimatias;
 
 import java.util.Arrays;
-import java.util.StringTokenizer;
 
 public class Domain extends Host {
 

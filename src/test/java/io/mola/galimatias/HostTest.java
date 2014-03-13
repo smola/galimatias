@@ -26,8 +26,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import java.net.MalformedURLException;
-
 import static org.fest.assertions.Assertions.assertThat;
 
 @RunWith(JUnit4.class)
