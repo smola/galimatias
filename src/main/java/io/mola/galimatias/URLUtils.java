@@ -99,13 +99,24 @@ class URLUtils {
      */
     static String[] domainToASCII(final String[] domainLabels) throws GalimatiasParseException {
         final List<String> asciiLabels = new ArrayList<String>();
+        int totalLength = 0;
         for (final String domainLabel : domainLabels) {
             try {
                 final String asciiLabel = domainLabelToASCII(domainLabel);
                 asciiLabels.add(asciiLabel);
+                if (asciiLabel.isEmpty()) {
+                    throw new GalimatiasParseException("DNS violation: Host contains empty label", -1);
+                }
+                totalLength += asciiLabel.length();
             } catch (IllegalArgumentException ex) {
                 throw new GalimatiasParseException("Could not convert domain to ASCII", -1, ex);
             }
+        }
+        if (asciiLabels.size() > 127) {
+            throw new GalimatiasParseException("DNS violation: Host must have a maximum of 127 labels", -1);
+        }
+        if (totalLength + asciiLabels.size() - 1 > 253) {
+            throw new GalimatiasParseException("DNS violation: Host longer than 253 bytes", -1);
         }
         final String[] result = new String[asciiLabels.size()];
         return asciiLabels.toArray(result);
