@@ -23,6 +23,7 @@
 package io.mola.galimatias;
 
 import org.junit.Rule;
+import org.junit.Test;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.rules.ExpectedException;
@@ -197,6 +198,14 @@ public class URLTest {
     }
 
     @Theory
+    public void withHostNoHierarchical(final @TestURLs TestURL testURL) throws GalimatiasParseException {
+        final URL originalURL = URL.parse(testURL.base(), testURL.original());
+        assumeTrue(!originalURL.isHierarchical());
+        thrown.expect(GalimatiasParseException.class);
+        originalURL.withHost("example.com");
+    }
+
+    @Theory
     public void withNullHost(final @TestURLs TestURL testURL) throws GalimatiasParseException {
         final URL originalURL = URL.parse(testURL.base(), testURL.original());
         assumeTrue(originalURL.isHierarchical());
@@ -306,6 +315,26 @@ public class URLTest {
 
         final java.net.URL toURL = originalURL.toJavaURL();
         assertThat(originalURL).isEqualTo(URL.fromJavaURL(toURL));
+    }
+
+    @Test
+    public void internalURLParserChecks() throws GalimatiasParseException {
+        // Trying to override scheme without ending with colon should have no effect
+        // as per WHATWG spec.
+        assertThat(new URLParser("ws", URL.parse("http://example.com"), URLParser.ParseURLState.SCHEME).parse())
+                .isEqualTo(URL.parse("http://example.com"));
+
+        assertThat(new URLParser("other.com:222", URL.parse("http://example.com"), URLParser.ParseURLState.HOST).parse())
+                .isEqualTo(URL.parse("http://other.com"));
+        assertThat(new URLParser("other.com/foo", URL.parse("http://example.com"), URLParser.ParseURLState.HOST).parse())
+                .isEqualTo(URL.parse("http://other.com"));
+        assertThat(new URLParser("other.com?foo", URL.parse("http://example.com"), URLParser.ParseURLState.HOST).parse())
+                .isEqualTo(URL.parse("http://other.com"));
+        assertThat(new URLParser("other.com#foo", URL.parse("http://example.com"), URLParser.ParseURLState.HOST).parse())
+                .isEqualTo(URL.parse("http://other.com"));
+
+        assertThat(new URLParser("22", URL.parse("http://example.com"), URLParser.ParseURLState.PORT).parse())
+                .isEqualTo(URL.parse("http://example.com:22"));
     }
 
 }

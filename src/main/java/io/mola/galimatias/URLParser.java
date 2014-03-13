@@ -90,7 +90,6 @@ final class URLParser {
         AUTHORITY,
         FILE_HOST,
         HOST,
-        HOSTNAME,
         PORT,
         RELATIVE_PATH_START,
         RELATIVE_PATH,
@@ -541,8 +540,7 @@ final class URLParser {
                     break;
                 }
 
-                case HOST:
-                case HOSTNAME: {
+                case HOST: { //XXX: WHATWG defines HOSTNAME as an alias, useless here.
                     if (c == ':' && !bracketsFlag) {
                         try {
                             host = Host.parseHost(buffer.toString());
@@ -551,7 +549,7 @@ final class URLParser {
                         }
                         buffer.setLength(0);
                         state = ParseURLState.PORT;
-                        if (stateOverride == ParseURLState.HOSTNAME) {
+                        if (stateOverride == ParseURLState.HOST) {
                             terminate = true;
                         }
                     } else if (isEOF || c == '/' || c == '\\' || c == '?' || c == '#') {
@@ -587,6 +585,7 @@ final class URLParser {
                         while (buffer.length() > 0 && buffer.charAt(0) == 0x0030 && buffer.length() > 1) {
                             buffer.deleteCharAt(0);
                         }
+                        //XXX: This is redundant with URL constructor
                         if (buffer.toString().equals(getDefaultPortForScheme(scheme))) {
                             buffer.setLength(0);
                         }

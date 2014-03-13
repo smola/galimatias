@@ -75,7 +75,8 @@ public class URL implements Serializable {
             this.username = (username == null)? "" : username;
             this.password = password;
             this.host = host;
-            this.port = port;
+            //XXX: This is already done in some cases by the URLParser
+            this.port = (port == defaultPort(this.scheme))? -1 : port;
             this.path = path;
         } else {
             this.username = "";
@@ -144,12 +145,16 @@ public class URL implements Serializable {
         return (port == -1)? defaultPort() : port;
     }
 
-    public int defaultPort() {
+    private static int defaultPort(final String scheme) {
         String defaultPort = URLUtils.getDefaultPortForScheme(scheme);
         if (defaultPort == null) {
             return -1;
         }
         return Integer.parseInt(defaultPort);
+    }
+
+    public int defaultPort() {
+        return defaultPort(scheme);
     }
 
     public String path() {

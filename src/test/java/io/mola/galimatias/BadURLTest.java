@@ -100,4 +100,83 @@ public class BadURLTest {
         url.withScheme("");
     }
 
+    @Theory
+    public void withSchemeInvalidCharacter(final @TestURLs TestURL testURL) throws GalimatiasParseException {
+        final URL originalURL = URL.parse(testURL.base(), testURL.original());
+        thrown.expect(GalimatiasParseException.class);
+        originalURL.withScheme("http%%");
+    }
+
+    @Test
+    public void strictTabsInUser() throws GalimatiasParseException {
+        assertThat(URL.parse("http://a\tb@example.com")).isEqualTo(URL.parse("http://ab@example.com"));
+        thrown.expect(GalimatiasParseException.class);
+        URL.parse(
+                URLParsingSettings.create().withErrorHandler(StrictErrorHandler.getInstance()),
+                "http://a\tb@example.com"
+        );
+    }
+
+    @Test
+    public void strictCarriageInUser() throws GalimatiasParseException {
+        assertThat(URL.parse("http://a\rb@example.com")).isEqualTo(URL.parse("http://ab@example.com"));
+        thrown.expect(GalimatiasParseException.class);
+        URL.parse(
+                URLParsingSettings.create().withErrorHandler(StrictErrorHandler.getInstance()),
+                "http://a\rb@example.com"
+        );
+    }
+
+    @Test
+    public void strictNewlineInUser() throws GalimatiasParseException {
+        assertThat(URL.parse("http://a\nb@example.com")).isEqualTo(URL.parse("http://ab@example.com"));
+        thrown.expect(GalimatiasParseException.class);
+        URL.parse(
+                URLParsingSettings.create().withErrorHandler(StrictErrorHandler.getInstance()),
+                "http://a\nb@example.com"
+        );
+    }
+
+    @Test
+    public void strictTabsNewlines() throws GalimatiasParseException {
+        URLParsingSettings strictSettings = URLParsingSettings.create().withErrorHandler(StrictErrorHandler.getInstance());
+        for (String replacement : new String[] { "\t", "\n", "\r" }) {
+            for (String url : new String[] {
+                    "http://a%sb@example.com", "http://a%sb:foo@example.com", "http://foo:a%sb@example.com",
+                    "http://a%sb.com", "http://ab.com:2%s2", "http://example.com/a%sb",
+                    "http://example.com/?a%sb", "http://exaple.com/#a%sb",
+                    "file://host%sname/path"
+            }) {
+                final String urlString = String.format(url, replacement);
+                assertThat(URL.parse(urlString)).isEqualTo(URL.parse(String.format(url, "")));
+                try {
+                    URL.parse(strictSettings, urlString);
+                    assertThat(false);
+                } catch (GalimatiasParseException ex) {
+                    assertThat(true);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void strictUnencodedPercentage() throws GalimatiasParseException {
+        URLParsingSettings strictSettings = URLParsingSettings.create().withErrorHandler(StrictErrorHandler.getInstance());
+        for (String replacement : new String[] { "%%", "%1Z", "%Z1", "%ZZ" }) {
+            for (String url : new String[] {
+                    "data:%s", "http://%s@example.com", "http://%s:foo@example.com", "http://foo:%s@example.com",
+                    "http://example.com/%s", "http://example.com/?%s", "http://exaple.com/#%s"
+            }) {
+                final String urlString = String.format(url, replacement);
+                URL.parse(urlString);
+                try {
+                    URL.parse(strictSettings, urlString);
+                    assertThat(false);
+                } catch (GalimatiasParseException ex) {
+                    assertThat(true);
+                }
+            }
+        }
+    }
+
 }
