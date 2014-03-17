@@ -278,6 +278,20 @@ public class URLTest {
         assertThat(originalURL.withFragment(null).fragment()).isEqualTo(null);
     }
 
+    @Theory
+    public void getAuthorityNullOnOpaque(final @TestURLs TestURL testURL) throws GalimatiasParseException {
+        final URL originalURL = URL.parse(testURL.base(), testURL.original());
+        assumeTrue(originalURL.isOpaque());
+        assertThat(originalURL.authority()).isNull();
+    }
+
+    @Theory
+    public void getAuthorityNonNullOnHierarchical(final @TestURLs TestURL testURL) throws GalimatiasParseException {
+        final URL originalURL = URL.parse(testURL.base(), testURL.original());
+        assumeTrue(originalURL.isHierarchical());
+        assumeFalse(originalURL.scheme().equals("file"));
+        assertThat(originalURL.authority()).isNotNull();
+    }
 
     @Theory
     public void equality(final @TestURLs TestURL testURL) throws GalimatiasParseException {
@@ -315,6 +329,38 @@ public class URLTest {
 
         final java.net.URL toURL = originalURL.toJavaURL();
         assertThat(originalURL).isEqualTo(URL.fromJavaURL(toURL));
+    }
+
+    @Test
+    public void equivalences() throws GalimatiasParseException {
+        assertThat(URL.parse("http://a.com")).isEqualTo(URL.parse("http://a.com/"));
+
+        assertThat(URL.parse("http://a.com/")).isNotEqualTo(URL.parse("http://a.com/?"));
+        assertThat(URL.parse("http://a.com/?").withQuery(null)).isEqualTo(URL.parse("http://a.com/"));
+        assertThat(URL.parse("http://a.com/").withQuery("")).isEqualTo(URL.parse("http://a.com/?"));
+
+        assertThat(URL.parse("http://a.com/")).isNotEqualTo(URL.parse("http://a.com/#"));
+        assertThat(URL.parse("http://a.com/#").withFragment(null)).isEqualTo(URL.parse("http://a.com/"));
+        assertThat(URL.parse("http://a.com/").withFragment("")).isEqualTo(URL.parse("http://a.com/#"));
+
+    }
+
+    @Test(expected = GalimatiasParseException.class)
+    public void fragmentCannotBeSetOnJavascriptScheme() throws GalimatiasParseException {
+        URL.parse("javascript:foo").withFragment("bar");
+    }
+
+    @Test
+    public void reduceObjectCreation() throws GalimatiasParseException {
+        URL original = URL.parse("http://a.com/?foo");
+        assertThat(original == original.withQuery("foo"));
+        original = URL.parse("http://a.com/#foo");
+        assertThat(original == original.withFragment("foo"));
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void schemeCannotBeNull() throws GalimatiasParseException {
+        new URL(null, null, null, null, Host.parseHost("example.com"), -1, "/", null, null, true);
     }
 
     @Test

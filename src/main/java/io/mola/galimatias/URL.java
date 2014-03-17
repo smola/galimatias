@@ -69,7 +69,10 @@ public class URL implements Serializable {
             final String path,
             final String query, final String fragment,
             final boolean isHierarchical) {
-        this.scheme = (scheme == null)? "" : scheme;
+        if (scheme == null) {
+            throw new NullPointerException("scheme cannot be null");
+        }
+        this.scheme = scheme;
         this.schemeData = (schemeData == null)? "" : schemeData;
         if (isHierarchical) {
             this.username = (username == null)? "" : username;
@@ -365,12 +368,9 @@ public class URL implements Serializable {
         return new URLParser(path, this, URLParser.ParseURLState.RELATIVE_PATH_START).parse();
     }
 
-    public URL withQuery(String query) throws GalimatiasParseException {
+    public URL withQuery(final String query) throws GalimatiasParseException {
         if (!isHierarchical) {
             throw new GalimatiasParseException("Cannot set query on opaque URL");
-        }
-        if (query != null && query.isEmpty()) {
-            query = null;
         }
         if (this.query == query) {
             return this;
@@ -381,16 +381,16 @@ public class URL implements Serializable {
         if (query == null) {
             return new URL(this.scheme, this.schemeData, this.username, this.password, this.host, this.port, this.path, null, this.fragment, true);
         }
+        if (query.isEmpty()) {
+            return new URL(this.scheme, this.schemeData, this.username, this.password, this.host, this.port, this.path, query, this.fragment, true);
+        }
         final String parseQuery = (query.charAt(0) == '?')? query.substring(1, query.length()) : query;
         return new URLParser(parseQuery, this, URLParser.ParseURLState.QUERY).parse();
     }
 
-    public URL withFragment(String fragment) throws GalimatiasParseException {
+    public URL withFragment(final String fragment) throws GalimatiasParseException {
         if ("javascript".equals(scheme)) {
             throw new GalimatiasParseException("Cannot set fragment on 'javascript:' URL");
-        }
-        if (fragment != null && fragment.isEmpty()) {
-            fragment = null;
         }
         if (this.fragment == fragment) {
             return this;
@@ -400,6 +400,9 @@ public class URL implements Serializable {
         }
         if (fragment == null) {
             return new URL(this.scheme, this.schemeData, this.username, this.password, this.host, this.port, this.path, this.query, null, true);
+        }
+        if (fragment.isEmpty()) {
+            return new URL(this.scheme, this.schemeData, this.username, this.password, this.host, this.port, this.path, this.query, fragment, true);
         }
         final String parseFragment = (fragment.charAt(0) == '#')? fragment.substring(1, fragment.length()) : fragment;
         return new URLParser(parseFragment, this, URLParser.ParseURLState.FRAGMENT).parse();
