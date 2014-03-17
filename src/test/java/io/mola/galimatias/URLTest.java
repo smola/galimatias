@@ -30,12 +30,10 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
 
-import static io.mola.galimatias.TestURL.TestURLs;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assume.*;
 
@@ -46,14 +44,8 @@ public class URLTest {
     public ExpectedException thrown = ExpectedException.none();
 
     @Theory
-    public void parseURL(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL url = URL.parse(testURL.base(), testURL.original());
-        assertThat(url.toString()).isEqualTo(testURL.result());
-    }
-
-    @Theory
-    public void parse_url_whatwg(final @TestURL3.TestURLs(dataset = TestURL3.DATASETS.WHATWG)
-                                     TestURL3 testURL) throws GalimatiasParseException {
+    public void parse_url_whatwg(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                     TestURL testURL) throws GalimatiasParseException {
         assumeNotNull(testURL.parsedURL);
         final URL parsedURL = URL.parse(testURL.parsedBaseURL, testURL.rawURL);
         assertThat(parsedURL).isEqualTo(testURL.parsedURL);
@@ -71,275 +63,298 @@ public class URLTest {
     }
 
     @Theory
-    public void parse_url_bad_whatwg(final @TestURL3.TestURLs(dataset = TestURL3.DATASETS.WHATWG)
-                                 TestURL3 testURL) throws GalimatiasParseException {
+    public void parse_url_bad_whatwg(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                         TestURL testURL) throws GalimatiasParseException {
         assumeTrue(testURL.parsedURL == null);
         thrown.expect(GalimatiasParseException.class);
         URL.parse(testURL.parsedBaseURL, testURL.rawURL);
     }
 
     @Theory
-    public void parse_url_host_whatwg(final @TestURL3.TestURLs(dataset = TestURL3.DATASETS.HOST_WHATWG)
-                                 TestURL3 testURL) throws GalimatiasParseException {
+    public void parse_url_host_whatwg(final @TestURL.TestURLs(dataset = TestURL.DATASETS.HOST_WHATWG)
+                                          TestURL testURL) throws GalimatiasParseException {
         assumeNotNull(testURL.parsedURL);
         final URL parsedURL = URL.parse(testURL.parsedBaseURL, testURL.rawURL);
         assertThat(parsedURL.host()).isEqualTo(testURL.parsedURL.host());
     }
 
     @Theory
-    public void parse_url_bad_host_whatwg(final @TestURL3.TestURLs(dataset = TestURL3.DATASETS.HOST_WHATWG)
-                                      TestURL3 testURL) throws GalimatiasParseException {
+    public void parse_url_bad_host_whatwg(final @TestURL.TestURLs(dataset = TestURL.DATASETS.HOST_WHATWG)
+                                              TestURL testURL) throws GalimatiasParseException {
         assumeTrue(testURL.parsedURL == null);
         thrown.expect(GalimatiasParseException.class);
         URL.parse(testURL.parsedBaseURL, testURL.rawURL);
     }
 
     @Theory
-    public void parseURLAsRFC2396(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URLParsingSettings settings = URLParsingSettings.create()
-                .withStandard(URLParsingSettings.Standard.RFC_2396);
-
-        final URL url = URL.parse(settings, testURL.base(), testURL.original());
-        assertThat(url.toString()).isEqualTo(testURL.resultForRFC2396());
+    public void userInfoWithUsernameAndPassword(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                                    TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeNotNull(testURL.parsedURL.username(), testURL.parsedURL.password());
+        assertThat(testURL.parsedURL.userInfo())
+                .isEqualTo(String.format("%s:%s", testURL.parsedURL.username(), testURL.parsedURL.password()));
     }
 
     @Theory
-    public void userInfoWithUsernameAndPassword(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        URL url = URL.parse(testURL.base(), testURL.original());
-        assumeNotNull(url.username(), url.password());
-        assertThat(url.userInfo()).isEqualTo(String.format("%s:%s", url.username(), url.password()));
+    public void userInfoWithUsernameOnly(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                             TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeNotNull(testURL.parsedURL.username());
+        assumeTrue(testURL.parsedURL.password() == null);
+        assertThat(testURL.parsedURL.userInfo()).isEqualTo(testURL.parsedURL.username());
     }
 
     @Theory
-    public void userInfoWithUsernameOnly(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        URL url = URL.parse(testURL.base(), testURL.original());
-        assumeNotNull(url.username());
-        assumeTrue(url.password() == null);
-        assertThat(url.userInfo()).isEqualTo(url.username());
+    public void userInfoWithPasswordOnly(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                             TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeNotNull(testURL.parsedURL.password());
+        assumeTrue("".equals(testURL.parsedURL.username()));
+        assertThat(testURL.parsedURL.userInfo()).isEqualTo(":" + testURL.parsedURL.password());
     }
 
     @Theory
-    public void userInfoWithPasswordOnly(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        URL url = URL.parse(testURL.base(), testURL.original());
-        assumeNotNull(url.password());
-        assumeTrue(url.username() == null || url.username().isEmpty());
-        assertThat(url.userInfo()).isEqualTo(String.format(":%s", url.password()));
-    }
-
-    @Theory
-    public void withSchemeFromHierarchical(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
-        assumeTrue(originalURL.isHierarchical());
+    public void withSchemeFromHierarchical(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                               TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(testURL.parsedURL.isHierarchical());
         for (final String scheme : new String[] { "http", "https", "ws", "wss", "ftp", "file" }) {
-            assertThat(originalURL.withScheme(scheme).scheme()).isEqualTo(scheme);
+            assertThat(testURL.parsedURL.withScheme(scheme).scheme()).isEqualTo(scheme);
         }
     }
 
     @Theory
-    public void withNullScheme(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
+    public void withNullScheme(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                   TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
         thrown.expect(NullPointerException.class);
-        originalURL.withScheme(null);
+        testURL.parsedURL.withScheme(null);
     }
 
     @Theory
-    public void withEmptyScheme(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
+    public void withEmptyScheme(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                    TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
         thrown.expect(GalimatiasParseException.class);
-        originalURL.withScheme("");
+        testURL.parsedURL.withScheme("");
     }
 
     @Theory
-    public void withSchemeFromOpaque(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
-        assumeTrue(originalURL.isOpaque());
+    public void withSchemeFromOpaque(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                         TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(testURL.parsedURL.isOpaque());
         for (final String scheme : new String[] { "data", "foobar" }) {
-            assertThat(originalURL.withScheme(scheme).scheme()).isEqualTo(scheme);
+            assertThat(testURL.parsedURL.withScheme(scheme).scheme()).isEqualTo(scheme);
         }
     }
 
     @Theory
-    public void withUsername(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
-        assumeTrue(originalURL.isHierarchical());
-        assertThat(originalURL.withUsername("user").username()).isEqualTo("user");
-        assertThat(originalURL.withUsername(null).username()).isEqualTo("");
+    public void withUsername(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                 TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(testURL.parsedURL.isHierarchical());
+        assertThat(testURL.parsedURL.withUsername("user").username()).isEqualTo("user");
+        assertThat(testURL.parsedURL.withUsername(null).username()).isEqualTo("");
     }
 
     @Theory
-    public void withUsernameOpaque(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
-        assumeTrue(originalURL.isOpaque());
+    public void withUsernameOpaque(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                       TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(testURL.parsedURL.isOpaque());
         thrown.expect(GalimatiasParseException.class);
-        originalURL.withUsername("user");
+        testURL.parsedURL.withUsername("user");
     }
 
     @Theory
-    public void withPassword(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
-        assumeTrue(originalURL.isHierarchical());
-        assertThat(originalURL.withPassword("password").password()).isEqualTo("password");
-        assertThat(originalURL.withPassword(null).password()).isNull();
+    public void withPassword(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                 TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(testURL.parsedURL.isHierarchical());
+        assertThat(testURL.parsedURL.withPassword("password").password()).isEqualTo("password");
+        assertThat(testURL.parsedURL.withPassword(null).password()).isNull();
     }
 
     @Theory
-    public void withPasswordOpaque(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
-        assumeTrue(originalURL.isOpaque());
+    public void withPasswordOpaque(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                       TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(testURL.parsedURL.isOpaque());
         thrown.expect(GalimatiasParseException.class);
-        originalURL.withPassword("password");
+        testURL.parsedURL.withPassword("password");
     }
 
     @Theory
-    public void withHost(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
-        assumeTrue(originalURL.isHierarchical());
-        assertThat(originalURL.withHost("example.com").host()).isEqualTo(Host.parseHost("example.com"));
+    public void withHost(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                             TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(testURL.parsedURL.isHierarchical());
+        assertThat(testURL.parsedURL.withHost("example.com").host()).isEqualTo(Host.parseHost("example.com"));
     }
 
     @Theory
-    public void withHostNoHierarchical(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
-        assumeTrue(!originalURL.isHierarchical());
+    public void withHostNoHierarchical(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                           TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(!testURL.parsedURL.isHierarchical());
         thrown.expect(GalimatiasParseException.class);
-        originalURL.withHost("example.com");
+        testURL.parsedURL.withHost("example.com");
     }
 
     @Theory
-    public void withNullHost(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
-        assumeTrue(originalURL.isHierarchical());
+    public void withNullHost(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                 TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(testURL.parsedURL.isHierarchical());
         thrown.expect(NullPointerException.class);
-        originalURL.withHost((Host) null);
-        originalURL.withHost((String)null);
+        testURL.parsedURL.withHost((String)null);
     }
 
     @Theory
-    public void withHostOpaque(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
-        assumeTrue(originalURL.isOpaque());
+    public void withHostOpaque(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                   TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(testURL.parsedURL.isOpaque());
         thrown.expect(GalimatiasParseException.class);
-        originalURL.withHost("example.com");
+        testURL.parsedURL.withHost("example.com");
     }
 
     @Theory
-    public void withPort(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
-        assumeTrue(originalURL.isHierarchical());
-        assertThat(originalURL.withPort(80).port()).isEqualTo(80);
+    public void withPort(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                             TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(testURL.parsedURL.isHierarchical());
+        assertThat(testURL.parsedURL.withPort(80).port()).isEqualTo(80);
     }
 
     @Theory
-    public void withPortOpaque(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
-        assumeTrue(originalURL.isOpaque());
+    public void withPortOpaque(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                   TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(testURL.parsedURL.isOpaque());
         thrown.expect(GalimatiasParseException.class);
-        originalURL.withPort(80);
+        testURL.parsedURL.withPort(80);
     }
 
     @Theory
-    public void withPath(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
-        assumeTrue(originalURL.isHierarchical());
-        assertThat(originalURL.withPath("/foo/bar").path()).isEqualTo("/foo/bar");
+    public void withPath(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                             TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(testURL.parsedURL.isHierarchical());
+        assertThat(testURL.parsedURL.withPath("/foo/bar").path()).isEqualTo("/foo/bar");
     }
 
     @Theory
-    public void withPathOpaque(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
-        assumeTrue(originalURL.isOpaque());
+    public void withPathOpaque(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                   TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(testURL.parsedURL.isOpaque());
         thrown.expect(GalimatiasParseException.class);
-        originalURL.withPath("/path");
+        testURL.parsedURL.withPath("/path");
     }
 
     @Theory
-    public void withQuery(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
-        assumeTrue(originalURL.isHierarchical());
-        assertThat(originalURL.withQuery("query").query()).isEqualTo("query");
-        assertThat(originalURL.withQuery("?query").query()).isEqualTo("query");
-        assertThat(originalURL.withQuery(null).query()).isEqualTo(null);
+    public void withQuery(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                              TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(testURL.parsedURL.isHierarchical());
+        assertThat(testURL.parsedURL.withQuery("query").query()).isEqualTo("query");
+        assertThat(testURL.parsedURL.withQuery("?query").query()).isEqualTo("query");
+        assertThat(testURL.parsedURL.withQuery(null).query()).isEqualTo(null);
     }
 
     @Theory
-    public void withQueryOpaque(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
-        assumeTrue(originalURL.isOpaque());
+    public void withQueryOpaque(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                    TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(testURL.parsedURL.isOpaque());
         thrown.expect(GalimatiasParseException.class);
-        originalURL.withQuery("query");
+        testURL.parsedURL.withQuery("query");
     }
 
     @Theory
-    public void withFragment(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
-        assumeFalse("javascript".equals(originalURL.scheme()));
-        assertThat(originalURL.withFragment("fragment").fragment()).isEqualTo("fragment");
-        assertThat(originalURL.withFragment("#fragment").fragment()).isEqualTo("fragment");
-        assertThat(originalURL.withFragment(null).fragment()).isEqualTo(null);
+    public void withFragment(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                 TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeFalse("javascript".equals(testURL.parsedURL.scheme()));
+        assertThat(testURL.parsedURL.withFragment("fragment").fragment()).isEqualTo("fragment");
+        assertThat(testURL.parsedURL.withFragment("#fragment").fragment()).isEqualTo("fragment");
+        assertThat(testURL.parsedURL.withFragment(null).fragment()).isEqualTo(null);
     }
 
     @Theory
-    public void getAuthorityNullOnOpaque(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
-        assumeTrue(originalURL.isOpaque());
-        assertThat(originalURL.authority()).isNull();
+    public void getAuthorityNullOnOpaque(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                             TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(testURL.parsedURL.isOpaque());
+        assertThat(testURL.parsedURL.authority()).isNull();
     }
 
     @Theory
-    public void getAuthorityNonNullOnHierarchical(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
-        assumeTrue(originalURL.isHierarchical());
-        assumeFalse(originalURL.scheme().equals("file"));
-        assertThat(originalURL.authority()).isNotNull();
+    public void getAuthorityNonNullOnHierarchical(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                                      TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(testURL.parsedURL.isHierarchical());
+        assumeFalse(testURL.parsedURL.scheme().equals("file"));
+        assertThat(testURL.parsedURL.authority()).isNotNull();
     }
 
     @Theory
-    public void equality(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
-        final URL resultURL = URL.parse(testURL.result());
-        assertThat(originalURL).isEqualTo(resultURL);
-        assertThat(originalURL).isEqualTo(originalURL);
-        assertThat(originalURL).isEqualTo(originalURL);
-        assertThat(originalURL.hashCode()).isEqualTo(resultURL.hashCode());
-        assertThat(originalURL).isNotEqualTo("other");
+    public void toFromJavaURI(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                  TestURL testURL) throws GalimatiasParseException, URISyntaxException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(isConvertibleToJavaURI(testURL.parsedURL));
+        final URL oneRound = URL.fromJavaURI(testURL.parsedURL.toJavaURI());
+        final URL twoRound = URL.fromJavaURI(oneRound.toJavaURI());
+        assertThat(oneRound).isEqualTo(twoRound);
     }
 
     @Theory
-    public void toFromJavaURI(final @TestURLs TestURL testURL) throws GalimatiasParseException, URISyntaxException {
-        assumeTrue(testURL.isValidURI());
-
-        final URLParsingSettings settings = URLParsingSettings.create()
-                .withStandard(URLParsingSettings.Standard.RFC_2396);
-
-        final URL originalURL = URL.parse(settings, testURL.base(), testURL.original());
-        final URI toURI = originalURL.toJavaURI();
-        assertThat(originalURL).isEqualTo(URL.fromJavaURI(toURI));
+    public void toFromJavaURIException(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                              TestURL testURL) throws GalimatiasParseException, URISyntaxException {
+        assumeNotNull(testURL.parsedURL);
+        assumeFalse(isConvertibleToJavaURI(testURL.parsedURL));
+        thrown.expect(URISyntaxException.class);
+        testURL.parsedURL.toJavaURI();
     }
 
+    private static boolean isConvertibleToJavaURI(final URL url) {
+        if (url.isOpaque() && "//".equals(url.schemeData())) {
+            return false;
+        }
+        if (url.isHierarchical() && url.host() != null && (url.host() instanceof Domain)) {
+            final Domain domain = (Domain) url.host();
+            return URLUtils.isASCIIAlpha(domain.labels().get(domain.labels().size() - 1).charAt(0));
+        }
+        return true;
+    }
 
     private static final List<String> JAVA_URL_PROTOCOLS = Arrays.asList(
             "http", "https", "ftp", "file", "jar"
     );
 
     @Theory
-    public void toFromJavaURL(final @TestURLs TestURL testURL) throws GalimatiasParseException, MalformedURLException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
-
-        assumeTrue(JAVA_URL_PROTOCOLS.contains(originalURL.scheme()));
-
-        final java.net.URL toURL = originalURL.toJavaURL();
-        assertThat(originalURL).isEqualTo(URL.fromJavaURL(toURL));
+    public void toFromJavaURL(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                  TestURL testURL) throws GalimatiasParseException, MalformedURLException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(JAVA_URL_PROTOCOLS.contains(testURL.parsedURL.scheme()));
+        final java.net.URL toURL = testURL.parsedURL.toJavaURL();
+        assertThat(testURL.parsedURL).isEqualTo(URL.fromJavaURL(toURL));
     }
 
     @Test
     public void equivalences() throws GalimatiasParseException {
         assertThat(URL.parse("http://a.com")).isEqualTo(URL.parse("http://a.com/"));
+        assertThat(URL.parse("http://a.com").hashCode()).isEqualTo(URL.parse("http://a.com/").hashCode());
 
         assertThat(URL.parse("http://a.com/")).isNotEqualTo(URL.parse("http://a.com/?"));
+        assertThat(URL.parse("http://a.com/").hashCode()).isNotEqualTo(URL.parse("http://a.com/?").hashCode());
         assertThat(URL.parse("http://a.com/?").withQuery(null)).isEqualTo(URL.parse("http://a.com/"));
         assertThat(URL.parse("http://a.com/").withQuery("")).isEqualTo(URL.parse("http://a.com/?"));
 
         assertThat(URL.parse("http://a.com/")).isNotEqualTo(URL.parse("http://a.com/#"));
+        assertThat(URL.parse("http://a.com/").hashCode()).isNotEqualTo(URL.parse("http://a.com/#").hashCode());
         assertThat(URL.parse("http://a.com/#").withFragment(null)).isEqualTo(URL.parse("http://a.com/"));
         assertThat(URL.parse("http://a.com/").withFragment("")).isEqualTo(URL.parse("http://a.com/#"));
 

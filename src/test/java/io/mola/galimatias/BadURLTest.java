@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 
 import static io.mola.galimatias.TestURL.TestURLs;
 import static org.fest.assertions.Assertions.assertThat;
+import static org.junit.Assume.*;
 
 @RunWith(Theories.class)
 public class BadURLTest {
@@ -85,24 +86,19 @@ public class BadURLTest {
     }
 
     @Theory
-    public void withNullScheme(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL url = URL.parse(testURL.base(), testURL.original());
-        thrown.expect(NullPointerException.class);
-        url.withScheme(null);
+    public void withSchemeInvalidCharacter(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                               TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        thrown.expect(GalimatiasParseException.class);
+        testURL.parsedURL.withScheme("http%%");
     }
 
     @Theory
-    public void withEmptyScheme(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL url = URL.parse(testURL.base(), testURL.original());
+    public void withSchemeStartingNotAlpha(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                           TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
         thrown.expect(GalimatiasParseException.class);
-        url.withScheme("");
-    }
-
-    @Theory
-    public void withSchemeInvalidCharacter(final @TestURLs TestURL testURL) throws GalimatiasParseException {
-        final URL originalURL = URL.parse(testURL.base(), testURL.original());
-        thrown.expect(GalimatiasParseException.class);
-        originalURL.withScheme("http%%");
+        testURL.parsedURL.withScheme("1foo");
     }
 
     @Test

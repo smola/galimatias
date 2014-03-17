@@ -23,6 +23,7 @@
 package io.mola.galimatias;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class Domain extends Host {
 
@@ -34,6 +35,10 @@ public class Domain extends Host {
 
     public static Domain parseDomain(final String input) throws GalimatiasParseException {
         return parseDomain(input, false);
+    }
+
+    public List<String> labels() {
+        return Arrays.asList(labels);
     }
 
     public static Domain parseDomain(final String input, final boolean unicode) throws GalimatiasParseException {

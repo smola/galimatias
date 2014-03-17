@@ -110,7 +110,9 @@ public class URL implements Serializable {
     }
 
     /**
-     * Mirrors {@link java.net.URL#getUserInfo()} behaviour.
+     * Gets user info component (i.e. user:pass). This will
+     * return an empty string if neither user or password
+     * are set.
      *
      * @return
      */
@@ -417,19 +419,34 @@ public class URL implements Serializable {
      * In order to prevent this, force RFC 2396 compliance when
      * parsing the URL. For example:
      *
-     * <pre>
-     * <code>
-     * URLParsingSettings settings = URLParsingSettings.create()
-     *     .withStandard(URLParsingSettings.Standard.RFC_2396);
-     * URL url = URI.parse(settings, url);
-     * java.net.URI uri = url.toJavaURI();
-     * </code>
-     * </pre>
+     * NOTE 1: This will not make distinction between no user and password and just empty
+     *         user and no password.
+     *      <pre>
+     *          <code>
+     *              URL.parse("http://example.com").toJavaURI().toString() -> "http://example.com"
+     *              URL.parse("http://@example.com").toJavaURI().toString() -> "http://example.com"
+     *          </code>
+     *      </pre>
+     *
+     * TODO: Check if this exception can actually be thrown
      *
      * @return
      */
     public java.net.URI toJavaURI() throws URISyntaxException {
-        return new URI(toString());
+        if (isHierarchical) {
+            return new URI(scheme(),
+                    (!"".equals(userInfo()))? URLUtils.percentDecode(userInfo()) : null,
+                    (host() != null)? host().toString() : null,
+                    port,
+                    (path() != null)? URLUtils.percentDecode(path()) : null,
+                    (query() != null)? URLUtils.percentDecode(query()) : null,
+                    (fragment() != null)? URLUtils.percentDecode(fragment()) : null
+            );
+        }
+        return new URI(scheme(),
+                URLUtils.percentDecode(schemeData()) + ((query() == null)? "" : "?" + URLUtils.percentDecode(query())),
+                (fragment() != null)? URLUtils.percentDecode(fragment()) : null
+        );
     }
 
     /**
@@ -556,8 +573,8 @@ public class URL implements Serializable {
         result = 31 * result + (host != null ? host.hashCode() : 0);
         result = 31 * result + (port != -1 ? port : 0);
         result = 31 * result + (path != null? path.hashCode() : 0);
-        result = 31 * result + (query != null ? query.hashCode() : 0);
-        result = 31 * result + (fragment != null ? fragment.hashCode() : 0);
+        result = 31 * result + (query != null ? query.hashCode() + 1 : 0);
+        result = 31 * result + (fragment != null ? fragment.hashCode() + 1 : 0);
         result = 31 * result + (isHierarchical ? 1 : 0);
         return result;
     }

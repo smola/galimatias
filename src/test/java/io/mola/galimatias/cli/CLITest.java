@@ -23,7 +23,7 @@
 package io.mola.galimatias.cli;
 
 import io.mola.galimatias.GalimatiasParseException;
-import io.mola.galimatias.TestURL3;
+import io.mola.galimatias.TestURL;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
@@ -32,8 +32,8 @@ import org.junit.runner.RunWith;
 public class CLITest {
 
     @Theory
-    public void parse_no_exceptions(final @TestURL3.TestURLs(dataset = TestURL3.DATASETS.WHATWG)
-                                     TestURL3 testURL) throws GalimatiasParseException {
+    public void parse_no_exceptions(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                        TestURL testURL) throws GalimatiasParseException {
         CLI.main(new String[]{ testURL.rawURL });
     }
 

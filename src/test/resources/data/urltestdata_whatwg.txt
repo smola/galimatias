@@ -41,6 +41,8 @@ http://f:\s21\s/\sb\s?\sd\s#\se\s
 ::23  s:http h:example.org p:/foo/::23
 foo://  s:foo p://
 http://a:b@c:29/d  s:http u:a pass:b h:c port:29 p:/d
+http://a@c  s:http u:a h:c p:/
+http://:p@c  s:http pass:p h:c p:/
 http::@c:29  s:http h:example.org p:/foo/:@c:29
 http://&a:foo(b]c@d:2/  s:http u:&a pass:foo(b]c h:d port:2 p:/
 http://::@c@d:2  s:http pass::%40c h:d port:2 p:/
@@ -119,6 +121,15 @@ file://localhost/  s:file h:localhost p:/
 file://localhost/test  s:file h:localhost p:/test
 test  s:file p:/tmp/mock/test
 file:test  s:file p:/tmp/mock/test
+-- File samples from Wikipedia
+file:///etc/fstab  s:file p:/etc/fstab
+file:////etc/fstab  s:file p://etc/fstab
+file:///c:/WINDOWS/clock.avi  s:file p:/c:/WINDOWS/clock.avi
+file:///c|/WINDOWS/clock.avi  s:file p:/c:/WINDOWS/clock.avi
+file://[badhost]/etc/fstab
+-- TODO: Parsing on this with RFC 2396 enabled might be broken
+file://localhost/c|/WINDOWS/clock.avi  s:file h:localhost p:/c:/WINDOWS/clock.avi
+file://localhost/c:/WINDOWS/clock.avi  s:file h:localhost p:/c:/WINDOWS/clock.avi
 
 -- Based on http://trac.webkit.org/browser/trunk/LayoutTests/fast/url/script-tests/path.js
 http://example.com/././foo about:blank s:http h:example.com p:/foo
@@ -276,3 +287,40 @@ http://localhost/FOO?bar=baz#quux  s:http h:localhost p:/FOO q:bar=baz f:quux
 http://localhost/foo?BAR=BAZ#quux  s:http h:localhost p:/foo q:BAR=BAZ f:quux
 http://localhost/foo?bar=baz#QUUX  s:http h:localhost p:/foo q:bar=baz f:QUUX
 
+-- Unicode misc
+http://example.com/\uD801\uDC00  s:http h:example.com p:/%F0%90%90%80
+http://example.com/\uD83D\uDC35  s:http h:example.com p:/%F0%9F%90%B5
+
+-- unwise characters   "{", "}", "|", "\", "^", "~", "[", "]", and "`"
+http://example.com/~user  s:http h:example.com p:/~user
+http://example.com/^{}|[]`  s:http h:example.com p:/^{}|[]%60
+http://example.com/?^{}|[]`  s:http h:example.com p:/ q:?^{}|[]%60
+http://example.com/#^{}|[]`  s:http h:example.com p:/ f:#^{}|[]`
+
+--
+-- Data scheme
+--
+data:foo  s:data p:foo
+data:%6a  s:data p:%6A
+data:\sa  s:data p:\sa
+
+--
+-- Javascript scheme
+--
+javascript:\stext();\sbar();  s:javascript p:\stext();\sbar();
+
+--
+-- Misc schemes
+--
+-- 'aaa' URIs not valid as of RFC 3986.
+aaa://host.example.com:1813;transport=udp;protocol=rad  s:aaa p://host.example.com:1813;transport=udp;protocol=rad
+about:blank  s:about p:blank
+adiumxtra://www.adiumxtras.com/download/0000  s:adiumxtra p://www.adiumxtras.com/download/0000
+aim:goim?screenname=notarealuser&message=This+is+my+message  s:aim p:goim q:?screenname=notarealuser&message=This+is+my+message
+apt:gcc  s:apt p:gcc
+callto:+34600800900  s:callto p:+34600800900
+feed:https://example.com/rss.xml  s:feed p:https://example.com/rss.xml
+-- 'ed2k' URIs use hierarchical scheme prefix, but they aren't
+ed2k://|file|The_Two_Towers-The_Purist_Edit-Trailer.avi|14997504|965c013e991ee246d63d45ea71954c4d|/|sources,202.89.123.6:4662|/  s:ed2k p://|file|The_Two_Towers-The_Purist_Edit-Trailer.avi|14997504|965c013e991ee246d63d45ea71954c4d|/|sources,202.89.123.6:4662|/
+magnet:?xt=urn:sha1:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C  s:magnet p: q:?xt=urn:sha1:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C
+mailto:user@example.com  s:mailto p:user@example.com

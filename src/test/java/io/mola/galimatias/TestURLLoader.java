@@ -71,9 +71,9 @@ public class TestURLLoader {
         return output.toString();
     }
 
-    public static List<TestURL3> loadTestURLs(final String resource) {
+    public static List<TestURL> loadTestURLs(final String resource) {
         try {
-            final List<TestURL3> results = new ArrayList<TestURL3>();
+            final List<TestURL> results = new ArrayList<TestURL>();
             final BufferedReader br;
             br = new BufferedReader(new InputStreamReader(TestURLLoader.class.getResourceAsStream(resource)));
             String line;
@@ -83,7 +83,7 @@ public class TestURLLoader {
                 }
                 String[] fields = line.split(" ");
 
-                TestURL3 testURL = new TestURL3();
+                TestURL testURL = new TestURL();
                 results.add(testURL);
                 testURL.rawURL = normalize(fields[0]);
 

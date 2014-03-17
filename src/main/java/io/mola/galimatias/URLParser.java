@@ -153,8 +153,8 @@ final class URLParser {
         String encodingOverride = "utf-8";
         String scheme = (url == null)? null : url.scheme();
         StringBuilder schemeData = (url == null)? new StringBuilder() : new StringBuilder(url.schemeData());
-        String username = (url == null || url.username() == null)? null : url.username();
-        String password = (url == null || url.password() == null)? null : url.password();
+        String username = (url == null)? null : url.username();
+        String password = (url == null)? null : url.password();
         Host host = (url == null)? null : url.host();
         int port = (url == null)? -1 : url.port();
         boolean relativeFlag = (url != null) && url.isHierarchical();
@@ -891,8 +891,6 @@ final class URLParser {
                         return;
                     }
                     break;
-                default:
-                    throw new IllegalArgumentException("encodeSet");
             }
         }
 
