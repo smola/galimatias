@@ -78,7 +78,7 @@ public class TestURLLoader {
             br = new BufferedReader(new InputStreamReader(TestURLLoader.class.getResourceAsStream(resource)));
             String line;
             while ((line = br.readLine()) != null) {
-                if (line.isEmpty() || line.startsWith("#")) {
+                if (line.isEmpty() || line.startsWith("--")) {
                     continue;
                 }
                 String[] fields = line.split(" ");
