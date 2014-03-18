@@ -72,7 +72,7 @@ public class URLUtils {
                     while (c == '%' && input.length() > idx + 2 &&
                             isASCIIHexDigit(input.charAt(idx + 1)) &&
                             isASCIIHexDigit(input.charAt(idx + 2))) {
-                        bytes.write(_hexDecode(input.charAt(idx + 1), input.charAt(idx + 2)));
+                        bytes.write(hexToInt(input.charAt(idx + 1), input.charAt(idx + 2)));
                         idx += 3;
                         c = (input.length() <= idx)? 0x00 : input.codePointAt(idx);
                     }
@@ -239,7 +239,7 @@ public class URLUtils {
         buffer.append(_hex[i & 0x0F]);
     }
 
-    static int _hexDecode(final char c1, final char c2) {
+    public static int hexToInt(final char c1, final char c2) {
         //TODO: Some micro-optimization here?
         return Integer.parseInt(new String(new char[]{c1, c2}), 16);
     }

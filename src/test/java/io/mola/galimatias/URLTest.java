@@ -258,26 +258,15 @@ public class URLTest {
     public void withQuery(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
                               TestURL testURL) throws GalimatiasParseException {
         assumeNotNull(testURL.parsedURL);
-        assumeTrue(testURL.parsedURL.isHierarchical());
         assertThat(testURL.parsedURL.withQuery("query").query()).isEqualTo("query");
         assertThat(testURL.parsedURL.withQuery("?query").query()).isEqualTo("query");
         assertThat(testURL.parsedURL.withQuery(null).query()).isEqualTo(null);
     }
 
     @Theory
-    public void withQueryOpaque(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
-                                    TestURL testURL) throws GalimatiasParseException {
-        assumeNotNull(testURL.parsedURL);
-        assumeTrue(testURL.parsedURL.isOpaque());
-        thrown.expect(GalimatiasParseException.class);
-        testURL.parsedURL.withQuery("query");
-    }
-
-    @Theory
     public void withFragment(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
                                  TestURL testURL) throws GalimatiasParseException {
         assumeNotNull(testURL.parsedURL);
-        assumeFalse("javascript".equals(testURL.parsedURL.scheme()));
         assertThat(testURL.parsedURL.withFragment("fragment").fragment()).isEqualTo("fragment");
         assertThat(testURL.parsedURL.withFragment("#fragment").fragment()).isEqualTo("fragment");
         assertThat(testURL.parsedURL.withFragment(null).fragment()).isEqualTo(null);
@@ -358,11 +347,6 @@ public class URLTest {
         assertThat(URL.parse("http://a.com/#").withFragment(null)).isEqualTo(URL.parse("http://a.com/"));
         assertThat(URL.parse("http://a.com/").withFragment("")).isEqualTo(URL.parse("http://a.com/#"));
 
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void fragmentCannotBeSetOnJavascriptScheme() throws GalimatiasParseException {
-        URL.parse("javascript:foo").withFragment("bar");
     }
 
     @Test

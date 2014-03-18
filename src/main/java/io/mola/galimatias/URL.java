@@ -371,9 +371,6 @@ public class URL implements Serializable {
     }
 
     public URL withQuery(final String query) throws GalimatiasParseException {
-        if (!isHierarchical) {
-            throw new GalimatiasParseException("Cannot set query on opaque URL");
-        }
         if (this.query == query) {
             return this;
         }
@@ -391,9 +388,9 @@ public class URL implements Serializable {
     }
 
     public URL withFragment(final String fragment) throws GalimatiasParseException {
-        if ("javascript".equals(scheme)) {
-            throw new GalimatiasParseException("Cannot set fragment on 'javascript:' URL");
-        }
+        //if ("javascript".equals(scheme)) {
+        //    throw new GalimatiasParseException("Cannot set fragment on 'javascript:' URL");
+        //}
         if (this.fragment == fragment) {
             return this;
         }
