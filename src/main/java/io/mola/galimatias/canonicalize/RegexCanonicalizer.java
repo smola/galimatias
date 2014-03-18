@@ -37,9 +37,9 @@ public class RegexCanonicalizer implements URLCanonicalizer {
         FULL
     }
 
-    private Scope scope;
-    private Pattern pattern;
-    private String substitution;
+    private final Scope scope;
+    private final Pattern pattern;
+    private final String substitution;
 
     public RegexCanonicalizer(final Scope scope, final Pattern pattern, final String substitution) {
         this.scope = scope;
