@@ -22,7 +22,6 @@
 
 package io.mola.galimatias;
 
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -30,8 +29,6 @@ import java.util.Locale;
 import static io.mola.galimatias.URLUtils.*;
 
 final class URLParser {
-
-    private static final Charset UTF_8 = Charset.forName("UTF-8");
 
     private final URL base;
     private final String input;
@@ -703,15 +700,10 @@ final class URLParser {
                         final byte[] bytes = buffer.toString().getBytes(UTF_8);
                         for (int i = 0; i < bytes.length; i++) {
                             final byte b = bytes[i];
-                            //XXX: Here we deviate from WHATWG URL and encode anything not valid in query as per RFC 3986.
-                            //     Original condition for encoding was: (b < 0x21 || b > 0x7E || b == 0x22 || b == 0x23 || b == 0x3C || b == 0x3E || b == 0x60)
-                            if (isQueryChar((char)b) ||
-                                    (b == '%' && i + 2 < bytes.length &&
-                                            isASCIIHexDigit((char)bytes[i+1]) &&
-                                            isASCIIHexDigit((char)bytes[i+2]))) {
-                                query.append((char) b);
-                            } else {
+                            if (b < 0x21 || b > 0x7E || b == 0x22 || b == 0x23 || b == 0x3C || b == 0x3E || b == 0x60) {
                                 percentEncode(b, query);
+                            } else {
+                                query.append((char) b);
                             }
                         }
                         buffer.setLength(0);
@@ -768,13 +760,8 @@ final class URLParser {
                             }
                         }
 
-                        if (URLParsingSettings.Standard.WHATWG == settings.standard()) {
-                            utf8PercentEncode(c, EncodeSet.SIMPLE, fragment);
-                        } else if (isFragmentChar(c)) {
-                            fragment.appendCodePoint(c);
-                        } else {
-                            utf8PercentEncode(c, null, fragment);
-                        }
+                        utf8PercentEncode(c, EncodeSet.SIMPLE, fragment);
+
                     }
                     break;
                 }
@@ -829,41 +816,6 @@ final class URLParser {
         USERNAME
     }
 
-    private boolean isUnreserved(final int c) {
-        return isASCIIAlphanumeric(c) || c == '-' || c == '.' || c == '_' || c == '~'; //TODO: Older RFC
-    }
-
-    private boolean isSubdelim(final int c) {
-        return c == '!' || c == '$' || c == '&' || c == '\'' || c == '(' || c == ')' || c == '*' || c == '+' || c == ',' || c == ';' || c == '=';
-    }
-
-    private boolean isPChar(final int c) {
-        //XXX: "pct-encoded" is pchar, but we check for it before calling this.
-        return isUnreserved(c) || isSubdelim(c) || c == ':' || c == '@';
-    }
-
-    private boolean isQueryChar(final int c) {
-        switch (settings.standard()) {
-            case WHATWG:
-                return !(c < 0x21 || c > 0x7E || c == 0x22 || c == 0x23 || c == 0x3C || c == 0x3E || c == 0x60);
-            case RFC_2396:
-            case RFC_3986:
-            default:
-                return isPChar(c) || c == '/' || c == '?';
-        }
-    }
-
-    private boolean isFragmentChar(final int c) {
-        switch (settings.standard()) {
-            case WHATWG:
-                return !isInSimpleEncodeSet(c);
-            case RFC_2396:
-            case RFC_3986:
-            default:
-                return isPChar(c) || c == '/' || c == '?';
-        }
-    }
-
     private void utf8PercentEncode(final int c, final EncodeSet encodeSet, final StringBuilder buffer) {
         if (encodeSet != null) {
             switch (encodeSet) {
@@ -893,8 +845,6 @@ final class URLParser {
                     break;
             }
         }
-
-
         final byte[] bytes = new String(Character.toChars(c)).getBytes(UTF_8);
         for (final byte b : bytes) {
             percentEncode(b, buffer);
@@ -906,17 +856,7 @@ final class URLParser {
     }
 
     private boolean isInDefaultEncodeSet(final int c) {
-        switch (settings.standard()) {
-            case WHATWG:
-                return isInSimpleEncodeSet(c) || c == ' ' || c == '"' || c == '#' || c == '<' || c == '>' || c == '?' || c == '`';
-            case RFC_3986: //TODO: Check
-                return isInSimpleEncodeSet(c) || c == ' ' || c == '"' || c == '#' || c == '<' || c == '>' || c == '?' || c == '`';
-            case RFC_2396:
-            default:
-                return isInSimpleEncodeSet(c) || c == ' ' || c == '"' || c == '#' || c == '<' || c == '>' || c == '?' || c == '`'
-                        || c == '|' || c == '[' || c == ']' || c == '{' || c == '}' || c == '^';
-
-        }
+        return isInSimpleEncodeSet(c) || c == ' ' || c == '"' || c == '#' || c == '<' || c == '>' || c == '?' || c == '`';
     }
 
     private boolean isInPasswordEncodeSet(final int c) {

@@ -26,6 +26,8 @@ import io.mola.galimatias.ErrorHandler;
 import io.mola.galimatias.GalimatiasParseException;
 import io.mola.galimatias.URL;
 import io.mola.galimatias.URLParsingSettings;
+import io.mola.galimatias.canonicalize.RFC2396Canonicalizer;
+import io.mola.galimatias.canonicalize.RFC3986Canonicalizer;
 
 /**
  * A command line interface to Galimatias URL parser.
@@ -101,9 +103,10 @@ public class CLI {
         System.out.println("Analyzing URL: " + input);
 
         URLParsingSettings settings = URLParsingSettings.create().withErrorHandler(errorHandler);
-        URL url;
+        URL url = null;
         String whatwgUrlSerialized = "";
         String rfc3986UrlSerialized = "";
+        String rfc2396UrlSerialized = "";
 
         boolean parseErrors;
 
@@ -115,42 +118,39 @@ public class CLI {
         }
 
         try {
-            System.out.println("Parsing with WHATWG rules...");
-            settings = settings.withStandard(URLParsingSettings.Standard.WHATWG);
+            System.out.println("Parsing...");
             url = URL.parse(settings, base, input);
             whatwgUrlSerialized = url.toString();
             printResult(url);
         } catch (GalimatiasParseException ex) {
             System.out.println("Parsing with WHATWG rules resulted in fatal error");
             printError(ex);
+            return;
         }
 
         try {
-            System.out.println("Parsing with RFC 3986 rules...");
-            settings = settings.withStandard(URLParsingSettings.Standard.RFC_3986);
-            url = URL.parse(settings, base, input);
-            rfc3986UrlSerialized = url.toString();
-            if (whatwgUrlSerialized.equals(url.toString())) {
+            System.out.println("Canonicalizing with RFC 3986 rules...");
+            rfc3986UrlSerialized = new RFC3986Canonicalizer().canonicalize(url).toString();
+            if (whatwgUrlSerialized.equals(rfc3986UrlSerialized)) {
                 System.out.println("\tResult identical to WHATWG rules");
             } else {
                 printResult(url);
             }
         } catch (GalimatiasParseException ex) {
-            System.out.println("Parsing with RFC 3986 rules resulted in fatal error");
+            System.out.println("Canonicalizing with RFC 3986 rules resulted in fatal error");
             printError(ex);
         }
 
         try {
-            System.out.println("Parsing with RFC 2396 rules...");
-            settings = settings.withStandard(URLParsingSettings.Standard.RFC_2396);
-            url = URL.parse(settings, base, input);
-            if (rfc3986UrlSerialized.equals(url.toString())) {
+            System.out.println("Canonicalizing with RFC 2396 rules...");
+            rfc2396UrlSerialized = new RFC2396Canonicalizer().canonicalize(url).toString();
+            if (rfc3986UrlSerialized.equals(rfc2396UrlSerialized)) {
                 System.out.println("\tResult identical to RFC 3986 rules");
             } else {
                 printResult(url);
             }
         } catch (GalimatiasParseException ex) {
-            System.out.println("Parsing with RFC 2396 rules resulted in fatal error");
+            System.out.println("Canonicalizing with RFC 2396 rules resulted in fatal error");
             printError(ex);
         }
 

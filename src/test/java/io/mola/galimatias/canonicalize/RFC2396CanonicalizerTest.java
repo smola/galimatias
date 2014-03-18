@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Santiago M. Mola <santi@mola.io>
+ * Copyright (c) 2014 Santiago M. Mola <santi@mola.io>
  *
  *   Permission is hereby granted, free of charge, to any person obtaining a
  *   copy of this software and associated documentation files (the "Software"),
@@ -20,39 +20,30 @@
  *   DEALINGS IN THE SOFTWARE.
  */
 
-package io.mola.galimatias;
+package io.mola.galimatias.canonicalize;
 
-/**
- * Provides settings for URL parsing.
- *
- * This class is immutable and all its attributes are immutable
- * by default too.
- */
-public final class URLParsingSettings {
+import io.mola.galimatias.GalimatiasParseException;
+import io.mola.galimatias.URL;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
-    private static URLParsingSettings DEFAULT = new URLParsingSettings();
+import static org.fest.assertions.Assertions.assertThat;
 
+@RunWith(JUnit4.class)
+public class RFC2396CanonicalizerTest {
 
-    private ErrorHandler errorHandler;
-
-    private URLParsingSettings() {
-        this(DefaultErrorHandler.getInstance());
-    }
-
-    private URLParsingSettings(final ErrorHandler errorHandler) {
-        this.errorHandler = errorHandler;
-    }
-
-    public ErrorHandler errorHandler() {
-        return this.errorHandler;
-    }
-
-    public static URLParsingSettings create() {
-        return DEFAULT;
-    }
-
-    public URLParsingSettings withErrorHandler(final ErrorHandler errorHandler) {
-        return new URLParsingSettings(errorHandler);
+    @Test
+    public void test() throws GalimatiasParseException {
+        final URLCanonicalizer canon = new RFC2396Canonicalizer();
+        for (final String[] pair : new String[][] {
+                new String[]{ "http://example.com/^{}|[]`~", "http://example.com/%5E%7B%7D%7C%5B%5D%60%7E" },
+                new String[]{ "http://example.com/?^{}|[]`~", "http://example.com/?%5E%7B%7D%7C%5B%5D%60%7E" },
+                new String[]{ "http://example.com/#^{}|[]`~", "http://example.com/#%5E%7B%7D%7C%5B%5D%60%7E" }
+        }) {
+            assertThat(canon.canonicalize(URL.parse(pair[0])).toString())
+                .isEqualTo(URL.parse(pair[1]).toString());
+        }
     }
 
 }

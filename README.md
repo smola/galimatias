@@ -84,18 +84,8 @@ java.net.URI javaURI;
 try {
   javaURI = url.toJavaURI();
 } catch (URISyntaxException ex) {
-  // This will happen if the URL contains unsafe characters (e.g. {}).
+  // This will happen in rare cases such as "foo://"
 }
-```
-
-You can also parse a URL and convert it to java.net.URI without
-any exception by forcing RFC 2396 compliance.
-
-```java
-String urlString = //...
-URLParsingSettings settings = URLParsingSettings.create()
-  .withStandard(URLParsingSettings.Standard.RFC_2396);
-URL url = URL.parse(settings, urlString);
 ```
 
 ### Parse a URL with strict error handling

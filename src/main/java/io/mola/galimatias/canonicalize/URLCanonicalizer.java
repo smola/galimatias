@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Santiago M. Mola <santi@mola.io>
+ * Copyright (c) 2014 Santiago M. Mola <santi@mola.io>
  *
  *   Permission is hereby granted, free of charge, to any person obtaining a
  *   copy of this software and associated documentation files (the "Software"),
@@ -20,39 +20,13 @@
  *   DEALINGS IN THE SOFTWARE.
  */
 
-package io.mola.galimatias;
+package io.mola.galimatias.canonicalize;
 
-/**
- * Provides settings for URL parsing.
- *
- * This class is immutable and all its attributes are immutable
- * by default too.
- */
-public final class URLParsingSettings {
+import io.mola.galimatias.GalimatiasParseException;
+import io.mola.galimatias.URL;
 
-    private static URLParsingSettings DEFAULT = new URLParsingSettings();
+interface URLCanonicalizer {
 
-
-    private ErrorHandler errorHandler;
-
-    private URLParsingSettings() {
-        this(DefaultErrorHandler.getInstance());
-    }
-
-    private URLParsingSettings(final ErrorHandler errorHandler) {
-        this.errorHandler = errorHandler;
-    }
-
-    public ErrorHandler errorHandler() {
-        return this.errorHandler;
-    }
-
-    public static URLParsingSettings create() {
-        return DEFAULT;
-    }
-
-    public URLParsingSettings withErrorHandler(final ErrorHandler errorHandler) {
-        return new URLParsingSettings(errorHandler);
-    }
+    public URL canonicalize(URL url) throws GalimatiasParseException;
 
 }

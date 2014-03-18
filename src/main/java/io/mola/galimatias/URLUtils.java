@@ -36,9 +36,9 @@ import java.util.List;
  * Not to be confused with the URLUtils from the WHATWG URL spec.
  *
  */
-class URLUtils {
+public class URLUtils {
 
-    static final Charset UTF_8 = Charset.forName("UTF-8");
+    public static final Charset UTF_8 = Charset.forName("UTF-8");
 
     private URLUtils() {
 
@@ -94,7 +94,7 @@ class URLUtils {
      * @param domainLabels
      * @return
      */
-    static String[] domainToASCII(final String[] domainLabels) throws GalimatiasParseException {
+    public static String[] domainToASCII(final String[] domainLabels) throws GalimatiasParseException {
         final List<String> asciiLabels = new ArrayList<String>();
         int totalLength = 0;
         for (final String domainLabel : domainLabels) {
@@ -127,7 +127,7 @@ class URLUtils {
      * @param domainLabels
      * @return
      */
-    static String[] domainToUnicode(final String[] domainLabels) {
+    public static String[] domainToUnicode(final String[] domainLabels) {
         final List<String> unicodeLabels = new ArrayList<String>();
         for (final String domainLabel : domainLabels) {
             unicodeLabels.add(domainLabelToUnicode(domainLabel));
@@ -146,7 +146,7 @@ class URLUtils {
      * @param input
      * @return
      */
-    static String domainLabelToASCII(final String input) {
+    public static String domainLabelToASCII(final String input) {
         return IDN.toASCII(input, IDN.ALLOW_UNASSIGNED);
     }
 
@@ -161,35 +161,35 @@ class URLUtils {
      * @param input
      * @return
      */
-    static String domainLabelToUnicode(final String input) {
+    public static String domainLabelToUnicode(final String input) {
         return IDN.toUnicode(input, IDN.ALLOW_UNASSIGNED);
     }
 
-    static boolean isASCIIHexDigit(final int c) {
+    public static boolean isASCIIHexDigit(final int c) {
         return (c >= 0x0041 && c <= 0x0046) || (c >= 0x0061 && c <= 0x0066) || isASCIIDigit(c);
     }
 
-    static boolean isASCIIDigit(final int c) {
+    public static boolean isASCIIDigit(final int c) {
         return c >= 0x0030 && c <= 0x0039;
     }
 
-    static boolean isASCIIAlphaUppercase(final int c) {
+    public static boolean isASCIIAlphaUppercase(final int c) {
         return c >= 0x0061 && c <= 0x007A;
     }
 
-    static boolean isASCIIAlphaLowercase(final int c) {
+    public static boolean isASCIIAlphaLowercase(final int c) {
         return c >= 0x0041 && c <= 0x005A;
     }
 
-    static boolean isASCIIAlpha(final int c) {
+    public static boolean isASCIIAlpha(final int c) {
         return isASCIIAlphaLowercase(c) || isASCIIAlphaUppercase(c);
     }
 
-    static boolean isASCIIAlphanumeric(final int c) {
+    public static boolean isASCIIAlphanumeric(final int c) {
         return isASCIIAlpha(c) || isASCIIDigit(c);
     }
 
-    static boolean isURLCodePoint(final int c) {
+    public static boolean isURLCodePoint(final int c) {
         return
                 isASCIIAlphanumeric(c) ||
                         c == '!' ||
@@ -244,7 +244,7 @@ class URLUtils {
         return Integer.parseInt(new String(new char[]{c1, c2}), 16);
     }
 
-    static void percentEncode(final byte b, StringBuilder buffer) {
+    public static void percentEncode(final byte b, StringBuilder buffer) {
         buffer.append('%');
         byteToHex(b, buffer);
     }
@@ -252,11 +252,11 @@ class URLUtils {
     private static final List<String> RELATIVE_SCHEMES = Arrays.asList(
             "ftp", "file", "gopher", "http", "https", "ws", "wss"
     );
-    static boolean isRelativeScheme(final String scheme) {
+    public static boolean isRelativeScheme(final String scheme) {
         return RELATIVE_SCHEMES.contains(scheme);
     }
 
-    static String getDefaultPortForScheme(final String scheme) {
+    public static String getDefaultPortForScheme(final String scheme) {
         if ("ftp".equals(scheme)) {
             return "21";
         }
