@@ -382,4 +382,19 @@ public class URLTest {
                 .isEqualTo(URL.parse("http://example.com:22"));
     }
 
+    @Test
+    public void toHumanStringChecks() throws GalimatiasParseException {
+        assertThat(URL.parse("http://á.com/").toHumanString()).isEqualTo("http://á.com/");
+        assertThat(URL.parse("http://á.com/%2F").toHumanString()).isEqualTo("http://á.com//");
+        assertThat(URL.parse("http://á.com/%7E?%2F#%2F").toHumanString()).isEqualTo("http://á.com/~?/#/");
+        assertThat(URL.parse("http://á/").toHumanString()).isEqualTo("http://á/");
+    }
+
+    @Theory
+    public void toHumanStringNoExceptions(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+        TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        testURL.parsedURL.toHumanString();
+    }
+
 }

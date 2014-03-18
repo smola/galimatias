@@ -539,6 +539,51 @@ public class URL implements Serializable {
         return output.toString();
     }
 
+    /**
+     * Serializes the URL to a human-readable representation. That is,
+     * percent-decoded and with IDN domains in its Unicode representation.
+     *
+     * @return
+     */
+    public String toHumanString() {
+        final StringBuilder output = new StringBuilder();
+
+        output.append(scheme).append(':');
+
+        if (isHierarchical) {
+            output.append("//");
+            final String userInfo = userInfo();
+            if (!userInfo.isEmpty()) {
+                output.append(URLUtils.percentDecode(userInfo)).append('@');
+            }
+            if (host != null) {
+                if (host instanceof IPv6Address) {
+                    output.append('[').append(host).append(']');
+                } else {
+                    output.append(host.toHumanString());
+                }
+            }
+            if (port != -1) {
+                output.append(':').append(port);
+            }
+            if (path != null) {
+                output.append(URLUtils.percentDecode(path));
+            }
+        } else {
+            output.append(URLUtils.percentDecode(schemeData));
+        }
+
+        if (query != null) {
+            output.append('?').append(URLUtils.percentDecode(query));
+        }
+
+        if (fragment != null) {
+            output.append('#').append(URLUtils.percentDecode(fragment));
+        }
+
+        return output.toString();
+    }
+
     @Override
     public boolean equals(final Object obj) {
         if (this == obj) {

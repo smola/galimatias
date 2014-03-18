@@ -305,6 +305,11 @@ public class IPv6Address extends Host {
     }
 
     @Override
+    public String toHumanString() {
+        return toString();
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

@@ -95,6 +95,22 @@ public class Domain extends Host {
     }
 
     @Override
+    public String toHumanString() {
+        final String[] unicodeLabels = URLUtils.domainToUnicode(labels);
+
+        if (unicodeLabels.length == 1) {
+            return unicodeLabels[0];
+        }
+        final StringBuilder output = new StringBuilder(unicodeLabels.length * 10);
+        output.append(unicodeLabels[0]);
+        for (int i = 1; i < unicodeLabels.length; i++) {
+            output.append('.').append(unicodeLabels[i]);
+        }
+
+        return output.toString();
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

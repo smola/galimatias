@@ -59,6 +59,7 @@ public class IPv4AddressTest {
         assertThat(ip).isNotEqualTo(IPv4Address.parseIPv4Address("127.0.0.2"));
         assertThat(ip).isNotEqualTo("foo");
         assertThat(ip).isNotEqualTo(null);
+        assertThat(ip.toHumanString()).isEqualTo(ip.toString());
     }
 
     @Test(expected = NullPointerException.class)

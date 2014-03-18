@@ -29,6 +29,8 @@ public abstract class Host implements Serializable {
     @Override
     public abstract String toString();
 
+    public abstract String toHumanString();
+
     /**
      * Parses a host as found in URLs. IPv6 literals are expected
      * enclosed in square brackets (i.e. [ipv6-literal]).

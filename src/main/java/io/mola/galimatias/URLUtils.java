@@ -132,7 +132,8 @@ public class URLUtils {
         for (final String domainLabel : domainLabels) {
             unicodeLabels.add(domainLabelToUnicode(domainLabel));
         }
-        return (String[]) unicodeLabels.toArray();
+        final String[] result = new String[unicodeLabels.size()];
+        return unicodeLabels.toArray(result);
     }
 
     /**

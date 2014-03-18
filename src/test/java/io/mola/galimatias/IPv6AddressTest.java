@@ -72,6 +72,7 @@ public class IPv6AddressTest {
             assertThat(original.hashCode()).isEqualTo(result.hashCode());
             assertThat(original).isNotEqualTo(null);
             assertThat(original).isNotEqualTo("foo");
+            assertThat(original.toHumanString()).isEqualTo(original.toString());
         }
         assertThat(IPv6Address.parseIPv6Address(TEST_ADDRESSES[0][0]))
                 .isNotEqualTo(IPv6Address.parseIPv6Address(TEST_ADDRESSES[1][0]));
