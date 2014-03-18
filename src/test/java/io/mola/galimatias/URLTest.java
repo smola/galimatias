@@ -203,12 +203,31 @@ public class URLTest {
     }
 
     @Theory
+    public void withHostNoHierarchical2(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                                       TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(!testURL.parsedURL.isHierarchical());
+        final Host host = Host.parseHost("example.com");
+        thrown.expect(GalimatiasParseException.class);
+        testURL.parsedURL.withHost(host);
+    }
+
+    @Theory
     public void withNullHost(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
                                  TestURL testURL) throws GalimatiasParseException {
         assumeNotNull(testURL.parsedURL);
         assumeTrue(testURL.parsedURL.isHierarchical());
         thrown.expect(NullPointerException.class);
         testURL.parsedURL.withHost((String)null);
+    }
+
+    @Theory
+    public void withNullHost2(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+                             TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(testURL.parsedURL.isHierarchical());
+        thrown.expect(NullPointerException.class);
+        testURL.parsedURL.withHost((Host)null);
     }
 
     @Theory
@@ -334,6 +353,8 @@ public class URLTest {
 
     @Test
     public void equivalences() throws GalimatiasParseException {
+        assertThat(URL.parse("http://example.com/")).isNotEqualTo("http://example.com/");
+
         assertThat(URL.parse("http://a.com")).isEqualTo(URL.parse("http://a.com/"));
         assertThat(URL.parse("http://a.com").hashCode()).isEqualTo(URL.parse("http://a.com/").hashCode());
 
