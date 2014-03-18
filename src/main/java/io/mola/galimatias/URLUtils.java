@@ -57,8 +57,14 @@ public class URLUtils {
                 int c = (isEOF)? 0x00 : input.codePointAt(idx);
 
                 while (!isEOF && c != '%') {
-                    bytes.write(new String(Character.toChars(c)).getBytes(UTF_8));
-                    idx += Character.charCount(c);
+                    if (c <= 0x7F) { // String.getBytes is slow, so do not perform encoding
+                                     // if not needed
+                        bytes.write((byte) c);
+                        idx++;
+                    } else {
+                        bytes.write(new String(Character.toChars(c)).getBytes(UTF_8));
+                        idx += Character.charCount(c);
+                    }
                     isEOF = idx >= input.length();
                     c = (isEOF)? 0x00 : input.codePointAt(idx);
                 }
@@ -66,8 +72,14 @@ public class URLUtils {
                 if (c == '%' && (input.length() <= idx + 2 ||
                         !isASCIIHexDigit(input.charAt(idx + 1)) ||
                         !isASCIIHexDigit(input.charAt(idx + 2)))) {
-                    bytes.write(new String(Character.toChars(c)).getBytes(UTF_8));
-                    idx += Character.charCount(c);
+                    if (c <= 0x7F) { // String.getBytes is slow, so do not perform encoding
+                        // if not needed
+                        bytes.write((byte) c);
+                        idx++;
+                    } else {
+                        bytes.write(new String(Character.toChars(c)).getBytes(UTF_8));
+                        idx += Character.charCount(c);
+                    }
                 } else {
                     while (c == '%' && input.length() > idx + 2 &&
                             isASCIIHexDigit(input.charAt(idx + 1)) &&
