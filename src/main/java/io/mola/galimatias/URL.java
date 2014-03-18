@@ -259,14 +259,44 @@ public class URL implements Serializable {
     }
 
     /**
-     * UNIMPLEMENTED.
+     * Returns a relative URL reference for the given URL.
+     *
+     * Behaves as @{link java.net.URI#relativize(URL)}.
      *
      * @param url Absolute URL.
      * @return Relative reference.
      */
     public String relativize(final URL url) {
-        //TODO
-        throw new UnsupportedOperationException("NOT IMPLEMENTED");
+        if (this.isOpaque() || url.isOpaque()) {
+            return url.toString();
+        }
+        if (!this.scheme().equals(url.scheme())) {
+            return url.toString();
+        }
+        if ((this.authority() == null || url.authority() == null) && this.authority() != url.authority()) {
+            return url.toString();
+        }
+        if (this.authority() != null && !this.authority().equals(url.authority())) {
+            return url.toString();
+        }
+
+        String prefixPath = (this.path().endsWith("/"))? this.path : this.path() + "/";
+
+        if (!url.path().startsWith(prefixPath) && !this.path().equals(url.path())) {
+            return url.toString();
+        }
+
+        StringBuilder output = new StringBuilder();
+        if (!this.path().equals(url.path())) {
+            output.append(url.path().replaceFirst(prefixPath, ""));
+        }
+        if (url.query() != null) {
+            output.append('?').append(url.query());
+        }
+        if (url.fragment() != null) {
+            output.append('#').append(url.fragment());
+        }
+        return output.toString();
     }
 
     /**

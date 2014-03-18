@@ -383,6 +383,47 @@ public class URLTest {
     }
 
     @Test
+    public void relativizeChecks() throws GalimatiasParseException {
+        URL base = URL.parse("about:blank");
+        assertThat(base.relativize(URL.parse("about:blank/foo"))).isEqualTo("about:blank/foo");
+        assertThat(base.relativize(URL.parse("http://example.com/"))).isEqualTo("http://example.com/");
+
+        base = URL.parse("http://example.com/");
+        assertThat(base.relativize(URL.parse("about:blank"))).isEqualTo("about:blank");
+        assertThat(base.relativize(URL.parse("https://example.com/"))).isEqualTo("https://example.com/");
+        assertThat(base.relativize(URL.parse("http://other.com/"))).isEqualTo("http://other.com/");
+        assertThat(base.relativize(URL.parse("http://user@example.com/"))).isEqualTo("http://user@example.com/");
+        assertThat(base.relativize(URL.parse("http://user:pass@example.com/"))).isEqualTo("http://user:pass@example.com/");
+        assertThat(base.relativize(URL.parse("http://:pass@example.com/"))).isEqualTo("http://:pass@example.com/");
+        assertThat(base.relativize(URL.parse("http://example.com/foo"))).isEqualTo("foo");
+        assertThat(base.relativize(URL.parse("http://example.com/foo?bar"))).isEqualTo("foo?bar");
+        assertThat(base.relativize(URL.parse("http://example.com/foo#bar"))).isEqualTo("foo#bar");
+        assertThat(base.relativize(URL.parse("http://example.com/foo?bar#baz"))).isEqualTo("foo?bar#baz");
+
+        base = URL.parse("http://example.com/foo?bar#baz");
+        assertThat(base.relativize(URL.parse("http://example.com/bar"))).isEqualTo("http://example.com/bar");
+        assertThat(base.relativize(URL.parse("http://example.com/foo/bar"))).isEqualTo("bar");
+        assertThat(base.relativize(URL.parse("http://example.com/foo/bar"))).isEqualTo("bar");
+        assertThat(base.relativize(URL.parse("http://example.com/foo"))).isEqualTo("");
+        assertThat(base.relativize(URL.parse("http://example.com/foo/"))).isEqualTo("");
+        assertThat(base.relativize(URL.parse("http://example.com/foo?bar#baz"))).isEqualTo("?bar#baz");
+
+        base = URL.parse("http://example.com/foo/?bar#baz");
+        assertThat(base.relativize(URL.parse("http://example.com/foo"))).isEqualTo("http://example.com/foo");
+        assertThat(base.relativize(URL.parse("http://example.com/foo/"))).isEqualTo("");
+        assertThat(base.relativize(URL.parse("http://example.com/foo/?bar#baz"))).isEqualTo("?bar#baz");
+
+        base = URL.parse("file:///etc/fstab");
+        assertThat(base.relativize(URL.parse("file://localhost/etc/fstab"))).isEqualTo("file://localhost/etc/fstab");
+        assertThat(base.relativize(URL.parse("file:///etc/fstab"))).isEqualTo("");
+        assertThat(base.relativize(URL.parse("file:///etc/fstab/bar"))).isEqualTo("bar");
+        assertThat(base.relativize(URL.parse("file:///etc/fstab?bar#baz"))).isEqualTo("?bar#baz");
+
+        base = URL.parse("file://localhost/etc/fstab");
+        assertThat(base.relativize(URL.parse("file:///etc/fstab"))).isEqualTo("file:///etc/fstab");
+    }
+
+    @Test
     public void toHumanStringChecks() throws GalimatiasParseException {
         assertThat(URL.parse("http://á.com/").toHumanString()).isEqualTo("http://á.com/");
         assertThat(URL.parse("http://á.com/%2F").toHumanString()).isEqualTo("http://á.com//");
