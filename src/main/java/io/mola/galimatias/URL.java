@@ -33,13 +33,10 @@ import java.util.List;
 /**
  * A parsed URL. Immutable.
  *
- * TODO: Add modifier methods.
- *
- * TODO: Study android.net.URI implementation. It has interesting API
- *       bits and tricks.
- *
  */
 public class URL implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private final String scheme;
     private final String schemeData;
@@ -273,7 +270,7 @@ public class URL implements Serializable {
         if (!this.scheme().equals(url.scheme())) {
             return url.toString();
         }
-        if ((this.authority() == null || url.authority() == null) && this.authority() != url.authority()) {
+        if (this.authority() == null ^ url.authority() == null) {
             return url.toString();
         }
         if (this.authority() != null && !this.authority().equals(url.authority())) {

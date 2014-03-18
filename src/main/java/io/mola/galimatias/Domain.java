@@ -28,6 +28,8 @@ import java.util.List;
 
 public class Domain extends Host {
 
+    private static final long serialVersionUID = 1L;
+
     private String[] labels;
 
     private Domain(final String[] labels) {
@@ -161,13 +163,15 @@ public class Domain extends Host {
         // Direct code is quicker than StringTokenizer.
         // Also, StringTokenizer uses isSpace() not isWhitespace()
 
-        if (str == null) {
-            return null;
-        }
+        //XXX: This never happens in Domain.parseDomain
+        //if (str == null) {
+        //    return null;
+        //}
         final int len = str.length();
-        if (len == 0) {
-            return EMPTY_STRING_ARRAY;
-        }
+        //if (len == 0) {
+        //    return EMPTY_STRING_ARRAY;
+        //}
+
         final List<String> list = new ArrayList<String>();
         int sizePlus1 = 1;
         int i = 0, start = 0;

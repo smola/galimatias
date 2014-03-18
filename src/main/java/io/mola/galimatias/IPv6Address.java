@@ -30,6 +30,8 @@ import static io.mola.galimatias.URLUtils.isASCIIDigit;
 
 public class IPv6Address extends Host {
 
+    private static final long serialVersionUID = 1L;
+
     private final short[] pieces;
 
     IPv6Address(short[] pieces) {

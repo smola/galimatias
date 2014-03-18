@@ -27,6 +27,8 @@ import java.net.UnknownHostException;
 
 public class IPv4Address extends Host {
 
+    private static final long serialVersionUID = 1L;
+
     private final int address;
 
     private IPv4Address(final byte[] addr) {
