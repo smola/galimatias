@@ -25,7 +25,7 @@ package io.mola.galimatias.canonicalize;
 import io.mola.galimatias.GalimatiasParseException;
 import io.mola.galimatias.URL;
 
-interface URLCanonicalizer {
+public interface URLCanonicalizer {
 
     public URL canonicalize(URL url) throws GalimatiasParseException;
 
