@@ -93,15 +93,6 @@ public class CLI {
 
     public static void main(String[] args) {
 
-        if (args.length != 1) {
-            System.err.println("Need a URL as input");
-            System.exit(1);
-        }
-
-        final String input = args[0];
-
-        System.out.println("Analyzing URL: " + input);
-
         URLParsingSettings settings = URLParsingSettings.create().withErrorHandler(errorHandler);
         URL url = null;
         String whatwgUrlSerialized = "";
@@ -110,12 +101,34 @@ public class CLI {
 
         boolean parseErrors;
 
-        URL base = null;
-        try {
-            base = URL.parse("http://example.org/foo/bar");
-        } catch (GalimatiasParseException ex) {
-            assert false; // shouldn't get in here unless serious bug
+        String input = "";
+        if (args.length < 1) {
+            System.err.println("Need a URL as input");
+            System.exit(1);
+        } else if (args.length == 1) {
+            input = args[0];
+        } else if (args.length == 2) {
+            try {
+                base = URL.parse(args[0]);
+            } catch (GalimatiasParseException ex) {
+                assert false; // shouldn't get in here unless serious bug
+            }
+            input = args[1];
+        } else {
+            System.err.println("Too many args");
+            System.exit(1);
         }
+
+        if (base == null) {
+            try {
+                base = URL.parse("http://example.org/foo/bar");
+            } catch (GalimatiasParseException ex) {
+                assert false; // shouldn't get in here unless serious bug
+            }
+        }
+
+        System.out.println("Base: " + base.toString());
+        System.out.println("Analyzing URL: " + input);
 
         try {
             System.out.println("Parsing...");
