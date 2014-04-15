@@ -101,6 +101,7 @@ public class CLI {
 
         boolean parseErrors;
 
+        URL base = null;
         String input = "";
         if (args.length < 1) {
             System.err.println("Need a URL as input");
