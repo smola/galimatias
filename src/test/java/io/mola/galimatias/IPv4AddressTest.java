@@ -40,7 +40,8 @@ public class IPv4AddressTest {
 
     private static final String[] TEST_ADDRESSES = new String[] {
         "0.0.0.0",
-        "255.255.255.255"
+        "255.255.255.255",
+        "127.0.0.1"
     };
 
     @Test
@@ -105,6 +106,7 @@ public class IPv4AddressTest {
             final InetAddress target = InetAddress.getByName(testAddress);
             final IPv4Address address = IPv4Address.parseIPv4Address(testAddress);
             assertThat(address.toInetAddress()).isEqualTo(target);
+            assertThat(address.toInetAddress().getHostAddress()).isEqualToIgnoringCase(testAddress);
         }
     }
 

@@ -85,10 +85,10 @@ public class IPv4Address extends Host {
 
     private byte[] getBytes() {
         return new byte[] {
-                (byte) (address & 0xFF),
-                (byte) (address >> 8 & 0xFF),
-                (byte) (address >> 16 & 0xFF),
-                (byte) (address >> 24 & 0xFF)
+                (byte) (address >> 24 & 0x00FF),
+                (byte) (address >> 16 & 0x00FF),
+                (byte) (address >> 8 & 0x00FF),
+                (byte) (address & 0x00FF)
         };
     }
 
