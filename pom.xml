@@ -208,7 +208,7 @@
                         <configuration>
                             <message>Creating site for ${project.version}</message>
                             <merge>true</merge>
-                            <force>true</force>
+                            <force>false</force>
                             <repositoryOwner>smola</repositoryOwner>
                             <repositoryName>galimatias</repositoryName>
                         </configuration>
