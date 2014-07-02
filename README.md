@@ -12,7 +12,7 @@ galimatias is a URL parsing and normalization library written in Java.
 - Stay as close as possible to WHATWG's [URL Standard](http://url.spec.whatwg.org/).
 - Convenient fluent API with immutable URL objects.
 - Interoperable with java.net.URL and java.net.URI.
-- Zero dependencies.
+- Minimal dependencies.
 
 ### Gotchas 
 
@@ -102,7 +102,7 @@ URL url = URL.parse(settings, urlString);
 Documentation
 -------------
 
-Check our [API docs](http://mola.io/galimatias/site/0.0.1-SNAPSHOT/apidocs/index.html) [THESE MIGHT BE OUTDATED].
+Check out the [Javadoc](http://mola.io/galimatias/apidocs/0.0.4/).
 
 Contribute
 ----------
@@ -116,6 +116,6 @@ Something else? Email me at santi@mola.io.
 License
 -------
 
-Copyright (c) 2013 Santiago M. Mola <santi@mola.io>
+Copyright (c) 2013-2014 Santiago M. Mola <santi@mola.io>
 
 galimatias is released under the terms of the MIT License.
