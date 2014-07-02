@@ -32,8 +32,6 @@ public class Domain extends Host {
 
     private static final long serialVersionUID = 2L;
 
-    private static final IDNA idna = IDNA.getUTS46Instance(IDNA.DEFAULT);
-
     private final String domain;
     private final boolean unicode;
 
@@ -67,12 +65,8 @@ public class Domain extends Host {
         // WHATWG says: Let host be the result of running utf-8's decoder on the percent decoding of running utf-8 encode on input.
         String domain = URLUtils.percentDecode(input);
 
-        final IDNA.Info idnaInfo = new IDNA.Info();
-        final StringBuilder idnaOutput = new StringBuilder();
-        idna.nameToASCII(domain, idnaOutput, idnaInfo);
-        processIdnaInfo(errorHandler, idnaInfo);
+        String asciiDomain = URLUtils.domainToASCII(domain, errorHandler);
 
-        String asciiDomain = idnaOutput.toString();
         for (int i = 0; i < asciiDomain.length(); i++) {
             switch (asciiDomain.charAt(i)) {
                 case 0x0000:
@@ -100,71 +94,7 @@ public class Domain extends Host {
             return new Domain(asciiDomain, unicode);
         }
 
-        final IDNA.Info unicodeIdnaInfo = new IDNA.Info();
-        final StringBuilder unicodeIdnaOutput = new StringBuilder();
-        idna.nameToUnicode(asciiDomain, unicodeIdnaOutput, unicodeIdnaInfo);
-        processIdnaInfo(errorHandler, unicodeIdnaInfo);
-
-        return new Domain(unicodeIdnaOutput.toString(), unicode);
-    }
-
-    private static void processIdnaInfo(final ErrorHandler errorHandler, final IDNA.Info idnaInfo) throws GalimatiasParseException {
-        for (IDNA.Error error : idnaInfo.getErrors()) {
-            String msg;
-            switch (error) {
-                case BIDI:
-                    msg = "A label does not meet the IDNA BiDi requirements (for right-to-left characters).";
-                    break;
-                case CONTEXTJ:
-                    msg = "A label does not meet the IDNA CONTEXTJ requirements.";
-                    break;
-                case CONTEXTO_DIGITS:
-                    msg = "A label does not meet the IDNA CONTEXTO requirements for digits.";
-                    break;
-                case CONTEXTO_PUNCTUATION:
-                    msg = "A label does not meet the IDNA CONTEXTO requirements for punctuation characters.";
-                    break;
-                case DISALLOWED:
-                    msg = "A label or domain name contains disallowed characters.";
-                    break;
-                case DOMAIN_NAME_TOO_LONG:
-                    msg = "A domain name is longer than 255 bytes in its storage form.";
-                    break;
-                case EMPTY_LABEL:
-                    msg = "A non-final domain name label (or the whole domain name) is empty.";
-                    break;
-                case HYPHEN_3_4:
-                    msg = "A label contains hyphen-minus ('-') in the third and fourth positions.";
-                    break;
-                case INVALID_ACE_LABEL:
-                    msg = "An ACE label does not contain a valid label string.";
-                    break;
-                case LABEL_HAS_DOT:
-                    msg = "A label contains a dot=full stop.";
-                    break;
-                case LABEL_TOO_LONG:
-                    msg = "A domain name label is longer than 63 bytes.";
-                    break;
-                case LEADING_COMBINING_MARK:
-                    msg = "A label starts with a combining mark.";
-                    break;
-                case LEADING_HYPHEN:
-                    msg = "A label starts with a hyphen-minus ('-').";
-                    break;
-                case PUNYCODE:
-                    msg = "A label starts with \"xn--\" but does not contain valid Punycode.";
-                    break;
-                case TRAILING_HYPHEN:
-                    msg = "A label ends with a hyphen-minus ('-').";
-                    break;
-                default:
-                    msg = "IDNA error.";
-                    break;
-            }
-            final GalimatiasParseException exception = new GalimatiasParseException(msg);
-            errorHandler.fatalError(exception);
-            throw exception;
-        }
+        return new Domain(URLUtils.domainToUnicode(asciiDomain, errorHandler), unicode);
     }
 
     @Override
@@ -179,7 +109,7 @@ public class Domain extends Host {
         }
         final IDNA.Info idnaInfo = new IDNA.Info();
         final StringBuilder idnaOutput = new StringBuilder();
-        idna.nameToUnicode(domain, idnaOutput, idnaInfo);
+        IDNA.getUTS46Instance(IDNA.DEFAULT).nameToUnicode(domain, idnaOutput, idnaInfo);
         return idnaOutput.toString();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Santiago M. Mola <santi@mola.io>
+ * Copyright (c) 2013-2014 Santiago M. Mola <santi@mola.io>
  *
  *   Permission is hereby granted, free of charge, to any person obtaining a
  *   copy of this software and associated documentation files (the "Software"),
@@ -22,6 +22,8 @@
 
 package io.mola.galimatias;
 
+import com.ibm.icu.text.IDNA;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.IDN;
@@ -36,14 +38,26 @@ import java.util.List;
  * Not to be confused with the URLUtils from the WHATWG URL spec.
  *
  */
-public class URLUtils {
+public final class URLUtils {
 
     public static final Charset UTF_8 = Charset.forName("UTF-8");
+
+    private static final IDNA idna = IDNA.getUTS46Instance(IDNA.DEFAULT);
 
     private URLUtils() {
 
     }
 
+    /**
+     * Percent-decodes a string.
+     *
+     * Percent-encoded bytes are assumed to represent UTF-8 characters.
+     *
+     * @see <a href="http://url.spec.whatwg.org/#percent-encoded-bytes">WHATWG URL Standard: Percent-encoded bytes</a>
+     *
+     * @param input
+     * @return
+     */
     public static String percentDecode(final String input) {
         if (input.isEmpty()) {
             return input;
@@ -97,85 +111,104 @@ public class URLUtils {
     }
 
     /**
-     * <strong>domain to ASCII</strong> algorithm.
-     *
-     * @todo Handle failures.
+     * Converts a domain to its ASCII representation. Uses the the <strong>name to ASCII</strong>
+     * as specified in the IDNA standard.
      *
      * @see <a href="http://url.spec.whatwg.org/#idna">WHATWG URL Standard - IDNA Section</a>
      *
-     * @param domainLabels
+     * @param domain
      * @return
      */
-    public static String[] domainToASCII(final String[] domainLabels) throws GalimatiasParseException {
-        final List<String> asciiLabels = new ArrayList<String>();
-        int totalLength = 0;
-        for (final String domainLabel : domainLabels) {
-            try {
-                final String asciiLabel = domainLabelToASCII(domainLabel);
-                asciiLabels.add(asciiLabel);
-                if (asciiLabel.isEmpty()) {
-                    throw new GalimatiasParseException("DNS violation: Host contains empty label", -1);
-                }
-                totalLength += asciiLabel.length();
-            } catch (IllegalArgumentException ex) {
-                throw new GalimatiasParseException("Could not convert domain to ASCII", -1, ex);
+    public static String domainToASCII(final String domain) throws GalimatiasParseException {
+        return domainToASCII(domain, DefaultErrorHandler.getInstance());
+    }
+
+    static String domainToASCII(final String domain, final ErrorHandler errorHandler) throws GalimatiasParseException {
+        final IDNA.Info idnaInfo = new IDNA.Info();
+        final StringBuilder idnaOutput = new StringBuilder();
+        idna.nameToASCII(domain, idnaOutput, idnaInfo);
+        processIdnaInfo(errorHandler, idnaInfo);
+        return idnaOutput.toString();
+    }
+
+    /**
+     * Converts a domain to its Unicode representation. Uses the the <strong>name to Unicode</strong>
+     * as specified in the IDNA standard.
+     *
+     * @see <a href="http://url.spec.whatwg.org/#idna">WHATWG URL Standard - IDNA Section</a>
+     *
+     * @param asciiDomain
+     * @return
+     */
+    public static String domainToUnicode(final String asciiDomain) throws GalimatiasParseException {
+        return domainToUnicode(asciiDomain, DefaultErrorHandler.getInstance());
+    }
+
+    static String domainToUnicode(final String asciiDomain, final ErrorHandler errorHandler) throws GalimatiasParseException {
+        final IDNA.Info unicodeIdnaInfo = new IDNA.Info();
+        final StringBuilder unicodeIdnaOutput = new StringBuilder();
+        idna.nameToUnicode(asciiDomain, unicodeIdnaOutput, unicodeIdnaInfo);
+        processIdnaInfo(errorHandler, unicodeIdnaInfo);
+        return unicodeIdnaOutput.toString();
+    }
+
+    private static void processIdnaInfo(final ErrorHandler errorHandler, final IDNA.Info idnaInfo) throws GalimatiasParseException {
+        for (IDNA.Error error : idnaInfo.getErrors()) {
+            String msg;
+            switch (error) {
+                case BIDI:
+                    msg = "A label does not meet the IDNA BiDi requirements (for right-to-left characters).";
+                    break;
+                case CONTEXTJ:
+                    msg = "A label does not meet the IDNA CONTEXTJ requirements.";
+                    break;
+                case CONTEXTO_DIGITS:
+                    msg = "A label does not meet the IDNA CONTEXTO requirements for digits.";
+                    break;
+                case CONTEXTO_PUNCTUATION:
+                    msg = "A label does not meet the IDNA CONTEXTO requirements for punctuation characters.";
+                    break;
+                case DISALLOWED:
+                    msg = "A label or domain name contains disallowed characters.";
+                    break;
+                case DOMAIN_NAME_TOO_LONG:
+                    msg = "A domain name is longer than 255 bytes in its storage form.";
+                    break;
+                case EMPTY_LABEL:
+                    msg = "A non-final domain name label (or the whole domain name) is empty.";
+                    break;
+                case HYPHEN_3_4:
+                    msg = "A label contains hyphen-minus ('-') in the third and fourth positions.";
+                    break;
+                case INVALID_ACE_LABEL:
+                    msg = "An ACE label does not contain a valid label string.";
+                    break;
+                case LABEL_HAS_DOT:
+                    msg = "A label contains a dot=full stop.";
+                    break;
+                case LABEL_TOO_LONG:
+                    msg = "A domain name label is longer than 63 bytes.";
+                    break;
+                case LEADING_COMBINING_MARK:
+                    msg = "A label starts with a combining mark.";
+                    break;
+                case LEADING_HYPHEN:
+                    msg = "A label starts with a hyphen-minus ('-').";
+                    break;
+                case PUNYCODE:
+                    msg = "A label starts with \"xn--\" but does not contain valid Punycode.";
+                    break;
+                case TRAILING_HYPHEN:
+                    msg = "A label ends with a hyphen-minus ('-').";
+                    break;
+                default:
+                    msg = "IDNA error.";
+                    break;
             }
+            final GalimatiasParseException exception = new GalimatiasParseException(msg);
+            errorHandler.fatalError(exception);
+            throw exception;
         }
-        if (asciiLabels.size() > 127) {
-            throw new GalimatiasParseException("DNS violation: Host must have a maximum of 127 labels", -1);
-        }
-        if (totalLength + asciiLabels.size() - 1 > 253) {
-            throw new GalimatiasParseException("DNS violation: Host longer than 253 bytes", -1);
-        }
-        final String[] result = new String[asciiLabels.size()];
-        return asciiLabels.toArray(result);
-    }
-
-    /**
-     * <strong>domain to Unicode</strong> algorithm.
-     *
-     * @see <a href="http://url.spec.whatwg.org/#idna">WHATWG URL Standard - IDNA Section</a>
-     *
-     * @param domainLabels
-     * @return
-     */
-    public static String[] domainToUnicode(final String[] domainLabels) {
-        final List<String> unicodeLabels = new ArrayList<String>();
-        for (final String domainLabel : domainLabels) {
-            unicodeLabels.add(domainLabelToUnicode(domainLabel));
-        }
-        final String[] result = new String[unicodeLabels.size()];
-        return unicodeLabels.toArray(result);
-    }
-
-    /**
-     * <strong>domain label to ASCII</strong> algorithm.
-     *
-     * This happens to be {@link java.net.IDN#toASCII(String,int)} with the
-     * {@link java.net.IDN#ALLOW_UNASSIGNED} flag set.
-     *
-     * @see <a href="http://url.spec.whatwg.org/#idna">WHATWG URL Standard - IDNA Section</a>
-     *
-     * @param input
-     * @return
-     */
-    public static String domainLabelToASCII(final String input) {
-        return IDN.toASCII(input, IDN.ALLOW_UNASSIGNED);
-    }
-
-    /**
-     * <strong>domain label to Unicode</strong> algorithm.
-     *
-     * This happens to be {@link java.net.IDN#toUnicode(String,int)} with the
-     * {@link java.net.IDN#ALLOW_UNASSIGNED} flag set.
-     *
-     * @see <a href="http://url.spec.whatwg.org/#idna">WHATWG URL Standard - IDNA Section</a>
-     *
-     * @param input
-     * @return
-     */
-    public static String domainLabelToUnicode(final String input) {
-        return IDN.toUnicode(input, IDN.ALLOW_UNASSIGNED);
     }
 
     public static boolean isASCIIHexDigit(final int c) {
@@ -265,10 +298,34 @@ public class URLUtils {
     private static final List<String> RELATIVE_SCHEMES = Arrays.asList(
             "ftp", "file", "gopher", "http", "https", "ws", "wss"
     );
+
+    /**
+     * Returns true if the schema is a known relative schema
+     * (ftp, file, gopher, http, https, ws, wss).
+     *
+     * @param scheme
+     * @return
+     */
     public static boolean isRelativeScheme(final String scheme) {
         return RELATIVE_SCHEMES.contains(scheme);
     }
 
+    /**
+     * Gets the default port for a given schema. That is:
+     *
+     * <ol>
+     *     <li>ftp - 21</li>
+     *     <li>file - null</li>
+     *     <li>gopher - 70</li>
+     *     <li>http - 80</li>
+     *     <li>https - 443</li>
+     *     <li>ws - 80</li>
+     *     <li>wss - 433</li>
+     * </ol>
+     *
+     * @param scheme
+     * @return
+     */
     public static String getDefaultPortForScheme(final String scheme) {
         if ("ftp".equals(scheme)) {
             return "21";
