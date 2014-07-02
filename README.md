@@ -42,7 +42,7 @@ galimatias is available at Maven Central. Just add to your pom.xml `<dependencie
 <dependency>
   <groupId>io.mola.galimatias</groupId>
   <artifactId>galimatias</artifactId>
-  <version>0.0.4</version>
+  <version>0.1.0</version>
 </dependency>
 ```
 
@@ -102,7 +102,7 @@ URL url = URL.parse(settings, urlString);
 Documentation
 -------------
 
-Check out the [Javadoc](http://mola.io/galimatias/apidocs/0.0.4/).
+Check out the [Javadoc](http://mola.io/galimatias/apidocs/0.1.0/).
 
 Contribute
 ----------
