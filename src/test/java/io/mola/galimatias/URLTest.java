@@ -444,6 +444,17 @@ public class URLTest {
         assertThat(base.relativize(URL.parse("file:///etc/fstab"))).isEqualTo("file:///etc/fstab");
     }
 
+    @Theory
+    public void toHumanStringIdempotence(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG) TestURL testURL)
+        throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+        assumeTrue(testURL.parsedURL.host() instanceof Domain);
+        Domain domain = (Domain) testURL.parsedURL.host();
+        assertThat(domain.toHumanString()).isEqualTo(Domain.parseDomain(domain.toString()).toHumanString());
+        assertThat(Domain.parseDomain(domain.toString(), true).toString()).isEqualTo(Domain.parseDomain(domain.toString()).toHumanString());
+        assertThat(Domain.parseDomain(domain.toString(), true).toHumanString()).isEqualTo(Domain.parseDomain(domain.toString()).toHumanString());
+    }
+
     @Test
     public void toHumanStringChecks() throws GalimatiasParseException {
         assertThat(URL.parse("http://á.com/").toHumanString()).isEqualTo("http://á.com/");

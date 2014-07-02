@@ -22,18 +22,24 @@
 
 package io.mola.galimatias;
 
+import com.ibm.icu.text.IDNA;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class Domain extends Host {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
-    private String[] labels;
+    private static final IDNA idna = IDNA.getUTS46Instance(IDNA.DEFAULT);
 
-    private Domain(final String[] labels) {
-        this.labels = labels;
+    private final String domain;
+    private final boolean unicode;
+
+    private Domain(final String domain, final boolean unicode) {
+        this.domain = domain;
+        this.unicode = unicode;
     }
 
     public static Domain parseDomain(final String input) throws GalimatiasParseException {
@@ -41,10 +47,14 @@ public class Domain extends Host {
     }
 
     public List<String> labels() {
-        return Arrays.asList(labels);
+        return Arrays.asList(splitWorker(domain, "\u002E\u3002\uFF0E\uFF61", -1, true));
     }
 
     public static Domain parseDomain(final String input, final boolean unicode) throws GalimatiasParseException {
+        return parseDomain(URLParsingSettings.create(), input, unicode);
+    }
+
+    public static Domain parseDomain(final URLParsingSettings settings, final String input, final boolean unicode) throws GalimatiasParseException {
         if (input == null) {
             throw new NullPointerException();
         }
@@ -52,65 +62,125 @@ public class Domain extends Host {
             throw new GalimatiasParseException("input is empty");
         }
 
+        final ErrorHandler errorHandler = settings.errorHandler();
+
         // WHATWG says: Let host be the result of running utf-8's decoder on the percent decoding of running utf-8 encode on input.
-        final String host = URLUtils.percentDecode(input);
+        String domain = URLUtils.percentDecode(input);
 
-        // WHATWG says: Let domain be the result of splitting host on any domain label separators.
-        final String[] domain = splitWorker(host, "\u002E\u3002\uFF0E\uFF61", -1, true);
-        if (domain.length == 0) {
-            throw new GalimatiasParseException("Zero domain labels found");
-        }
+        final IDNA.Info idnaInfo = new IDNA.Info();
+        final StringBuilder idnaOutput = new StringBuilder();
+        idna.nameToASCII(domain, idnaOutput, idnaInfo);
+        processIdnaInfo(errorHandler, idnaInfo);
 
-        final String[] asciiDomain = URLUtils.domainToASCII(domain);
-
-        for (int i = 0; i < asciiDomain.length; i++) {
-            final char[] labelChars = asciiDomain[i].toCharArray();
-            for (int j = 0; j < labelChars.length; j++) {
-                final char c = labelChars[j];
-                if (URLUtils.isASCIIAlpha(c)) {
-                    labelChars[j] = Character.toLowerCase(c);
-                } else if (c == 0x000 || c == 0x0009 ||c == 0x000A || c == 0x000D || c == 0x0020 || c == '#' || c == '%' || c == '/' || c == ':' || c == '?' || c == '@' || c == '\\') {
-                    throw new GalimatiasParseException("Illegal character in host", i);
-                }
+        String asciiDomain = idnaOutput.toString();
+        for (int i = 0; i < asciiDomain.length(); i++) {
+            switch (asciiDomain.charAt(i)) {
+                case 0x0000:
+                case 0x0009:
+                case 0x000A:
+                case 0x000D:
+                case 0x0020:
+                case '#':
+                case '%':
+                case '/':
+                case ':':
+                case '?':
+                case '@':
+                case '[':
+                case '\\':
+                case ']':
+                    final GalimatiasParseException exception =
+                            new GalimatiasParseException("Domain contains invalid character: " + asciiDomain.charAt(i));
+                    errorHandler.fatalError(exception);
+                    throw exception;
             }
-            asciiDomain[i] = new String(labelChars);
         }
 
         if (!unicode) {
-            return new Domain(asciiDomain);
+            return new Domain(asciiDomain, unicode);
         }
 
-        return new Domain(URLUtils.domainToUnicode(asciiDomain));
+        final IDNA.Info unicodeIdnaInfo = new IDNA.Info();
+        final StringBuilder unicodeIdnaOutput = new StringBuilder();
+        idna.nameToUnicode(asciiDomain, unicodeIdnaOutput, unicodeIdnaInfo);
+        processIdnaInfo(errorHandler, unicodeIdnaInfo);
+
+        return new Domain(unicodeIdnaOutput.toString(), unicode);
+    }
+
+    private static void processIdnaInfo(final ErrorHandler errorHandler, final IDNA.Info idnaInfo) throws GalimatiasParseException {
+        for (IDNA.Error error : idnaInfo.getErrors()) {
+            String msg;
+            switch (error) {
+                case BIDI:
+                    msg = "A label does not meet the IDNA BiDi requirements (for right-to-left characters).";
+                    break;
+                case CONTEXTJ:
+                    msg = "A label does not meet the IDNA CONTEXTJ requirements.";
+                    break;
+                case CONTEXTO_DIGITS:
+                    msg = "A label does not meet the IDNA CONTEXTO requirements for digits.";
+                    break;
+                case CONTEXTO_PUNCTUATION:
+                    msg = "A label does not meet the IDNA CONTEXTO requirements for punctuation characters.";
+                    break;
+                case DISALLOWED:
+                    msg = "A label or domain name contains disallowed characters.";
+                    break;
+                case DOMAIN_NAME_TOO_LONG:
+                    msg = "A domain name is longer than 255 bytes in its storage form.";
+                    break;
+                case EMPTY_LABEL:
+                    msg = "A non-final domain name label (or the whole domain name) is empty.";
+                    break;
+                case HYPHEN_3_4:
+                    msg = "A label contains hyphen-minus ('-') in the third and fourth positions.";
+                    break;
+                case INVALID_ACE_LABEL:
+                    msg = "An ACE label does not contain a valid label string.";
+                    break;
+                case LABEL_HAS_DOT:
+                    msg = "A label contains a dot=full stop.";
+                    break;
+                case LABEL_TOO_LONG:
+                    msg = "A domain name label is longer than 63 bytes.";
+                    break;
+                case LEADING_COMBINING_MARK:
+                    msg = "A label starts with a combining mark.";
+                    break;
+                case LEADING_HYPHEN:
+                    msg = "A label starts with a hyphen-minus ('-').";
+                    break;
+                case PUNYCODE:
+                    msg = "A label starts with \"xn--\" but does not contain valid Punycode.";
+                    break;
+                case TRAILING_HYPHEN:
+                    msg = "A label ends with a hyphen-minus ('-').";
+                    break;
+                default:
+                    msg = "IDNA error.";
+                    break;
+            }
+            final GalimatiasParseException exception = new GalimatiasParseException(msg);
+            errorHandler.fatalError(exception);
+            throw exception;
+        }
     }
 
     @Override
     public String toString() {
-        if (labels.length == 1) {
-            return labels[0];
-        }
-        final StringBuilder output = new StringBuilder(labels.length * 10);
-        output.append(labels[0]);
-        for (int i = 1; i < labels.length; i++) {
-            output.append('.').append(labels[i]);
-        }
-
-        return output.toString();
+        return domain;
     }
 
     @Override
     public String toHumanString() {
-        final String[] unicodeLabels = URLUtils.domainToUnicode(labels);
-
-        if (unicodeLabels.length == 1) {
-            return unicodeLabels[0];
+        if (unicode) {
+            return domain;
         }
-        final StringBuilder output = new StringBuilder(unicodeLabels.length * 10);
-        output.append(unicodeLabels[0]);
-        for (int i = 1; i < unicodeLabels.length; i++) {
-            output.append('.').append(unicodeLabels[i]);
-        }
-
-        return output.toString();
+        final IDNA.Info idnaInfo = new IDNA.Info();
+        final StringBuilder idnaOutput = new StringBuilder();
+        idna.nameToUnicode(domain, idnaOutput, idnaInfo);
+        return idnaOutput.toString();
     }
 
     @Override
@@ -118,28 +188,20 @@ public class Domain extends Host {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Domain domain = (Domain) o;
+        Domain domain1 = (Domain) o;
 
-        if (labels.length != domain.labels.length) {
-            return false;
-        }
-
-        for (int i = 0; i < labels.length; i++) {
-            if (!labels[i].equals(domain.labels[i])) {
-                return false;
-            }
-
-        }
+        //if (unicode != domain1.unicode) return false;
+        if (domain != null ? !domain.equals(domain1.domain) : domain1.domain != null) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(labels);
+        int result = domain != null ? domain.hashCode() : 0;
+        //result = 31 * result + (unicode ? 1 : 0);
+        return result;
     }
-
-    private static String[] EMPTY_STRING_ARRAY = new String[]{};
 
     /**
      * Imported from

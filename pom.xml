@@ -54,6 +54,11 @@
     </parent>
 
     <dependencies>
+        <dependency>
+            <groupId>com.ibm.icu</groupId>
+            <artifactId>icu4j</artifactId>
+            <version>53.1</version>
+        </dependency>
          <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-core</artifactId>
