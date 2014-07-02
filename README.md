@@ -102,7 +102,7 @@ URL url = URL.parse(settings, urlString);
 Documentation
 -------------
 
-Check out the [Javadoc](http://mola.io/galimatias/apidocs/0.1.0/).
+Check out the [Javadoc](http://galimatias.mola.io/apidocs/0.1.0/).
 
 Contribute
 ----------
