@@ -27,14 +27,17 @@ package io.mola.galimatias;
  */
 public class GalimatiasParseException extends Exception {
 
-    private int position;
+    private ParseIssue parseIssue = ParseIssue.UNSPECIFIED;
+    private int position = -1;
 
-    private GalimatiasParseException() {
+    private GalimatiasParseException() {}
 
+    public static Builder builder() {
+        return new Builder();
     }
 
     public GalimatiasParseException(final String message) {
-        this(message, -1);
+        super(message);
     }
 
     public GalimatiasParseException(final String message, final int position) {
@@ -42,8 +45,13 @@ public class GalimatiasParseException extends Exception {
         this.position = position;
     }
 
-    public GalimatiasParseException(final String message, final int position, final Throwable exception) {
+    public GalimatiasParseException(final String message, final ParseIssue parseIssue, final int position, final Throwable exception) {
         super(message, exception);
+
+        if (parseIssue != null) {
+            this.parseIssue = parseIssue;
+        }
+
         this.position = position;
     }
 
@@ -51,4 +59,40 @@ public class GalimatiasParseException extends Exception {
         return position;
     }
 
+    public ParseIssue getParseIssue() {
+        return parseIssue;
+    }
+
+    public static class Builder {
+        private String message;
+        private ParseIssue parseIssue;
+        private int position;
+        private Throwable cause;
+
+        private Builder() {}
+
+        public Builder withMessage(final String message) {
+            this.message = message;
+            return this;
+        }
+
+        public Builder withPosition(final int position) {
+            this.position = position;
+            return this;
+        }
+
+        public Builder withParseIssue(final ParseIssue parseIssue) {
+            this.parseIssue = parseIssue;
+            return this;
+        }
+
+        public Builder withCause(final Throwable cause) {
+            this.cause = cause;
+            return this;
+        }
+
+        public GalimatiasParseException build() {
+            return new GalimatiasParseException(message, parseIssue, position, cause);
+        }
+    }
 }
