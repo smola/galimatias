@@ -498,4 +498,37 @@ public class URLTest {
         testURL.parsedURL.toHumanString();
     }
 
+    @Theory
+    public void defaultSchemeShouldNotAffectAbsoluteURLs(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
+        TestURL testURL) throws GalimatiasParseException {
+        assumeNotNull(testURL.parsedURL);
+
+        URLParsingSettings settingsWithDefaultScheme = URLParsingSettings.create().withDefaultScheme("http");
+        assertThat(URL.parse(settingsWithDefaultScheme, testURL.parsedBaseURL, testURL.rawURL))
+                .isEqualTo(URL.parse(testURL.parsedBaseURL, testURL.rawURL));
+    }
+
+    /*
+     * See https://github.com/smola/galimatias/issues/38
+     */
+    @Theory
+    public void defaultSchemeShouldForceAbsoluteURLsWhenPossible(final @TestURL.TestURLs(dataset = TestURL.DATASETS.GALIMATIAS_FORCE_DEFAULT_SCHEME)
+                                                                     TestURL testURL) throws GalimatiasParseException {
+        URLParsingSettings settingsWithDefaultScheme = URLParsingSettings.create()
+                .withDefaultScheme(testURL.parsedBaseURL.scheme());
+        final URL parsedURL = URL.parse(settingsWithDefaultScheme, null, testURL.rawURL);
+        assertThat(parsedURL).isEqualTo(testURL.parsedURL);
+        assertThat(parsedURL.scheme()).isEqualTo(testURL.parsedURL.scheme());
+        assertThat(parsedURL.schemeData()).isEqualTo(testURL.parsedURL.schemeData());
+        assertThat(parsedURL.username()).isEqualTo(testURL.parsedURL.username());
+        assertThat(parsedURL.password()).isEqualTo(testURL.parsedURL.password());
+        assertThat(parsedURL.host()).isEqualTo(testURL.parsedURL.host());
+        assertThat(parsedURL.port()).isEqualTo(testURL.parsedURL.port());
+        assertThat(parsedURL.path()).isEqualTo(testURL.parsedURL.path());
+        assertThat(parsedURL.query()).isEqualTo(testURL.parsedURL.query());
+        assertThat(parsedURL.fragment()).isEqualTo(testURL.parsedURL.fragment());
+        assertThat(parsedURL.isHierarchical()).isEqualTo(testURL.parsedURL.isHierarchical());
+        assertThat(parsedURL.isOpaque()).isEqualTo(testURL.parsedURL.isOpaque());
+    }
+
 }

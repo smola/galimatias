@@ -322,6 +322,27 @@ final class URLParser {
                         buffer.setLength(0);
                         state = ParseURLState.NO_SCHEME;
                         idx = -1; // Note that it'll be incremented by 1 after the switch
+
+                        // XXX: THIS IS NOT PART OF THE SPEC
+                        // If defaultScheme is set, then we will try to parse this
+                        // as an absolute URL.
+                        if (settings.defaultScheme() != null && base == null) {
+                            scheme = settings.defaultScheme();
+                            // This partially replicates behaviour when the ':' is found
+                            // after the scheme. See above for the details.
+                            relativeFlag = isRelativeScheme(scheme);
+                            if ("file".equals(scheme)) {
+                                state = ParseURLState.RELATIVE;
+                            }
+                            else if (relativeFlag) {
+                                state = ParseURLState.AUTHORITY_FIRST_SLASH;
+                            }
+                            else {
+                                state = ParseURLState.SCHEME_DATA;
+                            }
+                        }
+                        // XXX: THIS IS NOT PART OF THE SPEC
+
                     }
 
                     // WHATWG URL: Otherwise, if c is the EOF code point, terminate this algorithm.

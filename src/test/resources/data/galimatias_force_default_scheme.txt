@@ -1,0 +1,7 @@
+-- See https://github.com/smola/galimatias/issues/38
+example.com http://foo.bar s:http p:/ h:example.com
+example.com/ http://foo.bar s:http p:/ h:example.com
+example.com/ http://foo.bar s:http p:/ h:example.com
+
+-- XXX: Beware the edge cases!
+example.com:8080 http://foo.bar s:example.com p:/ h:8080

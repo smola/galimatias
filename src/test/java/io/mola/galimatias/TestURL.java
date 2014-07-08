@@ -50,6 +50,7 @@ public class TestURL {
     public abstract class DATASETS {
         public static final String WHATWG = "/data/urltestdata_whatwg.txt";
         public static final String HOST_WHATWG = "/data/urltestdata_host_whatwg.txt";
+        public static final String GALIMATIAS_FORCE_DEFAULT_SCHEME = "/data/galimatias_force_default_scheme.txt";
     }
 
     @Retention(RetentionPolicy.RUNTIME)

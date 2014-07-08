@@ -32,27 +32,61 @@ public final class URLParsingSettings {
 
     private static URLParsingSettings DEFAULT = new URLParsingSettings();
 
-
     private ErrorHandler errorHandler;
+    private String defaultScheme;
 
     private URLParsingSettings() {
-        this(DefaultErrorHandler.getInstance());
+        this(DefaultErrorHandler.getInstance(), null);
     }
 
-    private URLParsingSettings(final ErrorHandler errorHandler) {
+    private URLParsingSettings(final ErrorHandler errorHandler, final String defaultScheme) {
         this.errorHandler = errorHandler;
+        this.defaultScheme = defaultScheme;
     }
 
+    /**
+     * Gets the @{link ErrorHandler}.
+     *
+     * Defaults to @{link DefaultErrorHandler}.
+     *
+     * @return the @{link ErrorHandler}
+     */
     public ErrorHandler errorHandler() {
         return this.errorHandler;
     }
+
+    /**
+     * Gets the default scheme. By default: null.
+     *
+     * @see @{link URLParsingSettings#withDefaultScheme}.
+     *
+     * @return the default scheme
+     */
+    public String defaultScheme() { return defaultScheme; }
 
     public static URLParsingSettings create() {
         return DEFAULT;
     }
 
+    /**
+     * Sets an error handler.
+     *
+     * @see @{link ErrorHandler}, @{link DefaultErrorHandler}, @{link StrictErrorHandler}.
+     *
+     * @param errorHandler
+     */
     public URLParsingSettings withErrorHandler(final ErrorHandler errorHandler) {
-        return new URLParsingSettings(errorHandler);
+        return new URLParsingSettings(errorHandler, defaultScheme);
+    }
+
+    /**
+     * Sets a default scheme. If this option is set to a scheme (e.g. http),
+     * and no base URL is used, every parsed URL will be forced to be an absolute URL.
+     *
+     * @param defaultScheme a URL scheme (e.g. http, https)
+     */
+    public URLParsingSettings withDefaultScheme(final String defaultScheme) {
+        return new URLParsingSettings(errorHandler, defaultScheme);
     }
 
 }
