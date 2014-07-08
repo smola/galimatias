@@ -28,6 +28,7 @@ import org.junit.runners.JUnit4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -100,13 +101,14 @@ public class IPv4AddressTest {
     }
 
     @Test
-    public void toInetAddress() throws UnknownHostException, GalimatiasParseException {
+    public void toFromInetAddress() throws UnknownHostException, GalimatiasParseException {
         for (final String testAddress : TEST_ADDRESSES) {
             log.debug("TESTING: {}", testAddress);
             final InetAddress target = InetAddress.getByName(testAddress);
             final IPv4Address address = IPv4Address.parseIPv4Address(testAddress);
             assertThat(address.toInetAddress()).isEqualTo(target);
             assertThat(address.toInetAddress().getHostAddress()).isEqualToIgnoringCase(testAddress);
+            assertThat(IPv4Address.fromInet4Adress((Inet4Address)target)).isEqualTo(address);
         }
     }
 

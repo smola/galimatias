@@ -28,6 +28,7 @@ import org.junit.runners.JUnit4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -156,13 +157,19 @@ public class IPv6AddressTest {
     }
 
     @Test
-    public void toInetAddress() throws UnknownHostException, GalimatiasParseException {
+    public void toFromInetAddress() throws UnknownHostException, GalimatiasParseException {
         for (final String[] testAddress : TEST_ADDRESSES) {
             final String origin = testAddress[0];
             log.debug("TESTING: {}", origin);
             final InetAddress target = InetAddress.getByName(origin);
             final IPv6Address address = IPv6Address.parseIPv6Address(origin);
             assertThat(address.toInetAddress()).isEqualTo(target);
+
+            //FIXME: We currently do not support getting Inet4Address here
+            //       (such as an IPv6-mapped IPv4 address).
+            if (target instanceof Inet6Address) {
+                assertThat(IPv6Address.fromInet6Address((Inet6Address) target)).isEqualTo(address);
+            }
         }
     }
 

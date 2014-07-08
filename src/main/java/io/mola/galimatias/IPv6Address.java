@@ -22,10 +22,12 @@
 
 package io.mola.galimatias;
 
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 
+import static io.mola.galimatias.URLUtils.byteToHex;
 import static io.mola.galimatias.URLUtils.isASCIIDigit;
 
 public class IPv6Address extends Host {
@@ -235,6 +237,21 @@ public class IPv6Address extends Host {
             // Can't happen if we pass the right amount of bytes
             throw new RuntimeException("BUG", e);
         }
+    }
+
+    /**
+     * Convert from @{java.net.Inet6Address}.
+     *
+     * @param inet6Address The IPv6 address as a @{java.net.Inet6Address}.
+     * @return The IPv6 address as a @{IPv6Address}.
+     */
+    public static IPv6Address fromInet6Address(final Inet6Address inet6Address) {
+        final byte[] bytes = inet6Address.getAddress();
+        final short[] pieces = new short[8];
+        for (int i = 0; i < pieces.length; i++) {
+            pieces[i] = (short) (((bytes[i*2] & 0xFF) << 8) | (bytes[i*2+1] & 0x00FF));
+        }
+        return new IPv6Address(pieces);
     }
 
     @Override

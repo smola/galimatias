@@ -79,8 +79,23 @@ public class IPv4Address extends Host {
         return new IPv4Address(addr);
     }
 
+    /**
+     * Convert to @{java.net.InetAddress}.
+     *
+     * @return The IPv4 address as a @{java.net.InetAddress}.
+     */
     public Inet4Address toInetAddress() throws UnknownHostException {
         return (Inet4Address) Inet4Address.getByAddress(getBytes());
+    }
+
+    /**
+     * Convert from @{java.net.Inet4Address}.
+     *
+     * @param inet4Address The IPv4 address as a @{java.net.Inet4Address}.
+     * @return The IPv4 address as a @{IPv4Address}.
+     */
+    public static IPv4Address fromInet4Adress(final Inet4Address inet4Address) {
+        return new IPv4Address(inet4Address.getAddress());
     }
 
     private byte[] getBytes() {
