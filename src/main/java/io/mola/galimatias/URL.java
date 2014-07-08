@@ -319,6 +319,45 @@ public class URL implements Serializable {
         return new URLParser(base, input).settings(settings).parse();
     }
 
+    /**
+     * Gets a URL object from a relative scheme and a host.
+     *
+     * @param scheme
+     * @param host
+     * @return
+     * @throws GalimatiasParseException
+     */
+    public static URL buildHierarchical(final String scheme, final String host) throws GalimatiasParseException {
+        if (!URLUtils.isRelativeScheme(scheme)) {
+            throw new GalimatiasParseException("Scheme is not relative: " + scheme);
+        }
+        return new URLParser(scheme + "://" + host).parse();
+    }
+
+    /**
+     * Gets a URL object for file:// scheme.
+     *
+     * @return
+     * @throws GalimatiasParseException
+     */
+    public static URL buildFile() throws GalimatiasParseException {
+        return new URLParser("file://").parse();
+    }
+
+    /**
+     * Gets a URL object from a non-relative scheme.
+     *
+     * @param scheme
+     * @return
+     * @throws GalimatiasParseException
+     */
+    public static URL buildOpaque(final String scheme) throws GalimatiasParseException {
+        if (URLUtils.isRelativeScheme(scheme)) {
+            throw new GalimatiasParseException("Scheme is relative: " + scheme);
+        }
+        return new URLParser(scheme + ":").parse();
+    }
+
     public URL withScheme(final String scheme) throws GalimatiasParseException {
         if (this.scheme.equalsIgnoreCase(scheme)) {
             return this;

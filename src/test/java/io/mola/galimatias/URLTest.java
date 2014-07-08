@@ -444,6 +444,34 @@ public class URLTest {
         assertThat(base.relativize(URL.parse("file:///etc/fstab"))).isEqualTo("file:///etc/fstab");
     }
 
+    @Test
+    public void buildHierarchical() throws GalimatiasParseException {
+        assertThat(URL.buildHierarchical("http", "example.com")).isEqualTo(URL.parse("http://example.com"));
+        assertThat(URL.buildHierarchical("https", "example.com")).isEqualTo(URL.parse("https://example.com"));
+        assertThat(URL.buildHierarchical("ftp", "example.com")).isEqualTo(URL.parse("ftp://example.com"));
+    }
+
+    @Test
+    public void buildOpaque() throws GalimatiasParseException {
+        assertThat(URL.buildOpaque("git")).isEqualTo(URL.parse("git:"));
+        assertThat(URL.buildOpaque("ed2k")).isEqualTo(URL.parse("ed2k:"));
+    }
+
+    @Test
+    public void buildFile() throws GalimatiasParseException {
+        assertThat(URL.buildFile()).isEqualTo(URL.parse("file://"));
+    }
+
+    @Test(expected = GalimatiasParseException.class)
+    public void buildHierarchicalWithOpaqueScheme() throws GalimatiasParseException {
+        URL.buildHierarchical("git", "example.com");
+    }
+
+    @Test(expected = GalimatiasParseException.class)
+    public void buildOpaqueWithHierarchical() throws GalimatiasParseException {
+        URL.buildOpaque("http");
+    }
+
     @Theory
     public void toHumanStringIdempotence(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG) TestURL testURL)
         throws GalimatiasParseException {
