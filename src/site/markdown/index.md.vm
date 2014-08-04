@@ -1,0 +1,18 @@
+
+<h1>galimatias:<br/>The URL Parser for Java</h1>
+    
+galimatias is a URL parser that provides:
+
+- URL parsing matching major web browsers behaviour, based on the [URL Standard](http://url.spec.whatwg.org/).
+- A convenient, fluid and immutable API for URL building and manipulation.
+- A collection of URL normalizers.
+- Interoperability with `java.net.URL`, `java.net.URI` and other standard classes.
+- No bloat. Minimal dependencies (only icu4j).
+
+Want a teaser?
+
+```java
+#set($snippetName = "blog_posted_teaser_1")
+#parse("snippet")
+```
+    

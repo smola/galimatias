@@ -1,0 +1,18 @@
+
+URL Woes
+========
+    
+Java Class Library
+------------------
+    
+- [java.net.URL.equals() is broken.](http://stackoverflow.com/a/3771123/205607)
+            
+- **`java.net.URI` can parse only RFC 2396 URI syntax.** RFC 2396 is a standard from year
+  1999, already obsoleted by RFC 3986 in 2005. Both of them now superseded by the WHATWG
+  [URL Standard](http://url.specs.whatwg.org). This means that a lot of valid URLs will
+  throw `URISyntaxException` for some `java.net.URI` methods.
+      
+- **No [International Domain Names (IDN)](http://en.wikipedia.org/wiki/Internationalized_domain_name) support.**
+  Neither `java.net.URI` nor `java.net.URL` have sensible support for IDN. Partial support is provided
+  through the `java.net.IDN` class, but that is not up to date with latest standards
+  ([UTS #46](http://unicode.org/reports/tr46/)).

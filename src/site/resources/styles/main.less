@@ -1,0 +1,40 @@
+
+@import "bootstrap/bootstrap";
+//@import "highlight-tomorrow-night-bright";
+
+.sidebar {
+  background-color: @molaio-black-off;
+
+  ul {
+    margin: 16px 16px 16px 36px;
+
+    li {
+      padding: 12px 0;
+      border-top: 1px solid @molaio-green;
+      text-transform: capitalize;
+      &.first {
+        border-top: 1px none transparent;
+      }
+      a {
+        font-size: 22px;
+        line-height: 22px;
+        text-decoration: none;
+      }
+    }
+  }
+}
+
+.page-background {
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  top: 0;
+  z-index: -5;
+}
+
+.footer {
+  padding-top: 16px;
+  padding-bottom: 16px;
+  background-color: @molaio-black-off;
+  color: @gray-lighter;
+}

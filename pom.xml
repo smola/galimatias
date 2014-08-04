@@ -11,7 +11,7 @@
     <description>
         galimatias is a library for URL parsing, canonicalization and manipulation.
     </description>
-    <url>http://github.io/smola/galimatias</url>
+    <url>http://galimatias.mola.io</url>
     <inceptionYear>2013</inceptionYear>
 
     <properties>
@@ -30,7 +30,7 @@
 
     <scm>
         <developerConnection>scm:git:git@github.com:smola/galimatias.git</developerConnection>
-        <url>https://github.com/smola/galimatias.git</url>
+        <url>https://github.com/smola/galimatias</url>
         <connection>scm:git:git://github.com/smola/galimatias.git</connection>
     </scm>
 
@@ -86,18 +86,6 @@
     </dependencies>
 
     <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>2.9.1</version>
-                    <configuration>
-                        <destDir>${project.version}</destDir>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -111,6 +99,20 @@
                     <showDeprecation>true</showDeprecation>
                 </configuration>
             </plugin>
+            <!--
+                RELEASE
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <configuration>
+                    <tagNameFormat>v@{project.version}</tagNameFormat>
+                    <preparationGoals>clean verify</preparationGoals>
+                </configuration>
+            </plugin>
+            <!--
+               QUALITY ASSURANCE
+            -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>cobertura-maven-plugin</artifactId>
@@ -129,26 +131,6 @@
                 <version>2.1.0</version>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>javadoc</goal>
-                        </goals>
-                        <phase>site</phase>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-release-plugin</artifactId>
-                <configuration>
-                    <tagNameFormat>v@{project.version}</tagNameFormat>
-                    <preparationGoals>clean verify</preparationGoals>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>findbugs-maven-plugin</artifactId>
                 <version>2.5.4</version>
@@ -163,9 +145,139 @@
                 <artifactId>versions-maven-plugin</artifactId>
                 <version>2.1</version>
             </plugin>
+            <!--
+                DOCS
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.9.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!--
+              WEBSITE GENERATION
+              -->
+            <plugin>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>3.3</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.doxia</groupId>
+                        <artifactId>doxia-module-markdown</artifactId>
+                        <version>1.6</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <skipDeploy>true</skipDeploy>
+                    <templateFile>${project.basedir}/src/site/site.vm</templateFile>
+                </configuration>
+            </plugin>
+            <!--
+            <plugin>
+                <groupId>com.github.goldin</groupId>
+                <artifactId>copy-maven-plugin</artifactId>
+                <version>0.2.5</version>
+                <executions>
+                    <execution>
+                        <id>versioned-docs</id>
+                        <phase>site</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/target/site/apidocs/${project.version}</directory>
+                                    <targetPath>${project.basedir}/target/site/apidocs/latest</targetPath>
+                                </resource>
+                                <!-!-XXX: At the moment we'll just publish latest version of docs -!->
+                                <!-!-
+                                <resource>
+                                    <directory>${project.basedir}/target/site/docs/latest</directory>
+                                    <targetPath>${project.basedir}/target/site/docs/${project.version}</targetPath>
+                                </resource>
+                                -!->
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+           -->
+            <plugin>
+                <groupId>com.github.github</groupId>
+                <artifactId>site-maven-plugin</artifactId>
+                <version>0.9</version>
+                <configuration>
+                    <message>Creating site for ${project.version}</message>
+                    <merge>true</merge>
+                    <force>false</force>
+                    <repositoryOwner>smola</repositoryOwner>
+                    <repositoryName>galimatias</repositoryName>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>github-site</id>
+                        <goals>
+                            <goal>site</goal>
+                        </goals>
+                        <phase>site-deploy</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.lesscss</groupId>
+                <artifactId>lesscss-maven-plugin</artifactId>
+                <version>1.7.0.1.1</version>
+                <executions>
+                    <execution>
+                        <phase>pre-site</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${project.basedir}/src/site/resources/styles</sourceDirectory>
+                            <outputDirectory>${project.basedir}/src/site/resources/styles</outputDirectory>
+                            <includes>
+                                <include>main.less</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.samaxes.maven</groupId>
+                <artifactId>minify-maven-plugin</artifactId>
+                <version>1.7.2</version>
+                <executions>
+                    <execution>
+                        <id>default-minify</id>
+                        <configuration>
+                            <charset>UTF-8</charset>
+                            <cssIncludes>
+                                <cssInclude>main.css</cssInclude>
+                            </cssIncludes>
+                            <webappSourceDir>${project.basedir}/src/site/resources</webappSourceDir>
+                            <webappTargetDir>${project.basedir}/src/site/resources</webappTargetDir>
+                            <cssSourceDir>styles</cssSourceDir>
+                            <cssTargetDir>styles</cssTargetDir>
+                        </configuration>
+                        <phase>pre-site</phase>
+                        <goals>
+                            <goal>minify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
-
     <reporting>
         <plugins>
             <plugin>
@@ -175,54 +287,26 @@
                 <reportSets>
                     <reportSet>
                         <reports>
-                            <report>license</report>
                         </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.9.2-SNAPSHOT</version>
+                <reportSets>
+                    <reportSet>
+                        <id>default</id>
+                        <reports>
+                            <report>javadoc</report>
+                        </reports>
+                        <configuration>
+                            <destDir>apidocs/${project.version}</destDir>
+                        </configuration>
                     </reportSet>
                 </reportSets>
             </plugin>
         </plugins>
     </reporting>
-
-    <profiles>
-        <profile>
-            <id>release</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>com.github.github</groupId>
-                        <artifactId>site-maven-plugin</artifactId>
-                        <version>0.9</version>
-                        <configuration>
-                            <message>Creating site for ${project.version}</message>
-                            <merge>true</merge>
-                            <force>false</force>
-                            <repositoryOwner>smola</repositoryOwner>
-                            <repositoryName>galimatias</repositoryName>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>site</goal>
-                                </goals>
-                                <phase>site</phase>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
 </project>
