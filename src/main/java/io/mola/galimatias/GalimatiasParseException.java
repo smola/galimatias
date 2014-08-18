@@ -32,20 +32,20 @@ public class GalimatiasParseException extends Exception {
 
     private GalimatiasParseException() {}
 
-    public static Builder builder() {
+    static Builder builder() {
         return new Builder();
     }
 
-    public GalimatiasParseException(final String message) {
+    GalimatiasParseException(final String message) {
         super(message);
     }
 
-    public GalimatiasParseException(final String message, final int position) {
+    GalimatiasParseException(final String message, final int position) {
         super(message);
         this.position = position;
     }
 
-    public GalimatiasParseException(final String message, final ParseIssue parseIssue, final int position, final Throwable exception) {
+    GalimatiasParseException(final String message, final ParseIssue parseIssue, final int position, final Throwable exception) {
         super(message, exception);
 
         if (parseIssue != null) {
@@ -59,11 +59,19 @@ public class GalimatiasParseException extends Exception {
         return position;
     }
 
+    /**
+     * Gets the @{link ParseIssue}.
+     *
+     * <strong>
+     *     This API is considered experimental and will change in
+     *     coming versions.
+     * </strong>
+     */
     public ParseIssue getParseIssue() {
         return parseIssue;
     }
 
-    public static class Builder {
+    static class Builder {
         private String message;
         private ParseIssue parseIssue;
         private int position;
