@@ -1,7 +1,8 @@
 /target
 
 # IntelliJ IDEA
-.idea/workspace.xml
+#.idea/workspace.xml
+.idea
 
 # VIM
 .*.swp
