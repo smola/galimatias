@@ -25,6 +25,8 @@ package io.mola.galimatias;
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
 
+import static io.mola.galimatias.URLUtils.isASCIIDigit;
+
 public class IPv4Address extends Host {
 
     private static final long serialVersionUID = 1L;
@@ -47,31 +49,48 @@ public class IPv4Address extends Host {
         if (input.isEmpty()) {
             throw new GalimatiasParseException("empty input");
         }
+        if (input.charAt(input.length() - 1) == '.') { //XXX: This case is not covered by the IPv6-mapped IPv4 case in the spec
+            throw new GalimatiasParseException("IPv4 address has trailing dot");
+        }
         byte[] addr = new byte[4];
         int dotsSeen = 0;
         int addrIdx = 0;
-        int i = 0;
-        while (i < input.length()) {
-            char c = input.charAt(i);
-            int value = 0;
-            while (URLUtils.isASCIIDigit(c)) {
-                value = value * 10 + (c - 0x30);
-                i++;
-                c = (i >= input.length())? 0x00 : input.charAt(i);
+        int idx = 0;
+        boolean isEOF = false;
+        while (!isEOF) {
+            char c = input.charAt(idx);
+            Integer value = null;
+            if (!isASCIIDigit(c)) {
+                throw new GalimatiasParseException("Non-digit character in IPv4 address");
             }
-            if (value > 255) {
-                throw new GalimatiasParseException("Malformed IPv4 address, bad value: " + value);
+            while (isASCIIDigit(c)) {
+                final int number = c - 0x30;  // 10.3.1
+                if (value == null) {          // 10.3.2
+                    value = number;
+                } else if (value == 0) {
+                    throw new GalimatiasParseException("IPv4 address contains a leading zero");
+                } else {
+                    value = value * 10 + number;
+                }
+                idx++;                        // 10.3.3
+                isEOF = idx >= input.length();
+                c = (isEOF)? 0x00 : input.charAt(idx);
+                if (value > 255) {            // 10.3.4
+                    throw new GalimatiasParseException("Invalid value for IPv4 address");
+                }
             }
             if (dotsSeen < 3 && c != '.') {
-                throw new GalimatiasParseException("Malformed IPv4 address", i);
+                throw new GalimatiasParseException("Illegal character in IPv4 address", idx);
             }
-            if (dotsSeen == 3 && i < input.length()) {
-                throw new GalimatiasParseException("IPv4 address is too long", i);
+            idx++;
+            isEOF = idx >= input.length();
+            c = (isEOF)? 0x00 : input.charAt(idx);
+            if (dotsSeen == 3 && idx < input.length()) {
+                throw new GalimatiasParseException("IPv4 address is too long", idx);
             }
-            addr[addrIdx] = (byte) value;
+            addr[addrIdx] = (byte) (int) value;
             addrIdx++;
             dotsSeen++;
-            i++;
         }
         if (dotsSeen != 4) {
             throw new GalimatiasParseException("Malformed IPv4 address");

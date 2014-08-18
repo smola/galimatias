@@ -147,7 +147,7 @@ public class IPv6Address extends Host {
             // Step 10: IPv4-mapped address.
             while (!isEOF) {
                 // Step 10.1
-                int value = 0;
+                Integer value = null;
 
                 // Step 10.2
                 if (!isASCIIDigit(c)) {
@@ -156,41 +156,46 @@ public class IPv6Address extends Host {
 
                 // Step 10.3
                 while (isASCIIDigit(c)) {
-                    value = value * 10 + (c - 0x30);
-                    idx++;
+                    final int number = c - 0x30;  // 10.3.1
+                    if (value == null) {          // 10.3.2
+                        value = number;
+                    } else if (value == 0) {
+                        throw new GalimatiasParseException("IPv4 mapped address contains a leading zero");
+                    } else {
+                        value = value * 10 + number;
+                    }
+                    idx++;                        // 10.3.3
                     isEOF = idx >= input.length;
                     c = (isEOF)? 0x00 : input[idx];
+                    if (value > 255) {            // 10.3.4
+                        throw new GalimatiasParseException("Invalid value for IPv4-mapped address");
+                    }
                 }
 
                 // Step 10.4
-                if (value > 255) {
-                    throw new GalimatiasParseException("Invalid value for IPv4-mapped address");
-                }
-
-                // Step 10.5
                 if (dotsSeen < 3 && c != '.') {
                     throw new GalimatiasParseException("Illegal character in IPv4-mapped address");
                 }
 
-                // Step 10.6
+                // Step 10.5
                 address[piecePointer] = (short) ((address[piecePointer] << 8) + value);
 
-                // Step 10.7
-                if (dotsSeen == 1 || dotsSeen == 3) { //FIXME: This was 0 and 2 in the spec?
+                // Step 10.6
+                if (dotsSeen == 1 || dotsSeen == 3) {
                     piecePointer++;
                 }
 
-                // Step 10.8
+                // Step 10.7
                 idx++;
                 isEOF = idx >= input.length;
                 c = (isEOF)? 0x00 : input[idx];
 
-                // Step 10.9
+                // Step 10.8
                 if (dotsSeen == 3 && !isEOF) {
                     throw new GalimatiasParseException("Too long IPv4-mapped address");
                 }
 
-                // Step 10.10
+                // Step 10.9
                 dotsSeen++;
             }
         }
@@ -202,8 +207,7 @@ public class IPv6Address extends Host {
             // Step 11.2
             piecePointer = 7;
             // Step 11.3
-            while (swaps != 0) {  //FIXME: Spec states that piecePointer should be checked for
-                //       != 0, but it is always non-zero if 'swaps' is non-zero.
+            while (piecePointer != 0 && swaps > 0) {
                 short swappedPiece = address[piecePointer];
                 address[piecePointer] = address[compressPointer + swaps - 1];
                 address[compressPointer + swaps - 1] = swappedPiece;
@@ -212,7 +216,7 @@ public class IPv6Address extends Host {
             }
         }
         // Step 12
-        else if (piecePointer != 8) {
+        else if (compressPointer == null && piecePointer != 8) {
             throw new GalimatiasParseException("Address too short");
         }
 

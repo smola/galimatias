@@ -91,6 +91,16 @@ public class IPv4AddressTest {
     }
 
     @Test(expected = GalimatiasParseException.class)
+    public void parseWithLeadingZero1() throws GalimatiasParseException {
+        IPv6Address.parseIPv6Address("192.168.1.1.05");
+    }
+
+    @Test(expected = GalimatiasParseException.class)
+    public void parseWithLeadingZero2() throws GalimatiasParseException {
+        IPv6Address.parseIPv6Address("192.168.1.1.00");
+    }
+
+    @Test(expected = GalimatiasParseException.class)
     public void parseTooShortAddress() throws GalimatiasParseException {
         IPv4Address.parseIPv4Address("1.1.1");
     }

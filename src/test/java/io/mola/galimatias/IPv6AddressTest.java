@@ -137,6 +137,16 @@ public class IPv6AddressTest {
     }
 
     @Test(expected = GalimatiasParseException.class)
+    public void parseIPv4MappedWithLeadingZero1() throws GalimatiasParseException {
+        IPv6Address.parseIPv6Address("::192.168.1.1.05");
+    }
+
+    @Test(expected = GalimatiasParseException.class)
+    public void parseIPv4MappedWithLeadingZero2() throws GalimatiasParseException {
+        IPv6Address.parseIPv6Address("::192.168.1.1.00");
+    }
+
+    @Test(expected = GalimatiasParseException.class)
     public void parseMalformedIPv4Mapped() throws GalimatiasParseException {
         IPv6Address.parseIPv6Address("::192.168.1a.1");
     }
