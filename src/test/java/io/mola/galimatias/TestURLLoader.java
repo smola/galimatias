@@ -45,7 +45,7 @@ public class TestURLLoader {
         put('f', '\f');
     }};
 
-    private static String normalize(final String input) {
+    public static String normalize(final String input) {
         // Borrowed from https://github.com/w3c/web-platform-tests/blob/master/url/urltestparser.js
         final StringBuilder output = new StringBuilder(input.length());
         for (int i = 0; i < input.length(); i++) {
