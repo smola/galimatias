@@ -58,14 +58,6 @@ public class IntertwinglyURLTest {
             final boolean parseable = !scheme.isEmpty();
             final String input = normalize(obj.get("input").asText());
             log.debug("INPUT: {}", input);
-            if ("http://%30%78%63%30%2e%30%32%35%30.01%2e".equals(input)) {
-                //XXX: Bogus test data?
-                continue;
-            }
-            if ("http://192.168.0.257".equals(input)) {
-                //XXX: Bogus test data?
-                continue;
-            }
             final URL base = URL.parse(obj.get("base").asText());
             final String username = obj.get("username").asText();
             String password = obj.get("password").asText();
