@@ -324,3 +324,8 @@ feed:https://example.com/rss.xml  s:feed p:https://example.com/rss.xml
 ed2k://|file|The_Two_Towers-The_Purist_Edit-Trailer.avi|14997504|965c013e991ee246d63d45ea71954c4d|/|sources,202.89.123.6:4662|/  s:ed2k p://|file|The_Two_Towers-The_Purist_Edit-Trailer.avi|14997504|965c013e991ee246d63d45ea71954c4d|/|sources,202.89.123.6:4662|/
 magnet:?xt=urn:sha1:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C  s:magnet p: q:?xt=urn:sha1:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C
 mailto:user@example.com  s:mailto p:user@example.com
+
+--
+-- Misc Unicode
+--
+http://foo:\uD83D\uDCA9@example.com/bar  s:http h:example.com p:/bar u:foo pass:%F%9F%92%A9

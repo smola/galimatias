@@ -517,8 +517,9 @@ final class URLParser {
                         }
                         atFlag = true;
 
-                        for (int i = 0; i < buffer.length(); i++) {
-                            final char otherChar = buffer.charAt(i);
+
+                        for (int i = 0; i < buffer.codePointCount(0, buffer.length()); i++) {
+                            final int otherChar = buffer.codePointAt(i);
                             if (
                                     otherChar == 0x0009 ||
                                     otherChar == 0x000A ||
