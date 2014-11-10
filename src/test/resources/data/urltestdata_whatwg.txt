@@ -328,4 +328,4 @@ mailto:user@example.com  s:mailto p:user@example.com
 --
 -- Misc Unicode
 --
-http://foo:\uD83D\uDCA9@example.com/bar  s:http h:example.com p:/bar u:foo pass:%F%9F%92%A9
+http://foo:\uD83D\uDCA9@example.com/bar  s:http h:example.com p:/bar u:foo pass:%F0%9F%92%A9
