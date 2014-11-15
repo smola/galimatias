@@ -173,6 +173,69 @@ public class URL implements Serializable {
         return query;
     }
 
+    public String queryParameter(final String name) {
+        if (name == null) {
+            throw new NullPointerException("name is null");
+        }
+        if (query == null || query.isEmpty()) {
+            return null;
+        }
+        int start = 0;
+        do {
+            final int nextAmpersand = query.indexOf('&', start);
+            final int end = (nextAmpersand == -1)? query.length() : nextAmpersand;
+            int nextEquals = query.indexOf('=', start);
+            if (nextEquals == -1 || nextEquals > end) {
+                nextEquals = end;
+            }
+            final int thisNameLength = nextEquals - start;
+            final int thisValueLength = end - nextEquals;
+            if (thisNameLength == name.length() && query.regionMatches(start, name, 0, name.length())) {
+                if (thisValueLength == 0) {
+                    return "";
+                }
+                return query.substring(nextEquals + 1, end);
+            }
+            if (nextAmpersand == -1) {
+                break;
+            }
+            start = nextAmpersand + 1;
+        } while (true);
+        return null;
+    }
+
+    public List<String> queryParameters(final String name) {
+        if (name == null) {
+            throw new NullPointerException("name is null");
+        }
+        if (query == null || query.isEmpty()) {
+            return null;
+        }
+        int start = 0;
+        final List<String> result = new ArrayList<String>();
+        do {
+            final int nextAmpersand = query.indexOf('&', start);
+            final int end = (nextAmpersand == -1)? query.length() : nextAmpersand;
+            int nextEquals = query.indexOf('=', start);
+            if (nextEquals == -1 || nextEquals > end) {
+                nextEquals = end;
+            }
+            final int thisNameLength = nextEquals - start;
+            final int thisValueLength = end - nextEquals;
+            if (thisNameLength == name.length() && query.regionMatches(start, name, 0, name.length())) {
+                if (thisValueLength == 0) {
+                    result.add("");
+                }
+                result.add(query.substring(nextEquals + 1, end));
+            }
+            if (nextAmpersand == -1) {
+                break;
+            }
+            start = nextAmpersand + 1;
+        } while (true);
+        return result;
+    }
+
     public String fragment() {
         return fragment;
     }
