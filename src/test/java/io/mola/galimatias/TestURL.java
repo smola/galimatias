@@ -54,7 +54,7 @@ public class TestURL {
     @Retention(RetentionPolicy.RUNTIME)
     @ParametersSuppliedBy(TestURLSupplier.class)
     public static @interface TestURLs {
-        String dataset();
+        String dataset() default DATASETS.WHATWG;
     }
 
     public static class TestURLSupplier extends ParameterSupplier {

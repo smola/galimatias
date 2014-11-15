@@ -22,17 +22,14 @@
 package io.mola.galimatias.canonicalize;
 
 import io.mola.galimatias.GalimatiasParseException;
-import io.mola.galimatias.TestURL;
 import io.mola.galimatias.URL;
 import org.junit.Test;
 import org.junit.experimental.theories.Theories;
-import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
 import java.util.regex.Pattern;
 
 import static org.fest.assertions.Assertions.assertThat;
-import static org.junit.Assume.assumeNotNull;
 
 @RunWith(Theories.class)
 public class RegexCanonicalizerTest {

@@ -173,6 +173,88 @@ public class URL implements Serializable {
         return query;
     }
 
+    /**
+     * Gets the first query parameter value for a given name.
+     *
+     * @see {@link #queryParameters(String)}
+     *
+     * @param name Parameter name.
+     * @return The first parameter value or null if there parameter is not present.
+     */
+    public String queryParameter(final String name) {
+        if (name == null) {
+            throw new NullPointerException("name is null");
+        }
+        if (query == null || query.isEmpty()) {
+            return null;
+        }
+        int start = 0;
+        do {
+            final int nextAmpersand = query.indexOf('&', start);
+            final int end = (nextAmpersand == -1)? query.length() : nextAmpersand;
+            int nextEquals = query.indexOf('=', start);
+            if (nextEquals == -1 || nextEquals > end) {
+                nextEquals = end;
+            }
+            final int thisNameLength = nextEquals - start;
+            final int thisValueLength = end - nextEquals;
+            if (thisNameLength == name.length() && query.regionMatches(start, name, 0, name.length())) {
+                if (thisValueLength == 0) {
+                    return "";
+                }
+                return query.substring(nextEquals + 1, end);
+            }
+            if (nextAmpersand == -1) {
+                break;
+            }
+            start = nextAmpersand + 1;
+        } while (true);
+        return null;
+    }
+
+    /**
+     * Gets all query parameter values for a given name.
+     *
+     * @param name Parameter name.
+     * @return A {@link java.util.List} with all parameter values or null if the parameter is not present.
+     */
+    public List<String> queryParameters(final String name) {
+        if (name == null) {
+            throw new NullPointerException("name is null");
+        }
+        if (query == null || query.isEmpty()) {
+            return null;
+        }
+        int start = 0;
+        final List<String> result = new ArrayList<String>();
+        do {
+            final int nextAmpersand = query.indexOf('&', start);
+            final int end = (nextAmpersand == -1) ? query.length() : nextAmpersand;
+            int nextEquals = query.indexOf('=', start);
+            if (nextEquals == -1 || nextEquals > end) {
+                nextEquals = end;
+            }
+            final int thisNameLength = nextEquals - start;
+            final int thisValueLength = end - nextEquals;
+            if (thisNameLength == name.length() && query.regionMatches(start, name, 0, name.length())) {
+                if (thisValueLength == 0) {
+                    result.add("");
+                } else {
+                    result.add(query.substring(nextEquals + 1, end));
+                }
+            }
+            if (nextAmpersand == -1) {
+                break;
+            }
+            start = nextAmpersand + 1;
+        } while (true);
+        return result;
+    }
+
+    public URLSearchParameters searchParameters() {
+        return new URLSearchParameters(query);
+    }
+
     public String fragment() {
         return fragment;
     }
