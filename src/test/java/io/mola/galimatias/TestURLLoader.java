@@ -43,6 +43,7 @@ public class TestURLLoader {
         put('s', ' ');
         put('t', '\t');
         put('f', '\f');
+        put('#', '#');
     }};
 
     private static String normalize(final String input) {
@@ -77,7 +78,7 @@ public class TestURLLoader {
             br = new BufferedReader(new InputStreamReader(TestURLLoader.class.getResourceAsStream(resource)));
             String line;
             while ((line = br.readLine()) != null) {
-                if (line.isEmpty() || line.startsWith("--")) {
+                if (line.isEmpty() || line.startsWith("#")) {
                     continue;
                 }
                 String[] fields = line.split(" ");
