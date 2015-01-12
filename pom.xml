@@ -158,6 +158,7 @@
                 <configuration>
                     <header>LICENSE</header>
                     <excludes>
+                        <exclude>LICENSE</exclude>
                         <exclude>**/README</exclude>
                         <exclude>src/test/resources/**</exclude>
                         <exclude>src/main/resources/**</exclude>
@@ -192,7 +193,8 @@
                             <rules>
                                 <requireSemanticVersioningConformance implementation="org.semver.enforcer.RequireSemanticVersioningConformance"/>
                                 <requireBackwardCompatibility implementation="org.semver.enforcer.RequireBackwardCompatibility">
-                                    <compatibilityType>BACKWARD_COMPATIBLE_IMPLEMENTER</compatibilityType>
+                                    <dumpDetails>true</dumpDetails>
+                                    <compatibilityType>BACKWARD_COMPATIBLE_USER</compatibilityType>
                                     <strictChecking>true</strictChecking>
                                 </requireBackwardCompatibility>
                             </rules>
