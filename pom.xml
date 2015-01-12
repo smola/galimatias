@@ -193,7 +193,8 @@
                             <rules>
                                 <requireSemanticVersioningConformance implementation="org.semver.enforcer.RequireSemanticVersioningConformance"/>
                                 <requireBackwardCompatibility implementation="org.semver.enforcer.RequireBackwardCompatibility">
-                                    <compatibilityType>BACKWARD_COMPATIBLE_IMPLEMENTER</compatibilityType>
+                                    <dumpDetails>true</dumpDetails>
+                                    <compatibilityType>BACKWARD_COMPATIBLE_USER</compatibilityType>
                                     <strictChecking>true</strictChecking>
                                 </requireBackwardCompatibility>
                             </rules>
