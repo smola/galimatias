@@ -386,19 +386,22 @@ public class URLTest {
     public void internalURLParserChecks() throws GalimatiasParseException {
         // Trying to override scheme without ending with colon should have no effect
         // as per WHATWG spec.
-        assertThat(new URLParser("ws", URL.parse("http://example.com"), URLParser.ParseURLState.SCHEME).parse())
+
+        final URLParser parser = URLParser.getInstance();
+
+        assertThat(parser.parse("ws", URL.parse("http://example.com"), URLParser.ParseURLState.SCHEME))
                 .isEqualTo(URL.parse("http://example.com"));
 
-        assertThat(new URLParser("other.com:222", URL.parse("http://example.com"), URLParser.ParseURLState.HOST).parse())
+        assertThat(parser.parse("other.com:222", URL.parse("http://example.com"), URLParser.ParseURLState.HOST))
                 .isEqualTo(URL.parse("http://other.com"));
-        assertThat(new URLParser("other.com/foo", URL.parse("http://example.com"), URLParser.ParseURLState.HOST).parse())
+        assertThat(parser.parse("other.com/foo", URL.parse("http://example.com"), URLParser.ParseURLState.HOST))
                 .isEqualTo(URL.parse("http://other.com"));
-        assertThat(new URLParser("other.com?foo", URL.parse("http://example.com"), URLParser.ParseURLState.HOST).parse())
+        assertThat(parser.parse("other.com?foo", URL.parse("http://example.com"), URLParser.ParseURLState.HOST))
                 .isEqualTo(URL.parse("http://other.com"));
-        assertThat(new URLParser("other.com#foo", URL.parse("http://example.com"), URLParser.ParseURLState.HOST).parse())
+        assertThat(parser.parse("other.com#foo", URL.parse("http://example.com"), URLParser.ParseURLState.HOST))
                 .isEqualTo(URL.parse("http://other.com"));
 
-        assertThat(new URLParser("22", URL.parse("http://example.com"), URLParser.ParseURLState.PORT).parse())
+        assertThat(parser.parse("22", URL.parse("http://example.com"), URLParser.ParseURLState.PORT))
                 .isEqualTo(URL.parse("http://example.com:22"));
     }
 

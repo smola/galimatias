@@ -50,15 +50,17 @@ public class ParseIssueTest {
     private ParseIssue parseIssue;
     private boolean errorIsFatal;
     private URLParser parser;
+    private URLParsingSettings settings;
+    private String url;
     private GalimatiasParseException errorException;
     private GalimatiasParseException fatalErrorException;
 
     public ParseIssueTest(String url, ParseIssue parseIssue, boolean errorIsFatal) {
         this.parseIssue = parseIssue;
         this.errorIsFatal = errorIsFatal;
-
-        this.parser = new URLParser(url);
-        this.parser.settings(URLParsingSettings.create().withErrorHandler(new ErrorHandler() {
+        this.url = url;
+        this.parser = URLParser.getInstance();
+        this.settings = URLParsingSettings.create().withErrorHandler(new ErrorHandler() {
             @Override
             public void error(GalimatiasParseException error) throws GalimatiasParseException {
                 errorException = error;
@@ -69,13 +71,13 @@ public class ParseIssueTest {
             public void fatalError(GalimatiasParseException error) {
                 fatalErrorException = error;
             }
-        }));
+        });
     }
 
     @Test
     public void handlesGalimiatiasParseExceptionWithCorrectParseIssue() throws GalimatiasParseException {
         try {
-            this.parser.parse();
+            this.parser.parse(null, url, null, null, settings);
         } catch (GalimatiasParseException ignored) {}
 
         if (errorIsFatal) {

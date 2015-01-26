@@ -333,7 +333,7 @@ public class URL implements Serializable {
      * @throws GalimatiasParseException
      */
     public URL resolve(final String input) throws GalimatiasParseException {
-        return new URLParser(this, input).parse();
+        return URLParser.getInstance().parse(this, input);
     }
 
     /**
@@ -385,19 +385,19 @@ public class URL implements Serializable {
      * @throws GalimatiasParseException
      */
     public static URL parse(final String input) throws GalimatiasParseException {
-        return new URLParser(input).parse();
+        return URLParser.getInstance().parse(input);
     }
 
     public static URL parse(final URL base, final String input) throws GalimatiasParseException {
-        return new URLParser(base, input).parse();
+        return URLParser.getInstance().parse(base, input);
     }
 
     public static URL parse(final URLParsingSettings settings, final String input) throws GalimatiasParseException {
-        return new URLParser(input).settings(settings).parse();
+        return URLParser.getInstance().parse(null, input, null, null, settings);
     }
 
     public static URL parse(final URLParsingSettings settings, final URL base, final String input) throws GalimatiasParseException {
-        return new URLParser(base, input).settings(settings).parse();
+        return URLParser.getInstance().parse(base, input, null, null, settings);
     }
 
     /**
@@ -412,7 +412,7 @@ public class URL implements Serializable {
         if (!URLUtils.isRelativeScheme(scheme)) {
             throw new GalimatiasParseException("Scheme is not relative: " + scheme);
         }
-        return new URLParser(scheme + "://" + host).parse();
+        return URLParser.getInstance().parse(scheme + "://" + host);
     }
 
     /**
@@ -422,7 +422,7 @@ public class URL implements Serializable {
      * @throws GalimatiasParseException
      */
     public static URL buildFile() throws GalimatiasParseException {
-        return new URLParser("file://").parse();
+        return URLParser.getInstance().parse("file://");
     }
 
     /**
@@ -436,7 +436,7 @@ public class URL implements Serializable {
         if (URLUtils.isRelativeScheme(scheme)) {
             throw new GalimatiasParseException("Scheme is relative: " + scheme);
         }
-        return new URLParser(scheme + ":").parse();
+        return URLParser.getInstance().parse(scheme + ":");
     }
 
     public URL withScheme(final String scheme) throws GalimatiasParseException {
@@ -450,16 +450,16 @@ public class URL implements Serializable {
             throw new GalimatiasParseException("empty scheme");
         }
         if (URLUtils.isRelativeScheme(scheme) == URLUtils.isRelativeScheme(this.scheme)) {
-            return new URLParser(scheme + ":", this, URLParser.ParseURLState.SCHEME_START).parse();
+            URLParser.getInstance().parse(scheme + ":", this, URLParser.ParseURLState.SCHEME_START);
         }
-        return new URLParser(toString().replaceFirst(this.scheme, scheme)).parse();
+        return URLParser.getInstance().parse(toString().replaceFirst(this.scheme, scheme));
     }
 
     public URL withUsername(final String username) throws GalimatiasParseException {
         if (!isHierarchical) {
             throw new GalimatiasParseException("Cannot set username on opaque URL");
         }
-        final String newUsername = (username == null)? "" : new URLParser(username).parseUsername();
+        final String newUsername = (username == null)? "" : URLParser.getInstance().parseUsername(username);
         if (this.username.equals(newUsername)) {
             return this;
         }
@@ -473,7 +473,7 @@ public class URL implements Serializable {
         if (this.password != null && this.password.equals(password)) {
             return this;
         }
-        final String newPassword = (password == null || password.isEmpty())? null : new URLParser(password).parsePassword();
+        final String newPassword = (password == null || password.isEmpty())? null : URLParser.getInstance().parsePassword(password);
         return new URL(this.scheme, this.schemeData, this.username, newPassword, this.host, this.port, this.path, this.query, this.fragment, true);
     }
 
@@ -514,7 +514,7 @@ public class URL implements Serializable {
         if (!isHierarchical) {
             throw new GalimatiasParseException("Cannot set path on opaque URL");
         }
-        return new URLParser(path, this, URLParser.ParseURLState.RELATIVE_PATH_START).parse();
+        return URLParser.getInstance().parse(path, this, URLParser.ParseURLState.RELATIVE_PATH_START);
     }
 
     public URL withQuery(final String query) throws GalimatiasParseException {
@@ -531,7 +531,7 @@ public class URL implements Serializable {
             return new URL(this.scheme, this.schemeData, this.username, this.password, this.host, this.port, this.path, query, this.fragment, true);
         }
         final String parseQuery = (query.charAt(0) == '?')? query.substring(1, query.length()) : query;
-        return new URLParser(parseQuery, this, URLParser.ParseURLState.QUERY).parse();
+        return URLParser.getInstance().parse(parseQuery, this, URLParser.ParseURLState.QUERY);
     }
 
     public URL withFragment(final String fragment) throws GalimatiasParseException {
@@ -551,7 +551,7 @@ public class URL implements Serializable {
             return new URL(this.scheme, this.schemeData, this.username, this.password, this.host, this.port, this.path, this.query, fragment, true);
         }
         final String parseFragment = (fragment.charAt(0) == '#')? fragment.substring(1, fragment.length()) : fragment;
-        return new URLParser(parseFragment, this, URLParser.ParseURLState.FRAGMENT).parse();
+        return URLParser.getInstance().parse(parseFragment, this, URLParser.ParseURLState.FRAGMENT);
     }
 
     /**
@@ -617,7 +617,7 @@ public class URL implements Serializable {
     public static URL fromJavaURI(java.net.URI uri) {
         //TODO: Let's do this more efficient.
         try {
-            return new URLParser(uri.toString()).parse();
+            return URLParser.getInstance().parse(uri.toString());
         } catch (GalimatiasParseException e) {
             // This should not happen.
             throw new RuntimeException("BUG", e);
@@ -633,7 +633,7 @@ public class URL implements Serializable {
     public static URL fromJavaURL(java.net.URL url) {
         //TODO: Let's do this more efficient.
         try {
-            return new URLParser(url.toString()).parse();
+            return URLParser.getInstance().parse(url.toString());
         } catch (GalimatiasParseException e) {
             // This should not happen.
             throw new RuntimeException("BUG", e);
