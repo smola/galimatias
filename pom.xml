@@ -4,7 +4,7 @@
 
     <groupId>io.mola.galimatias</groupId>
     <artifactId>galimatias</artifactId>
-    <version>0.2.1-SNAPSHOT</version>
+    <version>0.2.1</version>
     <packaging>jar</packaging>
 
     <name>galimatias</name>
