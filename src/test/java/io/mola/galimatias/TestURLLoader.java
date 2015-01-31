@@ -109,7 +109,7 @@ public class TestURLLoader {
                 String password = null;
                 Host host = null;
                 int port = -1;
-                String path = null;
+                String path = "";
                 String query = null;
                 String fragment = null;
                 boolean isHierarchical = false;

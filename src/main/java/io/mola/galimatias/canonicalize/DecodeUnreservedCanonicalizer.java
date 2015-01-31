@@ -30,7 +30,7 @@ public class DecodeUnreservedCanonicalizer implements URLCanonicalizer {
     @Override
     public URL canonicalize(final URL input) throws GalimatiasParseException {
         if (input == null) {
-            return input;
+            return null;
         }
         URL output = input;
         if (output.isHierarchical()) {

@@ -27,6 +27,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -69,9 +70,15 @@ public class URL implements Serializable {
             throw new NullPointerException("scheme cannot be null");
         }
         this.scheme = scheme;
-        this.schemeData = (schemeData == null)? "" : schemeData;
+        if (schemeData == null) {
+            throw new NullPointerException("schemeData");
+        }
+        this.schemeData = schemeData;
         if (isHierarchical) {
-            this.username = (username == null)? "" : username;
+            if (username == null) {
+                throw new NullPointerException("username");
+            }
+            this.username = username;
             this.password = password;
             this.host = host;
             //XXX: This is already done in some cases by the URLParser
@@ -164,7 +171,7 @@ public class URL implements Serializable {
 
     public List<String> pathSegments() {
         if (!isHierarchical) {
-            return null;
+            return Collections.emptyList();
         }
         return pathStringToSegments(path);
     }
@@ -449,8 +456,8 @@ public class URL implements Serializable {
         if (scheme.isEmpty()) {
             throw new GalimatiasParseException("empty scheme");
         }
-        if (URLUtils.isRelativeScheme(scheme) == URLUtils.isRelativeScheme(this.scheme)) {
-            URLParser.getInstance().parse(scheme + ":", this, URLParser.ParseURLState.SCHEME_START);
+        if (URLUtils.isRelativeScheme(scheme) == isHierarchical) {
+            return URLParser.getInstance().parse(scheme + ":", this, URLParser.ParseURLState.SCHEME_START);
         }
         return URLParser.getInstance().parse(toString().replaceFirst(this.scheme, scheme));
     }
