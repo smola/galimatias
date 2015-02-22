@@ -21,7 +21,6 @@
  */
 package io.mola.galimatias;
 
-import java.util.Arrays;
 
 /**
  * A name-value pair. Used for query parameters APIs.

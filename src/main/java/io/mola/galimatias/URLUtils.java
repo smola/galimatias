@@ -25,9 +25,7 @@ import com.ibm.icu.text.IDNA;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.IDN;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 

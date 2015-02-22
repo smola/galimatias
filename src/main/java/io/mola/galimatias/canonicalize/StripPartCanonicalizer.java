@@ -24,8 +24,6 @@ package io.mola.galimatias.canonicalize;
 import io.mola.galimatias.GalimatiasParseException;
 import io.mola.galimatias.URL;
 
-import java.util.regex.Pattern;
-
 public class StripPartCanonicalizer implements URLCanonicalizer {
 
     public static enum Part {

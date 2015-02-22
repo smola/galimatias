@@ -26,7 +26,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 
-import static io.mola.galimatias.URLUtils.byteToHex;
 import static io.mola.galimatias.URLUtils.isASCIIDigit;
 
 public class IPv6Address extends Host {
