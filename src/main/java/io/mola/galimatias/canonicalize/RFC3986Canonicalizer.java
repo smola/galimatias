@@ -23,140 +23,38 @@ package io.mola.galimatias.canonicalize;
 
 import io.mola.galimatias.GalimatiasParseException;
 import io.mola.galimatias.URL;
-
 import static io.mola.galimatias.URLUtils.*;
 
-public class RFC3986Canonicalizer implements URLCanonicalizer {
+public class RFC3986Canonicalizer extends BaseURLCanonicalizer {
 
-    public URL canonicalize(final URL input) throws GalimatiasParseException {
-        URL result = input;
-
+    @Override
+    public URL canonicalize(URL url) throws GalimatiasParseException {
         // User
-        String user = input.username();
-        if (user != null && !user.isEmpty()) {
-            StringBuilder newUser = new StringBuilder();
-            final int length = user.length();
-            for (int offset = 0; offset < length; ) {
-                final int c = user.codePointAt(offset);
-
-                if (c == '%' && user.length() > offset + 2 &&
-                        isASCIIHexDigit(user.charAt(offset + 1)) && isASCIIHexDigit(user.charAt(offset + 2))) {
-                    newUser.append((char) c);
-                } else if (isUserInfo(c)) {
-                    newUser.append((char)c);
-                } else {
-                    final byte[] bytes = new String(Character.toChars(c)).getBytes(UTF_8);
-                    for (final byte b : bytes) {
-                        percentEncode(b, newUser);
-                    }
-                }
-
-                offset += Character.charCount(c);
-            }
-            result = input.withUsername(newUser.toString());
+        if (url.username() != null && !url.username().isEmpty()) {
+            url = url.withUsername(canonicalize(url.username(), USERINFO_PREDICATE));
         }
 
         // Pass
-        String pass = input.password();
-        if (pass != null && !pass.isEmpty()) {
-            StringBuilder newPass = new StringBuilder();
-            final int length = pass.length();
-            for (int offset = 0; offset < length; ) {
-                final int c = pass.codePointAt(offset);
-
-                if (c == '%' && pass.length() > offset + 2 &&
-                        isASCIIHexDigit(pass.charAt(offset + 1)) && isASCIIHexDigit(pass.charAt(offset + 2))) {
-                    newPass.append((char) c);
-                } else if (isUserInfo(c)) {
-                    newPass.append((char)c);
-                } else {
-                    final byte[] bytes = new String(Character.toChars(c)).getBytes(UTF_8);
-                    for (final byte b : bytes) {
-                        percentEncode(b, newPass);
-                    }
-                }
-
-                offset += Character.charCount(c);
-            }
-            result = input.withPassword(newPass.toString());
+        if (url.password() != null && !url.password().isEmpty()) {
+            url = url.withPassword(canonicalize(url.password(), USERINFO_PREDICATE));
         }
 
         // Path
-        String path = input.path();
-        if (path != null) {
-            StringBuilder newPath = new StringBuilder();
-            final int length = path.length();
-            for (int offset = 0; offset < length; ) {
-                final int c = path.codePointAt(offset);
-
-                if (c == '%' && path.length() > offset + 2 &&
-                        isASCIIHexDigit(path.charAt(offset + 1)) && isASCIIHexDigit(path.charAt(offset + 2))) {
-                    newPath.append((char) c);
-                } else if (isPChar(c) || c == '/') {
-                    newPath.append((char)c);
-                } else {
-                    final byte[] bytes = new String(Character.toChars(c)).getBytes(UTF_8);
-                    for (final byte b : bytes) {
-                        percentEncode(b, newPath);
-                    }
-                }
-
-                offset += Character.charCount(c);
-            }
-            result = input.withPath(newPath.toString());
+        if (url.path() != null) {
+            url = url.withPath(canonicalize(url.path(), PATH_PREDICATE));
         }
 
         // Query
-        String query = input.query();
-        if (query != null) {
-            StringBuilder newQuery = new StringBuilder();
-            final int length = query.length();
-            for (int offset = 0; offset < length; ) {
-                final int c = query.codePointAt(offset);
-
-                if (c == '%' && query.length() > offset + 2 &&
-                        isASCIIHexDigit(query.charAt(offset + 1)) && isASCIIHexDigit(query.charAt(offset + 2))) {
-                    newQuery.append((char)c);
-                } else if (isPChar(c) || c == '/' || c == '?') {
-                    newQuery.append((char)c);
-                } else {
-                    final byte[] bytes = new String(Character.toChars(c)).getBytes(UTF_8);
-                    for (final byte b : bytes) {
-                        percentEncode(b, newQuery);
-                    }
-                }
-
-                offset += Character.charCount(c);
-            }
-            result = input.withQuery(newQuery.toString());
+        if (url.query() != null) {
+          url = url.withQuery(canonicalize(url.query(), QUERY_OR_FRAGMENT_PREDICATE));
         }
 
         // Fragment
-        String fragment = input.fragment();
-        if (fragment != null) {
-            StringBuilder newFragment = new StringBuilder();
-            final int length = fragment.length();
-            for (int offset = 0; offset < length; ) {
-                final int c = fragment.codePointAt(offset);
-
-                if (c == '%' && fragment.length() > offset + 2 &&
-                        isASCIIHexDigit(fragment.charAt(offset + 1)) && isASCIIHexDigit(fragment.charAt(offset + 2))) {
-                    newFragment.append((char) c);
-                } else if (isPChar(c) || c == '/' || c == '?') {
-                    newFragment.append((char)c);
-                } else {
-                    final byte[] bytes = new String(Character.toChars(c)).getBytes(UTF_8);
-                    for (final byte b : bytes) {
-                        percentEncode(b, newFragment);
-                    }
-                }
-
-                offset += Character.charCount(c);
-            }
-            result = input.withFragment(newFragment.toString());
+        if (url.fragment() != null) {
+            url = url.withFragment(canonicalize(url.fragment(), QUERY_OR_FRAGMENT_PREDICATE));
         }
 
-        return result;
+        return url;
     }
 
     private static boolean isUnreserved(final int c) {
@@ -177,4 +75,24 @@ public class RFC3986Canonicalizer implements URLCanonicalizer {
         return isUnreserved(c) || isSubdelim(c);
     }
 
+    private static final CharacterPredicate USERINFO_PREDICATE = new CharacterPredicate() {
+        @Override
+        public boolean test(int c) {
+            return isUserInfo(c);
+        }
+    };
+
+    private static final CharacterPredicate PATH_PREDICATE = new CharacterPredicate() {
+        @Override
+        public boolean test(int c) {
+            return isPChar(c) || c == '/';
+        }
+    };
+
+    private static final CharacterPredicate QUERY_OR_FRAGMENT_PREDICATE = new CharacterPredicate() {
+        @Override
+        public boolean test(int c) {
+            return isPChar(c) || c == '/' || c == '?';
+        }
+    };
 }
