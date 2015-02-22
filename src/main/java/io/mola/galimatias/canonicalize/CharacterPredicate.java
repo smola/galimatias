@@ -1,5 +1,5 @@
 package io.mola.galimatias.canonicalize;
 
 interface CharacterPredicate {
-  boolean test(int c);
+    boolean test(int c);
 }
