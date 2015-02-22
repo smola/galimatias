@@ -159,20 +159,20 @@ public class RFC3986Canonicalizer implements URLCanonicalizer {
         return result;
     }
 
-    private boolean isUnreserved(final int c) {
+    private static boolean isUnreserved(final int c) {
         return isASCIIAlphanumeric(c) || c == '-' || c == '.' || c == '_' || c == '~';
     }
 
-    private boolean isSubdelim(final int c) {
+    private static boolean isSubdelim(final int c) {
         return c == '!' || c == '$' || c == '&' || c == '\'' || c == '(' || c == ')' || c == '*' || c == '+' || c == ',' || c == ';' || c == '=';
     }
 
-    private boolean isPChar(final int c) {
+    private static boolean isPChar(final int c) {
         //XXX: "pct-encoded" is pchar, but we check for it before calling this.
         return isUnreserved(c) || isSubdelim(c) || c == ':' || c == '@';
     }
 
-    private boolean isUserInfo(final int c) {
+    private static boolean isUserInfo(final int c) {
         //XXX: ':' excluded here since we work directly with user/pass
         return isUnreserved(c) || isSubdelim(c);
     }

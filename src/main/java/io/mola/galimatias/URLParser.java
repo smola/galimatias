@@ -874,7 +874,7 @@ final class URLParser {
         USERNAME
     }
 
-    private void utf8PercentEncode(final int c, final EncodeSet encodeSet, final StringBuilder buffer) {
+    private static void utf8PercentEncode(final int c, final EncodeSet encodeSet, final StringBuilder buffer) {
         if (encodeSet != null) {
             switch (encodeSet) {
                 case SIMPLE:
@@ -909,19 +909,19 @@ final class URLParser {
         }
     }
 
-    private boolean isInSimpleEncodeSet(final int c) {
+    private static boolean isInSimpleEncodeSet(final int c) {
         return c < 0x0020 || c > 0x007E;
     }
 
-    private boolean isInDefaultEncodeSet(final int c) {
+    private static boolean isInDefaultEncodeSet(final int c) {
         return isInSimpleEncodeSet(c) || c == ' ' || c == '"' || c == '#' || c == '<' || c == '>' || c == '?' || c == '`';
     }
 
-    private boolean isInPasswordEncodeSet(final int c) {
+    private static boolean isInPasswordEncodeSet(final int c) {
         return isInDefaultEncodeSet(c) || c == '/' || c == '@' || c == '\\';
     }
 
-    private boolean isInUsernameEncodeSet(final int c) {
+    private static boolean isInUsernameEncodeSet(final int c) {
         return isInPasswordEncodeSet(c) || c == ':';
     }
 

@@ -159,28 +159,28 @@ public class RFC2396Canonicalizer implements URLCanonicalizer {
         return result;
     }
 
-    private boolean isMark(final int c) {
+    private static boolean isMark(final int c) {
         return c == '-' || c  == '_' || c == '.' || c == '!' || c == '*' || c == '\'' || c ==  '(' || c == ')';
     }
 
-    private boolean isUnreserved(final int c) {
+    private static boolean isUnreserved(final int c) {
         return isASCIIAlphanumeric(c) || isMark(c);
     }
 
-    private boolean isReserved(final int c) {
+    private static boolean isReserved(final int c) {
         return c == ';' || c == '/' || c == '?' || c == ':' || c == '@' || c == '&' || c == '=' || c == '+' || c == '$' || c == ',';
     }
 
-    private boolean isPChar(final int c) {
+    private static boolean isPChar(final int c) {
         //XXX: "pct-encoded" is pchar, but we check for it before calling this.
         return isUnreserved(c) || c == ':' || c == '@' || c == '&' || c == '=' || c == '+' || c == '$' || c == ',';
     }
 
-    private boolean isUric(final int c) {
+    private static boolean isUric(final int c) {
         return isReserved(c) || isUnreserved(c);
     }
 
-    private boolean isUserInfo(final int c) {
+    private static boolean isUserInfo(final int c) {
         //XXX: ':' is excluded here, since we work with user/pass, not userInfo
         return isUnreserved(c) || c == ';' || c == ':' || c == '&' || c == '=' || c == '+' || c == '$' || c == ',';
     }

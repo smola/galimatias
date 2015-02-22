@@ -38,69 +38,67 @@ public class FormURLEncodedParserTest {
     @Test
     public void parse() {
         List<NameValue> result;
-        final FormURLEncodedParser parser = FormURLEncodedParser.getInstance();
 
-        result = parser.parse("foo=123");
+        result = FormURLEncodedParser.parse("foo=123");
         assertThat(result).isEqualTo(Arrays.asList(new NameValue("foo", "123")));
 
-        result = parser.parse("foo=123&bar=456");
+        result = FormURLEncodedParser.parse("foo=123&bar=456");
         assertThat(result).isEqualTo(Arrays.asList(new NameValue("foo", "123"), new NameValue("bar", "456")));
 
-        result = parser.parse("=123");
+        result = FormURLEncodedParser.parse("=123");
         assertThat(result).isEqualTo(Arrays.asList(new NameValue("", "123")));
 
-        result = parser.parse("foo");
+        result = FormURLEncodedParser.parse("foo");
         assertThat(result).isEqualTo(Arrays.asList(new NameValue("foo", "")));
 
-        result = parser.parse("foo=");
+        result = FormURLEncodedParser.parse("foo=");
         assertThat(result).isEqualTo(Arrays.asList(new NameValue("foo", "")));
 
-        result = parser.parse("=123");
+        result = FormURLEncodedParser.parse("=123");
         assertThat(result).isEqualTo(Arrays.asList(new NameValue("", "123")));
 
-        result = parser.parse("foo");
+        result = FormURLEncodedParser.parse("foo");
         assertThat(result).isEqualTo(Arrays.asList(new NameValue("foo", "")));
 
-        result = parser.parse("foo=");
+        result = FormURLEncodedParser.parse("foo=");
         assertThat(result).isEqualTo(Arrays.asList(new NameValue("foo", "")));
 
-        result = parser.parse("a+=b+");
+        result = FormURLEncodedParser.parse("a+=b+");
         assertThat(result).isEqualTo(Arrays.asList(new NameValue("a ", "b ")));
 
-        result = parser.parse("a%20=b%20");
+        result = FormURLEncodedParser.parse("a%20=b%20");
         assertThat(result).isEqualTo(Arrays.asList(new NameValue("a%20", "b%20")));
 
-        result = parser.parse("©=ß");
+        result = FormURLEncodedParser.parse("©=ß");
         assertThat(result).isEqualTo(Arrays.asList(new NameValue("©", "ß")));
     }
 
     @Test
     public void encode() {
         String result;
-        final FormURLEncodedParser parser = FormURLEncodedParser.getInstance();
 
-        result = parser.encode(Arrays.asList(new NameValue("foo", "123")));
+        result = FormURLEncodedParser.encode(Arrays.asList(new NameValue("foo", "123")));
         assertThat(result).isEqualTo("foo=123");
 
-        result = parser.encode(Arrays.asList(new NameValue("foo", "123"), new NameValue("bar", "456")));
+        result = FormURLEncodedParser.encode(Arrays.asList(new NameValue("foo", "123"), new NameValue("bar", "456")));
         assertThat(result).isEqualTo("foo=123&bar=456");
 
-        result = parser.encode(Arrays.asList(new NameValue("", "123")));
+        result = FormURLEncodedParser.encode(Arrays.asList(new NameValue("", "123")));
         assertThat(result).isEqualTo("=123");
 
-        result = parser.encode(Arrays.asList(new NameValue("foo", "")));
+        result = FormURLEncodedParser.encode(Arrays.asList(new NameValue("foo", "")));
         assertThat(result).isEqualTo("foo=");
 
-        result = parser.encode(Arrays.asList(new NameValue("", "123")));
+        result = FormURLEncodedParser.encode(Arrays.asList(new NameValue("", "123")));
         assertThat(result).isEqualTo("=123");
 
-        result = parser.encode(Arrays.asList(new NameValue("a ", "b ")));
+        result = FormURLEncodedParser.encode(Arrays.asList(new NameValue("a ", "b ")));
         assertThat(result).isEqualTo("a =b ");
 
-        result = parser.encode(Arrays.asList(new NameValue("a%20", "b%20")));
+        result = FormURLEncodedParser.encode(Arrays.asList(new NameValue("a%20", "b%20")));
         assertThat(result).isEqualTo("a%2520=b%2520");
 
-        result = parser.encode(Arrays.asList(new NameValue("©", "ß")));
+        result = FormURLEncodedParser.encode(Arrays.asList(new NameValue("©", "ß")));
         assertThat(result).isEqualTo("%C2%A9=%C3%9F");
     }
 
