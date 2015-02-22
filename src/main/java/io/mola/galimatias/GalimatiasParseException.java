@@ -78,23 +78,23 @@ public class GalimatiasParseException extends Exception {
 
         private Builder() {}
 
-        public Builder withMessage(final String message) {
-            this.message = message;
+        public Builder withMessage(final String msg) {
+            this.message = msg;
             return this;
         }
 
-        public Builder withPosition(final int position) {
-            this.position = position;
+        public Builder withPosition(final int pos) {
+            this.position = pos;
             return this;
         }
 
-        public Builder withParseIssue(final ParseIssue parseIssue) {
-            this.parseIssue = parseIssue;
+        public Builder withParseIssue(final ParseIssue issue) {
+            this.parseIssue = issue;
             return this;
         }
 
-        public Builder withCause(final Throwable cause) {
-            this.cause = cause;
+        public Builder withCause(final Throwable throwableCause) {
+            this.cause = throwableCause;
             return this;
         }
 

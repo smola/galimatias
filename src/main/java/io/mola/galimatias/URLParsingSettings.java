@@ -50,8 +50,8 @@ public final class URLParsingSettings {
         return DEFAULT;
     }
 
-    public URLParsingSettings withErrorHandler(final ErrorHandler errorHandler) {
-        return new URLParsingSettings(errorHandler);
+    public URLParsingSettings withErrorHandler(final ErrorHandler handler) {
+        return new URLParsingSettings(handler);
     }
 
 }
