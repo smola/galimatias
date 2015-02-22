@@ -59,8 +59,9 @@ public class RegexCanonicalizer implements URLCanonicalizer {
                 return input.withFragment(pattern.matcher(input.fragment()).replaceAll(substitution));
             case FULL:
                 return URL.parse(pattern.matcher(input.toString()).replaceAll(substitution));
+            default:
+                return input;
         }
-        return input;
     }
 
 }

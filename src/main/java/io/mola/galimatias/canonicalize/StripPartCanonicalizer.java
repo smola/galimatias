@@ -56,8 +56,9 @@ public class StripPartCanonicalizer implements URLCanonicalizer {
                 return input.withQuery(null);
             case FRAGMENT:
                 return input.withFragment(null);
+            default:
+                return input;
         }
-        return input;
     }
 
 }
