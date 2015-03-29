@@ -439,118 +439,118 @@ public class URL implements Serializable {
         return new URLParser(scheme + ":").parse();
     }
 
-    public URL withScheme(final String scheme) throws GalimatiasParseException {
-        if (this.scheme.equalsIgnoreCase(scheme)) {
+    public URL withScheme(final String newScheme) throws GalimatiasParseException {
+        if (this.scheme.equalsIgnoreCase(newScheme)) {
             return this;
         }
-        if (scheme == null) {
+        if (newScheme == null) {
             throw new NullPointerException("null scheme");
         }
-        if (scheme.isEmpty()) {
+        if (newScheme.isEmpty()) {
             throw new GalimatiasParseException("empty scheme");
         }
-        if (URLUtils.isRelativeScheme(scheme) == URLUtils.isRelativeScheme(this.scheme)) {
-            return new URLParser(scheme + ":", this, URLParser.ParseURLState.SCHEME_START).parse();
+        if (URLUtils.isRelativeScheme(newScheme) == URLUtils.isRelativeScheme(this.scheme)) {
+            return new URLParser(newScheme + ":", this, URLParser.ParseURLState.SCHEME_START).parse();
         }
-        return new URLParser(toString().replaceFirst(this.scheme, scheme)).parse();
+        return new URLParser(toString().replaceFirst(this.scheme, newScheme)).parse();
     }
 
-    public URL withUsername(final String username) throws GalimatiasParseException {
+    public URL withUsername(String newUserName) throws GalimatiasParseException {
         if (!isHierarchical) {
             throw new GalimatiasParseException("Cannot set username on opaque URL");
         }
-        final String newUsername = (username == null)? "" : new URLParser(username).parseUsername();
-        if (this.username.equals(newUsername)) {
+        newUserName = (newUserName == null)? "" : new URLParser(newUserName).parseUsername();
+        if (this.username.equals(newUserName)) {
             return this;
         }
-        return new URL(this.scheme, this.schemeData, newUsername, this.password, this.host, this.port, this.path, this.query, this.fragment, true);
+        return new URL(this.scheme, this.schemeData, newUserName, this.password, this.host, this.port, this.path, this.query, this.fragment, true);
     }
 
-    public URL withPassword(final String password) throws GalimatiasParseException {
+    public URL withPassword(String newPassword) throws GalimatiasParseException {
         if (!isHierarchical) {
             throw new GalimatiasParseException("Cannot set password on opaque URL");
         }
-        if (this.password != null && this.password.equals(password)) {
+        if (this.password != null && this.password.equals(newPassword)) {
             return this;
         }
-        final String newPassword = (password == null || password.isEmpty())? null : new URLParser(password).parsePassword();
+        newPassword = (newPassword == null || newPassword.isEmpty())? null : new URLParser(newPassword).parsePassword();
         return new URL(this.scheme, this.schemeData, this.username, newPassword, this.host, this.port, this.path, this.query, this.fragment, true);
     }
 
-    public URL withHost(final String host) throws GalimatiasParseException {
+    public URL withHost(final String newHost) throws GalimatiasParseException {
         if (!isHierarchical) {
             throw new GalimatiasParseException("Cannot set host on opaque URL");
         }
-        return withHost(Host.parseHost(host));
+        return withHost(Host.parseHost(newHost));
     }
 
-    public URL withHost(final Host host) throws GalimatiasParseException {
+    public URL withHost(final Host newHost) throws GalimatiasParseException {
         if (!isHierarchical) {
             throw new GalimatiasParseException("Cannot set host on opaque URL");
         }
-        if (host == null) {
+        if (newHost == null) {
             throw new NullPointerException("null host");
         }
-        if (this.host != null && this.host.equals(host)) {
+        if (this.host != null && this.host.equals(newHost)) {
             return this;
         }
-        return new URL(this.scheme, this.schemeData, this.username, this.password, host, this.port, this.path, this.query, this.fragment, true);
+        return new URL(this.scheme, this.schemeData, this.username, this.password, newHost, this.port, this.path, this.query, this.fragment, true);
     }
 
-    public URL withPort(final int port) throws GalimatiasParseException {
+    public URL withPort(final int newPort) throws GalimatiasParseException {
         if (!isHierarchical) {
             throw new GalimatiasParseException("Cannot set port on opaque URL");
         }
-        if (port == this.port) {
+        if (newPort == this.port) {
             return this;
         }
-        if (this.port == -1 && port == defaultPort()) {
+        if (this.port == -1 && newPort == defaultPort()) {
             return this;
         }
-        return new URL(this.scheme, this.schemeData, this.username, this.password, this.host, port, this.path, this.query, this.fragment, true);
+        return new URL(this.scheme, this.schemeData, this.username, this.password, this.host, newPort, this.path, this.query, this.fragment, true);
     }
 
-    public URL withPath(final String path) throws GalimatiasParseException {
+    public URL withPath(final String newPath) throws GalimatiasParseException {
         if (!isHierarchical) {
             throw new GalimatiasParseException("Cannot set path on opaque URL");
         }
-        return new URLParser(path, this, URLParser.ParseURLState.RELATIVE_PATH_START).parse();
+        return new URLParser(newPath, this, URLParser.ParseURLState.RELATIVE_PATH_START).parse();
     }
 
-    public URL withQuery(final String query) throws GalimatiasParseException {
-        if (this.query == query) {
+    public URL withQuery(final String newQuery) throws GalimatiasParseException {
+        if (this.query == newQuery) {
             return this;
         }
-        if (this.query != null && this.query.equals(query)) {
+        if (this.query != null && this.query.equals(newQuery)) {
             return this;
         }
-        if (query == null) {
+        if (newQuery == null) {
             return new URL(this.scheme, this.schemeData, this.username, this.password, this.host, this.port, this.path, null, this.fragment, true);
         }
-        if (query.isEmpty()) {
-            return new URL(this.scheme, this.schemeData, this.username, this.password, this.host, this.port, this.path, query, this.fragment, true);
+        if (newQuery.isEmpty()) {
+            return new URL(this.scheme, this.schemeData, this.username, this.password, this.host, this.port, this.path, newQuery, this.fragment, true);
         }
-        final String parseQuery = (query.charAt(0) == '?')? query.substring(1, query.length()) : query;
+        final String parseQuery = (newQuery.charAt(0) == '?')? newQuery.substring(1, newQuery.length()) : newQuery;
         return new URLParser(parseQuery, this, URLParser.ParseURLState.QUERY).parse();
     }
 
-    public URL withFragment(final String fragment) throws GalimatiasParseException {
+    public URL withFragment(final String newFragment) throws GalimatiasParseException {
         //if ("javascript".equals(scheme)) {
         //    throw new GalimatiasParseException("Cannot set fragment on 'javascript:' URL");
         //}
-        if (this.fragment == fragment) {
+        if (this.fragment == newFragment) {
             return this;
         }
-        if (this.fragment != null && this.fragment.equals(fragment)) {
+        if (this.fragment != null && this.fragment.equals(newFragment)) {
             return this;
         }
-        if (fragment == null) {
+        if (newFragment == null) {
             return new URL(this.scheme, this.schemeData, this.username, this.password, this.host, this.port, this.path, this.query, null, true);
         }
-        if (fragment.isEmpty()) {
-            return new URL(this.scheme, this.schemeData, this.username, this.password, this.host, this.port, this.path, this.query, fragment, true);
+        if (newFragment.isEmpty()) {
+            return new URL(this.scheme, this.schemeData, this.username, this.password, this.host, this.port, this.path, this.query, newFragment, true);
         }
-        final String parseFragment = (fragment.charAt(0) == '#')? fragment.substring(1, fragment.length()) : fragment;
+        final String parseFragment = (newFragment.charAt(0) == '#')? newFragment.substring(1, newFragment.length()) : newFragment;
         return new URLParser(parseFragment, this, URLParser.ParseURLState.FRAGMENT).parse();
     }
 

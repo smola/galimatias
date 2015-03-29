@@ -34,7 +34,7 @@ public final class URLSearchParameters implements Iterable<NameValue> {
 
     URLSearchParameters(final String query) {
         if (query != null && !query.isEmpty()) {
-            nameValues = Collections.unmodifiableList(FormURLEncodedParser.getInstance().parse(query));
+            nameValues = Collections.unmodifiableList(FormURLEncodedParser.parse(query));
         } else {
             nameValues = EMPTY_NAME_VALUES;
         }

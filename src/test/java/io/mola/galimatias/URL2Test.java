@@ -26,9 +26,10 @@ import junit.framework.TestCase;
 /**
  * URL tests imported from Android's libcore.java.net.URLTest.
  */
+@SuppressWarnings("static-method")
 public final class URL2Test extends TestCase {
 
-    /* TODO 
+    /* TODO
     public void testFileEqualsWithEmptyHost() throws Exception {
         assertEquals(new URL("file", "", -1, "/a/"), new URL("file:/a/"));
     }

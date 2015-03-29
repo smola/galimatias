@@ -44,7 +44,7 @@ public class DecodeUnreservedCanonicalizer implements URLCanonicalizer {
                 .withFragment(decodeUnreserved(output.fragment()));
     }
 
-    private String decodeUnreserved(final String input) {
+    private static String decodeUnreserved(final String input) {
         if (input == null || input.isEmpty()) {
             return input;
         }

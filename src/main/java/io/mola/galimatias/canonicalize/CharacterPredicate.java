@@ -21,44 +21,6 @@
  */
 package io.mola.galimatias.canonicalize;
 
-import io.mola.galimatias.GalimatiasParseException;
-import io.mola.galimatias.URL;
-
-public class StripPartCanonicalizer implements URLCanonicalizer {
-
-    public static enum Part {
-        USERNAME,
-        PASSWORD,
-        PORT,
-        PATH,
-        QUERY,
-        FRAGMENT
-    }
-
-    private final Part part;
-
-    public StripPartCanonicalizer(final Part part) {
-        this.part = part;
-    }
-
-    @Override
-    public URL canonicalize(final URL input) throws GalimatiasParseException {
-        switch (part) {
-            case USERNAME:
-                return input.withUsername(null);
-            case PASSWORD:
-                return input.withPassword(null);
-            case PORT:
-                return input.withPort(-1);
-            case PATH:
-                return input.withPath("/");
-            case QUERY:
-                return input.withQuery(null);
-            case FRAGMENT:
-                return input.withFragment(null);
-            default:
-                return input;
-        }
-    }
-
+interface CharacterPredicate {
+    boolean test(int c);
 }

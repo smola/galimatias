@@ -21,44 +21,32 @@
  */
 package io.mola.galimatias.canonicalize;
 
-import io.mola.galimatias.GalimatiasParseException;
-import io.mola.galimatias.URL;
+import static io.mola.galimatias.URLUtils.UTF_8;
+import static io.mola.galimatias.URLUtils.isASCIIHexDigit;
+import static io.mola.galimatias.URLUtils.percentEncode;
 
-public class StripPartCanonicalizer implements URLCanonicalizer {
+abstract class BaseURLCanonicalizer implements URLCanonicalizer {
 
-    public static enum Part {
-        USERNAME,
-        PASSWORD,
-        PORT,
-        PATH,
-        QUERY,
-        FRAGMENT
-    }
+  protected static String canonicalize(String input, CharacterPredicate unencodedPredicate) {
+    StringBuilder result = new StringBuilder();
+    final int length = input.length();
+    for (int offset = 0; offset < length; ) {
+        final int c = input.codePointAt(offset);
 
-    private final Part part;
-
-    public StripPartCanonicalizer(final Part part) {
-        this.part = part;
-    }
-
-    @Override
-    public URL canonicalize(final URL input) throws GalimatiasParseException {
-        switch (part) {
-            case USERNAME:
-                return input.withUsername(null);
-            case PASSWORD:
-                return input.withPassword(null);
-            case PORT:
-                return input.withPort(-1);
-            case PATH:
-                return input.withPath("/");
-            case QUERY:
-                return input.withQuery(null);
-            case FRAGMENT:
-                return input.withFragment(null);
-            default:
-                return input;
+        if ((c == '%' && input.length() > offset + 2 &&
+                isASCIIHexDigit(input.charAt(offset + 1)) && isASCIIHexDigit(input.charAt(offset + 2))) ||
+            unencodedPredicate.test(c)) {
+            result.append((char) c);
+        } else {
+            final byte[] bytes = new String(Character.toChars(c)).getBytes(UTF_8);
+            for (final byte b : bytes) {
+                percentEncode(b, result);
+            }
         }
+
+        offset += Character.charCount(c);
     }
+    return result.toString();
+  }
 
 }

@@ -39,8 +39,11 @@ public final class FormURLEncodedParser {
 
     }
 
+    private static final FormURLEncodedParser INSTANCE = new FormURLEncodedParser();
+
+    @Deprecated
     public static FormURLEncodedParser getInstance() {
-        return new FormURLEncodedParser();
+        return INSTANCE;
     }
 
     /**
@@ -51,7 +54,7 @@ public final class FormURLEncodedParser {
      *
      * @param input
      */
-    public List<NameValue> parse(final String input) {
+    public static List<NameValue> parse(final String input) {
         return parse(input, Charset.forName("UTF-8"));
     }
 
@@ -65,7 +68,7 @@ public final class FormURLEncodedParser {
      *                imposes restrictions on what encodings can and cannot be used. This method does not enforce
      *                such restrictions.
      */
-    public List<NameValue> parse(final String input, final Charset charset) {
+    public static List<NameValue> parse(final String input, final Charset charset) {
         final boolean isIndex = false;
 
         if (input == null) {
@@ -148,7 +151,7 @@ public final class FormURLEncodedParser {
         return pairs;
     }
 
-    private String serialize(ByteBuffer bytes) {
+    private static String serialize(ByteBuffer bytes) {
         if (bytes == null) {
             throw new NullPointerException("bytes");
         }
@@ -187,7 +190,7 @@ public final class FormURLEncodedParser {
      * @param input
      * @return
      */
-    public String encode(final String input) {
+    public static String encode(final String input) {
         // 1. If encoding override is not given, set it to utf-8.
         return encode(input, Charset.forName("UTF-8"));
     }
@@ -201,7 +204,7 @@ public final class FormURLEncodedParser {
      * @param charset
      * @return
      */
-    public String encode(final String input, final Charset charset) {
+    public static String encode(final String input, final Charset charset) {
         return encode(parse(input), charset);
     }
 
@@ -215,7 +218,7 @@ public final class FormURLEncodedParser {
      * @param input
      * @return
      */
-    public String encode(final List<NameValue> input) {
+    public static String encode(final List<NameValue> input) {
         // 1. If encoding override is not given, set it to utf-8.
         return encode(input, Charset.forName("UTF-8"));
     }
@@ -227,7 +230,7 @@ public final class FormURLEncodedParser {
      * @param charset
      * @return
      */
-    public String encode(final List<NameValue> input, final Charset charset) {
+    public static String encode(final List<NameValue> input, final Charset charset) {
         if (input == null) {
             throw new NullPointerException("input");
         }

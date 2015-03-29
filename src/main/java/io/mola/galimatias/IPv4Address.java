@@ -32,13 +32,13 @@ public class IPv4Address extends Host {
 
     private final int address;
 
-    private IPv4Address(final byte[] addr) {
-        int address = 0;
-        address  = addr[3] & 0xFF;
-        address |= ((addr[2] << 8) & 0xFF00);
-        address |= ((addr[1] << 16) & 0xFF0000);
-        address |= ((addr[0] << 24) & 0xFF000000);
-        this.address = address;
+    private IPv4Address(final byte[] addrBytes) {
+        int addr = 0;
+        addr  = addrBytes[3] & 0xFF;
+        addr |= ((addrBytes[2] << 8) & 0xFF00);
+        addr |= ((addrBytes[1] << 16) & 0xFF0000);
+        addr |= ((addrBytes[0] << 24) & 0xFF000000);
+        this.address = addr;
     }
 
     public static IPv4Address parseIPv4Address(final String input) throws GalimatiasParseException{
