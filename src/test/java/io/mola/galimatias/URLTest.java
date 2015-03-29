@@ -279,6 +279,7 @@ public class URLTest {
         assertThat(testURL.parsedURL.withQuery("query").query()).isEqualTo("query");
         assertThat(testURL.parsedURL.withQuery("?query").query()).isEqualTo("query");
         assertThat(testURL.parsedURL.withQuery(null).query()).isEqualTo(null);
+        assertThat(testURL.parsedURL.withQuery("").query()).isEqualTo("");
     }
 
     @Theory
@@ -288,6 +289,7 @@ public class URLTest {
         assertThat(testURL.parsedURL.withFragment("fragment").fragment()).isEqualTo("fragment");
         assertThat(testURL.parsedURL.withFragment("#fragment").fragment()).isEqualTo("fragment");
         assertThat(testURL.parsedURL.withFragment(null).fragment()).isEqualTo(null);
+        assertThat(testURL.parsedURL.withFragment("").fragment()).isEqualTo("");
     }
 
     @Theory
