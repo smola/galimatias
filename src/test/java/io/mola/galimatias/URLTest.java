@@ -433,6 +433,11 @@ public class URLTest {
         assertThat(base.relativize(URL.parse("http://example.com/foo/"))).isEqualTo("");
         assertThat(base.relativize(URL.parse("http://example.com/foo/?bar#baz"))).isEqualTo("?bar#baz");
 
+        base = URL.parse("coap://example.com/foo/?bar#baz");
+        assertThat(base.relativize(URL.parse("coap://example.com/foo"))).isEqualTo("coap://example.com/foo");
+        assertThat(base.relativize(URL.parse("coap://example.com/foo/"))).isEqualTo("");
+        assertThat(base.relativize(URL.parse("coap://example.com/foo/?bar#baz"))).isEqualTo("?bar#baz");
+
         base = URL.parse("file:///etc/fstab");
         assertThat(base.relativize(URL.parse("file://localhost/etc/fstab"))).isEqualTo("file://localhost/etc/fstab");
         assertThat(base.relativize(URL.parse("file:///etc/fstab"))).isEqualTo("");

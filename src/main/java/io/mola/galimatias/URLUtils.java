@@ -293,12 +293,12 @@ public final class URLUtils {
     }
 
     private static final List<String> RELATIVE_SCHEMES = Arrays.asList(
-            "ftp", "file", "gopher", "http", "https", "ws", "wss"
+            "coap", "ftp", "file", "gopher", "http", "https", "ws", "wss"
     );
 
     /**
      * Returns true if the schema is a known relative schema
-     * (ftp, file, gopher, http, https, ws, wss).
+     * (coap, ftp, file, gopher, http, https, ws, wss).
      *
      * @param scheme
      * @return
