@@ -804,7 +804,7 @@ final class URLParser {
                         handleIllegalWhitespaceError();
                     } else {
                         if (!isURLCodePoint(c) && c != '%') {
-                            handleIllegalCharacterError("Illegal character in path segment: not a URL code point");
+                            handleIllegalCharacterError("Illegal character in fragment: not a URL code point");
                         }
                         if (c == '%') {
                             if (!isASCIIHexDigit(at(idx+1)) || !isASCIIHexDigit(at(idx+2))) {
