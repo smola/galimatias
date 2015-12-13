@@ -67,7 +67,8 @@ public class Domain extends Host {
         String asciiDomain = URLUtils.domainToASCII(domain, errorHandler);
 
         for (int i = 0; i < asciiDomain.length(); i++) {
-            switch (asciiDomain.charAt(i)) {
+            char codePoint = asciiDomain.charAt(i);
+            switch (codePoint) {
                 case 0x0000:
                 case 0x0009:
                 case 0x000A:
@@ -82,8 +83,20 @@ public class Domain extends Host {
                 case '[':
                 case '\\':
                 case ']':
+                    String message = "Illegal character in domain";
+                    if (codePoint == ' ') {
+                        message += ": space is not allowed";
+                    } else if (codePoint == '\t') {
+                        message += ": tab is not allowed";
+                    } else if (codePoint == '\n') {
+                        message += ": line break is not allowed";
+                    } else if (codePoint == '\r') {
+                        message += ": carriage return is not allowed";
+                    } else {
+                        message += ": \u201c" + new String(Character.toChars(codePoint)) + "\u201d is not allowed";
+                    }
                     final GalimatiasParseException exception =
-                            new GalimatiasParseException("Domain contains invalid character: " + asciiDomain.charAt(i));
+                            new GalimatiasParseException(message);
                     errorHandler.fatalError(exception);
                     throw exception;
             }
