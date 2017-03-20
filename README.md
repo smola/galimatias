@@ -25,7 +25,7 @@ galimatias started out of frustration with java.net.URL and java.net.URI. Both o
 
 - **[java.net.URL.equals() is broken.](http://stackoverflow.com/a/3771123/205607)**
 
-- **java.net.URI can pase only RFC 2396 URI syntax.** `java.net.URI` will only parse a URI if it's strictly compliant with RFC 2396. Most URLs found in the wild do not comply with any syntax standard, and RFC 2396 is outdated anyway.
+- **java.net.URI can parse only RFC 2396 URI syntax.** `java.net.URI` will only parse a URI if it's strictly compliant with RFC 2396. Most URLs found in the wild do not comply with any syntax standard, and RFC 2396 is outdated anyway.
 
 - **java.net.URI is not protocol-aware.** `http://example.com`, `http://example.com/` and `http://example.com:80` are different entities.
 
