@@ -124,7 +124,7 @@ public final class URLUtils {
         final IDNA.Info idnaInfo = new IDNA.Info();
         final StringBuilder idnaOutput = new StringBuilder();
         idna.nameToASCII(domain, idnaOutput, idnaInfo);
-        processIdnaInfo(errorHandler, idnaInfo);
+        processIdnaInfo(errorHandler, idnaInfo, false);
         return idnaOutput.toString();
     }
 
@@ -145,11 +145,13 @@ public final class URLUtils {
         final IDNA.Info unicodeIdnaInfo = new IDNA.Info();
         final StringBuilder unicodeIdnaOutput = new StringBuilder();
         idna.nameToUnicode(asciiDomain, unicodeIdnaOutput, unicodeIdnaInfo);
-        processIdnaInfo(errorHandler, unicodeIdnaInfo);
+        processIdnaInfo(errorHandler, unicodeIdnaInfo, false);
         return unicodeIdnaOutput.toString();
     }
 
-    private static void processIdnaInfo(final ErrorHandler errorHandler, final IDNA.Info idnaInfo) throws GalimatiasParseException {
+    private static void processIdnaInfo(final ErrorHandler errorHandler,
+            final IDNA.Info idnaInfo, final boolean checkHyphens)
+            throws GalimatiasParseException {
         for (IDNA.Error error : idnaInfo.getErrors()) {
             String msg;
             switch (error) {
@@ -175,6 +177,9 @@ public final class URLUtils {
                     msg = "A non-final domain name label (or the whole domain name) is empty.";
                     break;
                 case HYPHEN_3_4:
+                    if (!checkHyphens) {
+                        return;
+                    }
                     msg = "A label contains hyphen-minus ('-') in the third and fourth positions.";
                     break;
                 case INVALID_ACE_LABEL:
@@ -190,12 +195,18 @@ public final class URLUtils {
                     msg = "A label starts with a combining mark.";
                     break;
                 case LEADING_HYPHEN:
+                    if (!checkHyphens) {
+                        return;
+                    }
                     msg = "A label starts with a hyphen-minus ('-').";
                     break;
                 case PUNYCODE:
                     msg = "A label starts with \"xn--\" but does not contain valid Punycode.";
                     break;
                 case TRAILING_HYPHEN:
+                    if (!checkHyphens) {
+                        return;
+                    }
                     msg = "A label ends with a hyphen-minus ('-').";
                     break;
                 default:
