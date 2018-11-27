@@ -21,45 +21,40 @@
  */
 package io.mola.galimatias;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
-import static org.fest.assertions.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
 
-@RunWith(JUnit4.class)
-public class DomainTest {
+import static org.junit.jupiter.api.Assertions.*;
+
+class DomainTest {
 
     @Test
-    public void equals() throws GalimatiasParseException {
-        final Domain sameDomain = Domain.parseDomain("example.com");
-        assertThat(sameDomain).isEqualTo(sameDomain);
-        assertThat(sameDomain).isEqualTo(Domain.parseDomain("example.com"));
-        assertThat(sameDomain).isEqualTo(Domain.parseDomain("EXAMPLE.COM"));
-        assertThat(sameDomain).isNotEqualTo(Domain.parseDomain("other.com"));
-        assertThat(sameDomain).isNotEqualTo(Domain.parseDomain("other.example.com"));
-        assertThat(sameDomain).isNotEqualTo("foo");
-        assertThat(sameDomain).isNotEqualTo(null);
+    void equals() throws GalimatiasParseException {
+        final Domain domain = Domain.parseDomain("example.com");
+        assertAll(
+                () -> assertEquals(domain, domain),
+                () -> assertEquals(domain, Domain.parseDomain("example.com")),
+                () -> assertEquals(domain, Domain.parseDomain("EXAMPLE.COM")),
+                () -> assertNotEquals(domain, Domain.parseDomain("other.com")),
+                () -> assertNotEquals(domain, Domain.parseDomain("other.example.com")),
+                () -> assertNotEquals(domain, Domain.parseDomain("foo")),
+                () -> assertNotEquals(domain, null)
+        );
     }
 
     @Test
-    public void parseDomainIDNA() throws GalimatiasParseException {
-        assertThat(Domain.parseDomain("ジェーピーニック.jp").toString()).isEqualTo("xn--hckqz9bzb1cyrb.jp");
+    void parseDomainIDNA() throws GalimatiasParseException {
+        assertEquals("xn--hckqz9bzb1cyrb.jp", Domain.parseDomain("ジェーピーニック.jp").toString());
     }
 
-    @Test(expected = GalimatiasParseException.class)
-    public void parseDomainEmpty() throws GalimatiasParseException {
-        Domain.parseDomain("");
+    @Test
+    void parseDomainEmpty() {
+        assertThrows(GalimatiasParseException.class, () -> Domain.parseDomain(""));
     }
 
-    @Test(expected = NullPointerException.class)
-    public void parseDomainNull() throws GalimatiasParseException {
-        Domain.parseDomain(null);
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseDomainDot() throws GalimatiasParseException {
-        Domain.parseDomain(".");
+    @Test
+    void parseDomainNull() {
+        assertThrows(NullPointerException.class, () -> Domain.parseDomain(null));
     }
 
 }

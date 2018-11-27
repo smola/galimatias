@@ -21,59 +21,79 @@
  */
 package io.mola.galimatias;
 
-import io.mola.galimatias.theories.AnyUrlyString;
-import io.mola.galimatias.theories.FooOrNullString;
-import org.junit.experimental.theories.Theories;
-import org.junit.experimental.theories.Theory;
-import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import static org.fest.assertions.Assertions.*;
-import static org.junit.Assume.*;
-import static org.junit.Assert.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@RunWith(Theories.class)
-public class NameValueTest {
+import java.util.Arrays;
+import java.util.stream.Stream;
 
-    private static final Logger log = LoggerFactory.getLogger(NameValueTest.class);
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-    @Theory
-    public void nullsThrow(@FooOrNullString final String name, @FooOrNullString final String value) {
+class NameValueTest {
+
+    static Stream<Arguments> nameValues() {
+        return Arrays.stream(new String[][]{
+                        new String[]{"foo", "foo"},
+                        new String[]{"foo", "bar"},
+                        new String[]{"bar", "bar"},
+                        new String[]{"bar", "foo"},
+                        new String[]{"foo", null},
+                        new String[]{null, "foo"},
+                        new String[]{null, null}
+                }).map((arr) -> Arguments.of(arr[0], arr[1]));
+    }
+
+    static Stream<Arguments> nameValuesPairs() {
+        return nameValues().flatMap(
+                (arg) -> nameValues().map((oargs) -> Arguments.of(arg.get()[0], arg.get()[1], oargs.get()[0], oargs.get()[1]))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("nameValues")
+    void nullsThrow(final String name, final String value) {
         assumeTrue(name == null || value == null);
-        try {
-            new NameValue(name, value);
-            fail("null was not thrown");
-        } catch (NullPointerException ex) { }
+        assertThrows(NullPointerException.class, () -> new NameValue(name, value));
     }
 
-    @Theory
-    public void getters(@AnyUrlyString final String name, @AnyUrlyString final String value) {
+    @ParameterizedTest
+    @MethodSource("nameValues")
+    void getters(final String name, final String value) {
+        assumeTrue(name != null && value != null);
         final NameValue nameValue = new NameValue(name, value);
-        assertThat(nameValue.name()).isEqualTo(name);
-        assertThat(nameValue.value()).isEqualTo(value);
+        assertAll(
+                () -> assertEquals(name, nameValue.name()),
+                () -> assertEquals(value, nameValue.value())
+        );
     }
 
-    @Theory
-    public void equalsForUnequals(@AnyUrlyString final String name1, @AnyUrlyString final String value1,
-                                  @AnyUrlyString final String name2, @AnyUrlyString final String value2) {
+    @ParameterizedTest
+    @MethodSource("nameValuesPairs")
+    void equalsForUnequals(final String name1, final String value1,
+                                  final String name2, final String value2) {
+        assumeTrue(name1 != null);
+        assumeTrue(name2 != null);
+        assumeTrue(value1 != null);
+        assumeTrue(value2 != null);
         assumeTrue(!name1.equals(name2) || !value1.equals(value2));
         final NameValue nameValue1 = new NameValue(name1, value1);
         final NameValue nameValue2 = new NameValue(name2, value2);
-        assertThat(nameValue1).isNotEqualTo(nameValue2);
-        if (nameValue1.hashCode() == nameValue2.hashCode()) {
-            log.warn("hashCode collision for {} and {}", nameValue1, nameValue2);
-        }
-        assertThat(nameValue1.toString()).isNotEqualTo(nameValue2.toString());
+        assertNotEquals(nameValue2, nameValue1);
+        assertNotEquals(nameValue2.toString(), nameValue1.toString());
     }
 
-    @Theory
-    public void equalsForEquals(@AnyUrlyString final String name, @AnyUrlyString final String value) {
+    @ParameterizedTest
+    @MethodSource("nameValues")
+    void equalsForEquals(final String name, final String value) {
+        assumeTrue(name != null && value != null);
         final NameValue nameValue1 = new NameValue(name, value);
         final NameValue nameValue2 = new NameValue(name, value);
-        assertThat(nameValue1).isEqualTo(nameValue2);
-        assertThat(nameValue1.hashCode()).isEqualTo(nameValue2.hashCode());
-        assertThat(nameValue1.toString()).isEqualTo(nameValue2.toString());
+        assertEquals(nameValue2, nameValue1);
+        assertEquals(nameValue2.hashCode(), nameValue1.hashCode());
+        assertEquals(nameValue2.toString(), nameValue1.toString());
     }
 
 }

@@ -359,4 +359,7 @@ public final class URLUtils {
         return null;
     }
 
+    static String defaultEmpty(final String s) {
+        return (s == null)? "" : s;
+    }
 }

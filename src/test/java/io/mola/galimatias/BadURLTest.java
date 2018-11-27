@@ -21,116 +21,80 @@
  */
 package io.mola.galimatias;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.theories.Theories;
-import org.junit.experimental.theories.Theory;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
 
-import static org.fest.assertions.Assertions.assertThat;
-import static org.junit.Assume.*;
+import org.junit.jupiter.api.Test;
 
-@RunWith(Theories.class)
-public class BadURLTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
+class BadURLTest {
 
     @Test
-    public void parseNullURL() throws GalimatiasParseException {
-        thrown.expect(NullPointerException.class);
-        thrown.expectMessage("null input");
-        URL.parse(null);
+    void parseNullURL() {
+        NullPointerException exception = assertThrows(NullPointerException.class, () -> URL.parse(null));
+        assertEquals("null input", exception.getMessage());
+
     }
 
     @Test
-    public void parseEmptyURL() throws GalimatiasParseException {
-        thrown.expect(GalimatiasParseException.class);
-        thrown.expectMessage("Missing scheme");
-        URL.parse("");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseURLwithoutScheme() throws GalimatiasParseException {
-        URL.parse("//scheme-relative-stuff");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseOneToken() throws GalimatiasParseException {
-        URL.parse("http");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseURLWithBadBase() throws GalimatiasParseException {
-        URL.parse(URL.parse("mailto:user@example.com"), "/relative");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseURLWithMalformedScheme() throws GalimatiasParseException {
-        URL.parse("+http://example.com");
+    void parseEmptyURL() {
+        GalimatiasParseException exception = assertThrows(GalimatiasParseException.class, () -> URL.parse(""));
+        assertEquals("Missing scheme", exception.getMessage());
     }
 
     @Test
-    public void parseURLWithErrors() throws GalimatiasParseException {
-        assertThat(URL.parse("http://example.com\\foo\\bar").toString()).isEqualTo("http://example.com/foo/bar");
+    void parseURLwithoutScheme() {
+        assertThrows(GalimatiasParseException.class, () -> URL.parse("//scheme-relative-stuff"));
     }
 
-    @Test(expected = GalimatiasParseException.class)
-    public void parseURLWithErrorsStrict() throws GalimatiasParseException {
+    @Test
+    void parseOneToken() {
+        assertThrows(GalimatiasParseException.class, () -> URL.parse("http"));
+    }
+
+    @Test
+    void parseURLWithBadBase() {
+        assertThrows(GalimatiasParseException.class, () -> URL.parse(URL.parse("mailto:user@example.com"), "/relative"));
+    }
+
+    @Test
+    void parseURLWithMalformedScheme() {
+        assertThrows(GalimatiasParseException.class, () -> URL.parse("+http://example.com"));
+    }
+
+    @Test
+    void parseURLWithErrorsStrict() {
         final URLParsingSettings settings = URLParsingSettings.create()
                 .withErrorHandler(StrictErrorHandler.getInstance());
-        assertThat(URL.parse(settings, "http://example.com\\foo\\bar").toString()).isEqualTo("http://example.com/foo/bar");
-    }
-
-    @Theory
-    public void withSchemeInvalidCharacter(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
-                                               TestURL testURL) throws GalimatiasParseException {
-        assumeNotNull(testURL.parsedURL);
-        thrown.expect(GalimatiasParseException.class);
-        testURL.parsedURL.withScheme("http%%");
-    }
-
-    @Theory
-    public void withSchemeStartingNotAlpha(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG)
-                                           TestURL testURL) throws GalimatiasParseException {
-        assumeNotNull(testURL.parsedURL);
-        thrown.expect(GalimatiasParseException.class);
-        testURL.parsedURL.withScheme("1foo");
+        assertThrows(GalimatiasParseException.class, () -> URL.parse(settings, "http://example.com\\foo\\bar"));
     }
 
     @Test
-    public void strictTabsInUser() throws GalimatiasParseException {
-        assertThat(URL.parse("http://a\tb@example.com")).isEqualTo(URL.parse("http://ab@example.com"));
-        thrown.expect(GalimatiasParseException.class);
-        URL.parse(
+    void strictTabsInUser(){
+        assertThrows(GalimatiasParseException.class, () -> URL.parse(
                 URLParsingSettings.create().withErrorHandler(StrictErrorHandler.getInstance()),
                 "http://a\tb@example.com"
-        );
+        ));
     }
 
     @Test
-    public void strictCarriageInUser() throws GalimatiasParseException {
-        assertThat(URL.parse("http://a\rb@example.com")).isEqualTo(URL.parse("http://ab@example.com"));
-        thrown.expect(GalimatiasParseException.class);
-        URL.parse(
+    void strictCarriageInUser() {
+        assertThrows(GalimatiasParseException.class, () -> URL.parse(
                 URLParsingSettings.create().withErrorHandler(StrictErrorHandler.getInstance()),
                 "http://a\rb@example.com"
-        );
+        ));
     }
 
     @Test
-    public void strictNewlineInUser() throws GalimatiasParseException {
-        assertThat(URL.parse("http://a\nb@example.com")).isEqualTo(URL.parse("http://ab@example.com"));
-        thrown.expect(GalimatiasParseException.class);
-        URL.parse(
+    void strictNewlineInUser() {
+        assertThrows(GalimatiasParseException.class, () -> URL.parse(
                 URLParsingSettings.create().withErrorHandler(StrictErrorHandler.getInstance()),
                 "http://a\nb@example.com"
-        );
+        ));
     }
 
     @Test
-    public void strictTabsNewlines() throws GalimatiasParseException {
+    void strictTabsNewlines() {
         URLParsingSettings strictSettings = URLParsingSettings.create().withErrorHandler(StrictErrorHandler.getInstance());
         for (String replacement : new String[] { "\t", "\n", "\r" }) {
             for (String url : new String[] {
@@ -139,34 +103,21 @@ public class BadURLTest {
                     "http://example.com/?a%sb", "http://exaple.com/#a%sb",
                     "file://host%sname/path"
             }) {
-                final String urlString = String.format(url, replacement);
-                assertThat(URL.parse(urlString)).isEqualTo(URL.parse(String.format(url, "")));
-                try {
-                    URL.parse(strictSettings, urlString);
-                    assertThat(false);
-                } catch (GalimatiasParseException ex) {
-                    assertThat(true);
-                }
+                assertThrows(GalimatiasParseException.class, () -> URL.parse(strictSettings, url));
             }
         }
     }
 
     @Test
-    public void strictUnencodedPercentage() throws GalimatiasParseException {
-        URLParsingSettings strictSettings = URLParsingSettings.create().withErrorHandler(StrictErrorHandler.getInstance());
+    void strictUnencodedPercentage() {
+        URLParsingSettings settings = URLParsingSettings.create().withErrorHandler(StrictErrorHandler.getInstance());
         for (String replacement : new String[] { "%%", "%1Z", "%Z1", "%ZZ" }) {
             for (String url : new String[] {
                     "data:%s", "http://%s@example.com", "http://%s:foo@example.com", "http://foo:%s@example.com",
                     "http://example.com/%s", "http://example.com/?%s", "http://exaple.com/#%s"
             }) {
                 final String urlString = String.format(url, replacement);
-                URL.parse(urlString);
-                try {
-                    URL.parse(strictSettings, urlString);
-                    assertThat(false);
-                } catch (GalimatiasParseException ex) {
-                    assertThat(true);
-                }
+                assertThrows(GalimatiasParseException.class, () -> URL.parse(settings, urlString));
             }
         }
     }
