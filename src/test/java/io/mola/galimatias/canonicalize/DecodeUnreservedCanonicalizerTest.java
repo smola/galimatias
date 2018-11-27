@@ -22,21 +22,15 @@
 package io.mola.galimatias.canonicalize;
 
 import io.mola.galimatias.GalimatiasParseException;
-import io.mola.galimatias.TestURL;
 import io.mola.galimatias.URL;
-import org.junit.Test;
-import org.junit.experimental.theories.Theories;
-import org.junit.experimental.theories.Theory;
-import org.junit.runner.RunWith;
 
-import static org.fest.assertions.Assertions.assertThat;
-import static org.junit.Assume.assumeNotNull;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@RunWith(Theories.class)
-public class DecodeUnreservedCanonicalizerTest {
+class DecodeUnreservedCanonicalizerTest {
 
     @Test
-    public void test() throws GalimatiasParseException {
+    void test() throws GalimatiasParseException {
         final URLCanonicalizer canon = new DecodeUnreservedCanonicalizer();
         for (final String[] pair : new String[][] {
                 new String[]{ "http://%41%5A%61%7A%30%39%2D%2E%5F%7E@example.com/", "http://AZaz09-._~@example.com/"},
@@ -45,20 +39,8 @@ public class DecodeUnreservedCanonicalizerTest {
                 new String[]{ "http://example.com/?%41%5A%61%7A%30%39%2D%2E%5F%7E", "http://example.com/?AZaz09-._~" },
                 new String[]{ "http://example.com/#%41%5A%61%7A%30%39%2D%2E%5F%7E", "http://example.com/#AZaz09-._~" }
         }) {
-            assertThat(canon.canonicalize(URL.parse(pair[0])).toString())
-                .isEqualTo(URL.parse(pair[1]).toString());
+            assertEquals(URL.parse(pair[1]).toString(), canon.canonicalize(URL.parse(pair[0])).toString());
         }
-    }
-
-    @Theory
-    public void idempotence(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG) TestURL testURL) throws GalimatiasParseException {
-        assumeNotNull(testURL.parsedURL);
-        final URLCanonicalizer canon = new DecodeUnreservedCanonicalizer();
-        final URL roundOne = canon.canonicalize(testURL.parsedURL);
-        final URL roundTwo = canon.canonicalize(roundOne);
-        assertThat(roundOne).isEqualTo(roundTwo);
-        final URL reparse = URL.parse(roundTwo.toString());
-        assertThat(reparse).isEqualTo(roundTwo);
     }
 
 }

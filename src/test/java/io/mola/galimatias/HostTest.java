@@ -21,34 +21,31 @@
  */
 package io.mola.galimatias;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(JUnit4.class)
-public class HostTest {
+class HostTest {
 
     @Test
-    public void parseTest() throws GalimatiasParseException {
-        assertThat(Host.parseHost("example.com")).isInstanceOf(Domain.class);
-        assertThat(Host.parseHost("[2001:0db8:85a3:08d3:1319:8a2e:0370:7334]")).isInstanceOf(IPv6Address.class);
+    void parseTest() throws GalimatiasParseException {
+        assertTrue(Host.parseHost("example.com") instanceof Domain);
+        assertTrue(Host.parseHost("[2001:0db8:85a3:08d3:1319:8a2e:0370:7334]") instanceof IPv6Address);
     }
 
-    @Test(expected = GalimatiasParseException.class)
-    public void parseHostWithUnmatchedBracket() throws GalimatiasParseException {
-        Host.parseHost("[2001:0db8:85a3:08d3:1319:8a2e:0370:7334");
+    @Test
+    void parseHostWithUnmatchedBracket() {
+        assertThrows(GalimatiasParseException.class, () -> Host.parseHost("[2001:0db8:85a3:08d3:1319:8a2e:0370:7334"));
     }
 
-    @Test(expected = NullPointerException.class)
-    public void parseNullHost() throws GalimatiasParseException {
-        Host.parseHost(null);
+    @Test
+    void parseNullHost() {
+        assertThrows(NullPointerException.class, () -> Host.parseHost(null));
     }
 
-    @Test(expected = GalimatiasParseException.class)
-    public void parseEmptyHost() throws GalimatiasParseException {
-        Host.parseHost("");
+    @Test
+    void parseEmptyHost() {
+        assertThrows(GalimatiasParseException.class, () -> Host.parseHost(""));
     }
 
 }

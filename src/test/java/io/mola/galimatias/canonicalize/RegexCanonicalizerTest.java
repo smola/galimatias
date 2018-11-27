@@ -23,22 +23,19 @@ package io.mola.galimatias.canonicalize;
 
 import io.mola.galimatias.GalimatiasParseException;
 import io.mola.galimatias.URL;
-import org.junit.Test;
-import org.junit.experimental.theories.Theories;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 
 import java.util.regex.Pattern;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@RunWith(Theories.class)
-public class RegexCanonicalizerTest {
+class RegexCanonicalizerTest {
 
     @Test
-    public void test() throws GalimatiasParseException {
+    void test() throws GalimatiasParseException {
         URLCanonicalizer canon = new RegexCanonicalizer(RegexCanonicalizer.Scope.HOST, Pattern.compile("^www\\."), "");
-        assertThat(canon.canonicalize(URL.parse("http://www.example.com/"))).isEqualTo(URL.parse("http://example.com"));
-        assertThat(canon.canonicalize(URL.parse("http://example.com/"))).isEqualTo(URL.parse("http://example.com"));
+        assertEquals(URL.parse("http://example.com"), canon.canonicalize(URL.parse("http://www.example.com/")));
+        assertEquals(URL.parse("http://example.com"), canon.canonicalize(URL.parse("http://example.com/")));
     }
 
 }

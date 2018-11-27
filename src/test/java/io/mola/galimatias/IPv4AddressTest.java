@@ -21,104 +21,103 @@
  */
 package io.mola.galimatias;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
+import java.util.stream.Stream;
 
-import static org.fest.assertions.Assertions.assertThat;
+class IPv4AddressTest {
 
-@RunWith(JUnit4.class)
-public class IPv4AddressTest {
-
-    private static Logger log = LoggerFactory.getLogger(IPv4AddressTest.class);
-
-    private static final String[] TEST_ADDRESSES = new String[] {
-        "0.0.0.0",
-        "255.255.255.255",
-        "127.0.0.1"
+    private static final String[][] TEST_ADDRESSES = new String[][] {
+        new String[] { "0.0.0.0" },
+        new String[] { "255.255.255.255" },
+        new String[] { "127.0.0.1" },
+        //TODO: new String[] { "192.0x00A80001", "192.168.0.1" },
+        //TODO: new String[] { "1.1.1.1.", "1.1.1.1" },
+        //TODO: new String[] { "1.1.1", "1.1.0.1" },
+        //TODO: new String[] { "4294967295", "255.255.255.255" }
     };
 
-    @Test
-    public void parseIPv4Address() throws GalimatiasParseException {
-        for (final String testAddress : TEST_ADDRESSES) {
-            log.debug("TESTING: {}", testAddress);
-            assertThat(IPv4Address.parseIPv4Address(testAddress).toString()).isEqualTo(testAddress);
-        }
+    private static Stream<Arguments> testAddresses() {
+        return Arrays.stream(TEST_ADDRESSES)
+                .map((arr) -> (arr.length == 2)? arr : new String[]{arr[0], arr[0]})
+                .map(Arguments::of);
+    }
+
+    @ParameterizedTest
+    @MethodSource("testAddresses")
+    void parseIPv4Address(final String origin, final String target) throws GalimatiasParseException {
+        assertEquals(target, IPv4Address.parseIPv4Address(origin).toString());
     }
 
     @Test
-    public void equals() throws GalimatiasParseException {
+    void equals() throws GalimatiasParseException {
         final IPv4Address ip = IPv4Address.parseIPv4Address("127.0.0.1");
-        assertThat(ip).isEqualTo(ip);
-        assertThat(ip).isEqualTo(IPv4Address.parseIPv4Address("127.0.0.1"));
-        assertThat(ip).isNotEqualTo(IPv4Address.parseIPv4Address("127.0.0.2"));
-        assertThat(ip).isNotEqualTo("foo");
-        assertThat(ip).isNotEqualTo(null);
-        assertThat(ip.toHumanString()).isEqualTo(ip.toString());
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void parseNullAddress() throws GalimatiasParseException {
-        IPv4Address.parseIPv4Address(null);
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseEmptyAddress() throws GalimatiasParseException {
-        IPv4Address.parseIPv4Address("");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseIllegalCharacter() throws GalimatiasParseException {
-        IPv4Address.parseIPv4Address("1.1.x.1");
-    }
-
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseTooLongAddress() throws GalimatiasParseException {
-        IPv4Address.parseIPv4Address("1.1.1.1.2");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseAddressWithFinalDot() throws GalimatiasParseException {
-        IPv4Address.parseIPv4Address("1.1.1.1.");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseWithLeadingZero1() throws GalimatiasParseException {
-        IPv6Address.parseIPv6Address("192.168.1.1.05");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseWithLeadingZero2() throws GalimatiasParseException {
-        IPv6Address.parseIPv6Address("192.168.1.1.00");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseTooShortAddress() throws GalimatiasParseException {
-        IPv4Address.parseIPv4Address("1.1.1");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseHighValueIPv4Mapped() throws GalimatiasParseException {
-        IPv4Address.parseIPv4Address("192.168.1.256");
+        assertNotNull(ip);
+        assertEquals(ip, ip);
+        assertEquals(ip, IPv4Address.parseIPv4Address("127.0.0.1"));
+        assertNotEquals(ip, IPv4Address.parseIPv4Address("127.0.0.2"));
+        assertNotEquals(ip,"foo");
+        assertEquals(ip.toHumanString(), ip.toString());
     }
 
     @Test
-    public void toFromInetAddress() throws UnknownHostException, GalimatiasParseException {
-        for (final String testAddress : TEST_ADDRESSES) {
-            log.debug("TESTING: {}", testAddress);
-            final InetAddress target = InetAddress.getByName(testAddress);
-            final IPv4Address address = IPv4Address.parseIPv4Address(testAddress);
-            assertThat(address.toInetAddress()).isEqualTo(target);
-            assertThat(address.toInetAddress().getHostAddress()).isEqualToIgnoringCase(testAddress);
-            assertThat(IPv4Address.fromInet4Adress((Inet4Address)target)).isEqualTo(address);
+    void parseNullAddress() {
+        assertThrows(NullPointerException.class, () -> IPv4Address.parseIPv4Address(null));
+    }
+
+    @Test
+    void parseEmptyAddress() {
+        assertThrows(GalimatiasParseException.class, () -> IPv4Address.parseIPv4Address(""));
+    }
+
+    @Test
+    void parseIllegalCharacter() throws GalimatiasParseException {
+        assertThrows(GalimatiasParseException.class, () -> IPv4Address.parseIPv4Address("1.1.x.1"));
+    }
+
+
+    @Test
+    void parseTooLongAddress() {
+        assertThrows(GalimatiasParseException.class, () -> IPv4Address.parseIPv4Address("1.1.1.1.2"));
+    }
+
+    @Test
+    void parseAddressWithFinalDot() {
+        assertThrows(GalimatiasParseException.class, () -> IPv4Address.parseIPv4Address("1.1.1.1."));
+    }
+
+    @Test
+    void parseWithLeadingZero1() {
+        assertThrows(GalimatiasParseException.class, () -> IPv4Address.parseIPv4Address("192.168.1.1.05"));
+        assertThrows(GalimatiasParseException.class, () -> IPv4Address.parseIPv4Address("192.168.1.1.00"));
+    }
+
+    @Test
+    void parseHighValueIPv4Mapped() {
+        assertThrows(GalimatiasParseException.class, () -> IPv4Address.parseIPv4Address("192.168.1.256"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("testAddresses")
+    void toFromInetAddress(final String origin, final String target) throws UnknownHostException, GalimatiasParseException {
+        // Java standard library does not support trailing dots in IPv4
+        if (origin.endsWith(".")) {
+            return;
         }
+
+        final InetAddress stdAddress = InetAddress.getByName(origin);
+        final IPv4Address address = IPv4Address.parseIPv4Address(origin);
+        assertEquals(stdAddress, address.toInetAddress());
+        assertEquals(target, address.toInetAddress().getHostAddress());
+        assertEquals(address, IPv4Address.fromInet4Adress((Inet4Address)stdAddress));
     }
 
 }

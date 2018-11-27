@@ -22,41 +22,23 @@
 package io.mola.galimatias.canonicalize;
 
 import io.mola.galimatias.GalimatiasParseException;
-import io.mola.galimatias.TestURL;
 import io.mola.galimatias.URL;
-import org.junit.Test;
-import org.junit.experimental.theories.Theories;
-import org.junit.experimental.theories.Theory;
-import org.junit.runner.RunWith;
 
-import static org.fest.assertions.Assertions.assertThat;
-import static org.junit.Assume.assumeNotNull;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@RunWith(Theories.class)
-public class RFC2396CanonicalizerTest {
+class RFC2396CanonicalizerTest {
 
     @Test
-    public void test() throws GalimatiasParseException {
+    void test() throws GalimatiasParseException {
         final URLCanonicalizer canon = new RFC2396Canonicalizer();
         for (final String[] pair : new String[][] {
                 new String[]{ "http://example.com/^{}|[]`~", "http://example.com/%5E%7B%7D%7C%5B%5D%60%7E" },
                 new String[]{ "http://example.com/?^{}|[]`~", "http://example.com/?%5E%7B%7D%7C%5B%5D%60%7E" },
                 new String[]{ "http://example.com/#^{}|[]`~", "http://example.com/#%5E%7B%7D%7C%5B%5D%60%7E" }
         }) {
-            assertThat(canon.canonicalize(URL.parse(pair[0])).toString())
-                .isEqualTo(URL.parse(pair[1]).toString());
+            assertEquals(URL.parse(pair[1]).toString(), canon.canonicalize(URL.parse(pair[0])).toString());
         }
-    }
-
-    @Theory
-    public void idempotence(final @TestURL.TestURLs(dataset = TestURL.DATASETS.WHATWG) TestURL testURL) throws GalimatiasParseException {
-        assumeNotNull(testURL.parsedURL);
-        final URLCanonicalizer canon = new RFC2396Canonicalizer();
-        final URL roundOne = canon.canonicalize(testURL.parsedURL);
-        final URL roundTwo = canon.canonicalize(roundOne);
-        assertThat(roundOne).isEqualTo(roundTwo);
-        final URL reparse = URL.parse(roundTwo.toString());
-        assertThat(reparse).isEqualTo(roundTwo);
     }
 
 }

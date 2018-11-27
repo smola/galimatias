@@ -21,23 +21,21 @@
  */
 package io.mola.galimatias;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.List;
+import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@RunWith(Parameterized.class)
-public class ParseIssueTest {
+class ParseIssueTest {
 
-    @Parameters(name = "{0}: {1}, fatal: {2}")
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
+    static Stream<Arguments> data() {
+        return Arrays.stream(new Object[][] {
                 { "www.example.com", ParseIssue.MISSING_SCHEME, true },
                 { "http://www.example.com/%", ParseIssue.INVALID_PERCENT_ENCODING, false },
                 { "http://www.example.com\\path", ParseIssue.BACKSLASH_AS_DELIMITER, false },
@@ -45,46 +43,39 @@ public class ParseIssueTest {
                 { "http://:\uD83D\uDCA9@example.com/bar", ParseIssue.ILLEGAL_CHARACTER, false },
                 { "http://www.exam\tple.com/path", ParseIssue.ILLEGAL_WHITESPACE, false },
                 { "http://user:pass@/path", ParseIssue.INVALID_HOST, true }
-        });
+        }).map(Arguments::of);
     }
 
-    private ParseIssue parseIssue;
-    private boolean errorIsFatal;
-    private URLParser parser;
-    private GalimatiasParseException errorException;
-    private GalimatiasParseException fatalErrorException;
+    @ParameterizedTest
+    @MethodSource("data")
+    void handlesGalimiatiasParseExceptionWithCorrectParseIssue(String url, ParseIssue parseIssue, boolean errorIsFatal) {
+        final List<GalimatiasParseException> errorExceptions = new ArrayList<>();
+        final List<GalimatiasParseException> fatalExceptions = new ArrayList<>();
 
-    public ParseIssueTest(String url, ParseIssue parseIssue, boolean errorIsFatal) {
-        this.parseIssue = parseIssue;
-        this.errorIsFatal = errorIsFatal;
-
-        this.parser = new URLParser(url);
-        this.parser.settings(URLParsingSettings.create().withErrorHandler(new ErrorHandler() {
+        final URLParsingSettings settings = URLParsingSettings.create().withErrorHandler(new ErrorHandler() {
             @Override
             public void error(GalimatiasParseException error) throws GalimatiasParseException {
-                errorException = error;
+                errorExceptions.add(error);
                 throw error;
             }
 
             @Override
             public void fatalError(GalimatiasParseException error) {
-                fatalErrorException = error;
+                fatalExceptions.add(error);
             }
-        }));
-    }
+        });
 
-    @Test
-    public void handlesGalimiatiasParseExceptionWithCorrectParseIssue() throws GalimatiasParseException {
+
         try {
-            this.parser.parse();
+            URL.parse(settings, url);
         } catch (GalimatiasParseException ignored) {}
 
         if (errorIsFatal) {
-            assertNotNull("Fatal error expected", fatalErrorException);
-            assertEquals(parseIssue, fatalErrorException.getParseIssue());
+            assertEquals(1, fatalExceptions.size());
+            assertEquals(parseIssue, fatalExceptions.get(0).getParseIssue());
         } else {
-            assertNotNull("Non-fatal error expected", errorException);
-            assertEquals(parseIssue, errorException.getParseIssue());
+            assertEquals(1, errorExceptions.size());
+            assertEquals(parseIssue, errorExceptions.get(0).getParseIssue());
         }
     }
 }

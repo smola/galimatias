@@ -21,39 +21,38 @@
  */
 package io.mola.galimatias;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import static org.junit.Assert.*;
-
-public class GalimatiasParseExceptionTest {
+class GalimatiasParseExceptionTest {
 
     @Test
-    public void defaultsParseIssueToUnspecified() {
+    void defaultsParseIssueToUnspecified() {
         GalimatiasParseException exception = new GalimatiasParseException("message");
         assertEquals(ParseIssue.UNSPECIFIED, exception.getParseIssue());
     }
 
     @Test
-    public void defaultsParseIssueToUnspecifiedWhenPositionIsProvided() {
+    void defaultsParseIssueToUnspecifiedWhenPositionIsProvided() {
         GalimatiasParseException exception = new GalimatiasParseException("message", 1);
         assertEquals(ParseIssue.UNSPECIFIED, exception.getParseIssue());
     }
 
 
     @Test
-    public void defaultsPositionToNegativeOne() {
+    void defaultsPositionToNegativeOne() {
         GalimatiasParseException exception = new GalimatiasParseException("message");
         assertEquals(-1, exception.getPosition());
     }
 
     @Test
-    public void setsParseIssueToUnspecifiedWhenNullIsProvided() {
+    void setsParseIssueToUnspecifiedWhenNullIsProvided() {
         GalimatiasParseException exception =  new GalimatiasParseException("message", null, 1, new RuntimeException());
         assertEquals(ParseIssue.UNSPECIFIED, exception.getParseIssue());
     }
 
     @Test
-    public void setsAllFieldsCorrectlyWhenFullConstructorIsUsed() {
+    void setsAllFieldsCorrectlyWhenFullConstructorIsUsed() {
         final String message = "message";
         final ParseIssue parseIssue = ParseIssue.INVALID_PERCENT_ENCODING;
         final int position = 1;
@@ -68,7 +67,7 @@ public class GalimatiasParseExceptionTest {
     }
 
     @Test
-    public void setsAllFieldsCorrectlyWhenBuilderIsUsed() {
+    void setsAllFieldsCorrectlyWhenBuilderIsUsed() {
         final String message = "message";
         final ParseIssue parseIssue = ParseIssue.INVALID_PERCENT_ENCODING;
         final int position = 1;

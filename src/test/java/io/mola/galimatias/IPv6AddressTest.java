@@ -21,165 +21,153 @@
  */
 package io.mola.galimatias;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
+import java.util.stream.Stream;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(JUnit4.class)
-public class IPv6AddressTest {
-
-    private static Logger log = LoggerFactory.getLogger(IPv6AddressTest.class);
+class IPv6AddressTest {
 
     private static final String[][] TEST_ADDRESSES = new String[][] {
-        new String[] { "fedc:ba98:7654:3210:fedc:ba98:7654:3210" },
-        new String[] { "FEDC:BA98:7654:3210:FEDC:BA98:7654:3211", "fedc:ba98:7654:3210:fedc:ba98:7654:3211" },
-        new String[] { "2001:0db8:85a3:0000:0000:8a2e:0370:7334", "2001:db8:85a3::8a2e:370:7334" },
-        new String[] { "2001:db8:85a3::8a2e:370:7334", "2001:db8:85a3::8a2e:370:7334" },
-        new String[] { "0:0:0:0:0:0:0:1", "::1" },
-        new String[] { "0:0:0:0:0:0:0:0", "::" },
-        new String[] { "::1" },
-        new String[] { "::" },
-        new String[] { "::ffff:192.0.2.128", "::ffff:c000:280" }, //XXX: "::ffff:192.0.2.128" },
-        new String[] { "::192.0.2.128", "::c000:280" } //XXX: Are we serializing IPv4-mapped addresses? "::192.0.2.128" }
+            new String[] { "fedc:ba98:7654:3210:fedc:ba98:7654:3210" },
+            new String[] { "FEDC:BA98:7654:3210:FEDC:BA98:7654:3211", "fedc:ba98:7654:3210:fedc:ba98:7654:3211" },
+            new String[] { "2001:0db8:85a3:0000:0000:8a2e:0370:7334", "2001:db8:85a3::8a2e:370:7334" },
+            new String[] { "2001:db8:85a3::8a2e:370:7334", "2001:db8:85a3::8a2e:370:7334" },
+            new String[] { "0:0:0:0:0:0:0:1", "::1" },
+            new String[] { "0:0:0:0:0:0:0:0", "::" },
+            new String[] { "::1" },
+            new String[] { "::" },
+            new String[] { "::ffff:192.0.2.128", "::ffff:c000:280" }, //XXX: "::ffff:192.0.2.128" },
+            new String[] { "::192.0.2.128", "::c000:280" } //XXX: Are we serializing IPv4-mapped addresses? "::192.0.2.128" }
     };
 
-    @Test
-    public void parseIPv6Address() throws GalimatiasParseException {
-        for (final String[] testAddress : TEST_ADDRESSES) {
-            final String origin = testAddress[0];
-            log.debug("TESTING: {}", origin);
-            final String target = (testAddress.length > 1)? testAddress[1] : testAddress[0];
+    private static Stream<Arguments> testAddresses() {
+        return Arrays.stream(TEST_ADDRESSES)
+                .map((arr) -> (arr.length == 2)? arr : new String[]{arr[0], arr[0]})
+                .map(Arguments::of);
+    }
+
+    @ParameterizedTest
+    @MethodSource("testAddresses")
+    void parseIPv6Address(final String origin, final String target) throws GalimatiasParseException {
             final IPv6Address address = IPv6Address.parseIPv6Address(origin);
-            assertThat(address.toString()).isEqualTo(target);
-        }
+            assertNotNull(address);
+            assertEquals(target, address.toString());
+    }
+
+    @ParameterizedTest
+    @MethodSource("testAddresses")
+    void equals(final String origin, final String result) throws GalimatiasParseException {
+        final IPv6Address originAddr = IPv6Address.parseIPv6Address(origin);
+        assertNotNull(originAddr);
+        final IPv6Address resultAddr = IPv6Address.parseIPv6Address(result);
+        assertNotNull(originAddr);
+        assertAll("address",
+                () -> assertEquals(resultAddr, originAddr),
+                () -> assertEquals(originAddr, originAddr),
+                () -> assertEquals(originAddr.hashCode(), resultAddr.hashCode()),
+                () -> assertNotEquals(originAddr, null),
+                () -> assertNotEquals(originAddr, "foo"),
+                () -> assertEquals(originAddr.toHumanString(), originAddr.toString()));
     }
 
     @Test
-    public void equals() throws GalimatiasParseException {
-        for (final String[] testAddress : TEST_ADDRESSES) {
-            final IPv6Address original = IPv6Address.parseIPv6Address(testAddress[0]);
-            final IPv6Address result = IPv6Address.parseIPv6Address(testAddress[testAddress.length > 1? 1 : 0]);
-            assertThat(original).isEqualTo(original);
-            assertThat(original).isEqualTo(result);
-            assertThat(original.hashCode()).isEqualTo(result.hashCode());
-            assertThat(original).isNotEqualTo(null);
-            assertThat(original).isNotEqualTo("foo");
-            assertThat(original.toHumanString()).isEqualTo(original.toString());
-        }
-        assertThat(IPv6Address.parseIPv6Address(TEST_ADDRESSES[0][0]))
-                .isNotEqualTo(IPv6Address.parseIPv6Address(TEST_ADDRESSES[1][0]));
-
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseInvalidPrefix1() throws GalimatiasParseException {
-        IPv6Address.parseIPv6Address(":1");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseInvalidPrefix2() throws GalimatiasParseException {
-        IPv6Address.parseIPv6Address(":");
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void parseNullAddress() throws GalimatiasParseException {
-        IPv6Address.parseIPv6Address(null);
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseEmptyAddress() throws GalimatiasParseException {
-        IPv6Address.parseIPv6Address("");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseIllegalCharacter() throws GalimatiasParseException {
-        IPv6Address.parseIPv6Address("1::x:1");
-    }
-
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseTooLongAddress() throws GalimatiasParseException {
-        IPv6Address.parseIPv6Address("0:0:0:0:0:0:0:1:2");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseAddressWithFinalColon() throws GalimatiasParseException {
-        IPv6Address.parseIPv6Address("0:0:0:0:0:0:0:1:");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseTooLongIPv4MappedAddress() throws GalimatiasParseException {
-        IPv6Address.parseIPv6Address("0:0:0:0:0:0:0:192.168.1.1");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseTooShortAddress() throws GalimatiasParseException {
-        IPv6Address.parseIPv6Address("0:0:0:0:0:1");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseDoubleCompressedAddress() throws GalimatiasParseException {
-        IPv6Address.parseIPv6Address("1::2::3");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseTooLongIPv4Mapped() throws GalimatiasParseException {
-        IPv6Address.parseIPv6Address("::192.168.1.1.5");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseIPv4MappedWithLeadingZero1() throws GalimatiasParseException {
-        IPv6Address.parseIPv6Address("::192.168.1.1.05");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseIPv4MappedWithLeadingZero2() throws GalimatiasParseException {
-        IPv6Address.parseIPv6Address("::192.168.1.1.00");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseMalformedIPv4Mapped() throws GalimatiasParseException {
-        IPv6Address.parseIPv6Address("::192.168.1a.1");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseMalformedIPv4Mapped2() throws GalimatiasParseException {
-        IPv6Address.parseIPv6Address("::192.168.a1.1");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseMalformedIPv4Mapped3() throws GalimatiasParseException {
-        IPv6Address.parseIPv6Address("::.192.168.1.1");
-    }
-
-    @Test(expected = GalimatiasParseException.class)
-    public void parseHighValueIPv4Mapped() throws GalimatiasParseException {
-        IPv6Address.parseIPv6Address("::192.168.1.256");
+    void notEquals() throws GalimatiasParseException {
+        assertNotEquals(
+                IPv6Address.parseIPv6Address(TEST_ADDRESSES[1][0]),
+                IPv6Address.parseIPv6Address(TEST_ADDRESSES[0][0]));
     }
 
     @Test
-    public void toFromInetAddress() throws UnknownHostException, GalimatiasParseException {
-        for (final String[] testAddress : TEST_ADDRESSES) {
-            final String origin = testAddress[0];
-            log.debug("TESTING: {}", origin);
+    void parseInvalidPrefix() {
+        assertThrows(GalimatiasParseException.class, () -> IPv6Address.parseIPv6Address(":1"));
+        assertThrows(GalimatiasParseException.class, () -> IPv6Address.parseIPv6Address(":"));
+    }
+
+    @Test
+    void parseNullAddress() {
+        assertThrows(NullPointerException.class, () -> IPv6Address.parseIPv6Address(null));
+    }
+
+    @Test
+    void parseEmptyAddress() {
+        assertThrows(GalimatiasParseException.class, () -> IPv6Address.parseIPv6Address(""));
+    }
+
+    @Test
+    void parseIllegalCharacter() {
+        assertThrows(GalimatiasParseException.class, () -> IPv6Address.parseIPv6Address("1::x:1"));
+    }
+
+
+    @Test
+    void parseTooLongAddress() {
+        assertThrows(GalimatiasParseException.class, () -> IPv6Address.parseIPv6Address("0:0:0:0:0:0:0:1:2"));
+    }
+
+    @Test
+    void parseAddressWithFinalColon() {
+        assertThrows(GalimatiasParseException.class, () -> IPv6Address.parseIPv6Address("0:0:0:0:0:0:0:1:"));
+    }
+
+    @Test
+    void parseTooLongIPv4MappedAddress() {
+        assertThrows(GalimatiasParseException.class, () -> IPv6Address.parseIPv6Address("0:0:0:0:0:0:0:192.168.1.1"));
+    }
+
+    @Test
+    void parseTooShortAddress() {
+        assertThrows(GalimatiasParseException.class, () -> IPv6Address.parseIPv6Address("0:0:0:0:0:1"));
+    }
+
+    @Test
+    void parseDoubleCompressedAddress() {
+        assertThrows(GalimatiasParseException.class, () -> IPv6Address.parseIPv6Address("1::2::3"));
+    }
+
+    @Test
+    void parseTooLongIPv4Mapped() {
+        assertThrows(GalimatiasParseException.class, () -> IPv6Address.parseIPv6Address("::192.168.1.1.5"));
+    }
+
+    @Test
+    void parseIPv4MappedWithLeadingZero() {
+        assertThrows(GalimatiasParseException.class, () -> IPv6Address.parseIPv6Address("::192.168.1.1.05"));
+        assertThrows(GalimatiasParseException.class, () -> IPv6Address.parseIPv6Address("::192.168.1.1.00"));
+    }
+
+    @Test
+    void parseMalformedIPv4Mapped() {
+        assertThrows(GalimatiasParseException.class, () -> IPv6Address.parseIPv6Address("::192.168.1a.1"));
+        assertThrows(GalimatiasParseException.class, () -> IPv6Address.parseIPv6Address("::192.168.a1.1"));
+        assertThrows(GalimatiasParseException.class, () -> IPv6Address.parseIPv6Address("::.192.168.1.1"));
+    }
+
+    @Test
+    void parseHighValueIPv4Mapped() {
+        assertThrows(GalimatiasParseException.class, () -> IPv6Address.parseIPv6Address("::192.168.1.256"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("testAddresses")
+    void toFromInetAddress(final String origin, final String discard) throws UnknownHostException, GalimatiasParseException {
             final InetAddress target = InetAddress.getByName(origin);
             final IPv6Address address = IPv6Address.parseIPv6Address(origin);
-            assertThat(address.toInetAddress()).isEqualTo(target);
+            assertEquals(target, address.toInetAddress());
 
             //FIXME: We currently do not support getting Inet4Address here
             //       (such as an IPv6-mapped IPv4 address).
             if (target instanceof Inet6Address) {
-                assertThat(IPv6Address.fromInet6Address((Inet6Address) target)).isEqualTo(address);
+                assertEquals(address, IPv6Address.fromInet6Address((Inet6Address) target));
             }
-        }
     }
 
 }
