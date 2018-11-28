@@ -23,7 +23,8 @@ package io.mola.galimatias.canonicalize;
 
 import io.mola.galimatias.GalimatiasParseException;
 import io.mola.galimatias.URL;
-import static io.mola.galimatias.URLUtils.*;
+
+import static io.mola.galimatias.CodePoints.isASCIIAlphanumeric;
 
 public class RFC3986Canonicalizer extends BaseURLCanonicalizer {
 
@@ -44,14 +45,14 @@ public class RFC3986Canonicalizer extends BaseURLCanonicalizer {
             url = url.withPath(canonicalize(url.path(), PATH_PREDICATE));
         }
 
-        // Query
-        if (url.query() != null) {
-          url = url.withQuery(canonicalize(url.query(), QUERY_OR_FRAGMENT_PREDICATE));
+        final String query = url.query();
+        if (query != null && query.length() > 1) {
+            url = url.withQuery(canonicalize(query.substring(1), QUERY_OR_FRAGMENT_PREDICATE));
         }
 
-        // Fragment
-        if (url.fragment() != null) {
-            url = url.withFragment(canonicalize(url.fragment(), QUERY_OR_FRAGMENT_PREDICATE));
+        final String fragment = url.fragment();
+        if (fragment != null && fragment.length() > 1) {
+            url = url.withFragment(canonicalize(fragment.substring(1), QUERY_OR_FRAGMENT_PREDICATE));
         }
 
         return url;

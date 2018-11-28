@@ -45,9 +45,6 @@ public class CLI {
         System.out.println("\t\tURL: " + url.toString());
         System.out.println("\t\tURL type: " + ((url.isHierarchical())? "hierarchical" : "opaque"));
         System.out.println("\t\tScheme: " + url.scheme());
-        if (url.schemeData() != null) {
-            System.out.println("\t\tScheme data: " + url.schemeData());
-        }
         if (url.username() != null) {
             System.out.println("\t\tUsername: " + url.username());
         }

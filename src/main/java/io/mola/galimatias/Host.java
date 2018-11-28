@@ -67,18 +67,25 @@ public abstract class Host implements Serializable {
      * @throws GalimatiasParseException
      */
     public static Host parseHost(final String input) throws GalimatiasParseException {
+        return parseHost(input, false);
+    }
+
+    static Host parseHost(final String input, final boolean isNotSpecial) throws GalimatiasParseException {
         if (input == null) {
             throw new NullPointerException("null host");
         }
-        if (input.isEmpty()) {
-            throw new GalimatiasParseException("empty host", -1);
-        }
-        if (input.charAt(0) == '[') {
+
+        if (input.startsWith("[")) {
             if (input.charAt(input.length() - 1) != ']') {
                 throw new GalimatiasParseException("Unmatched '['", -1);
             }
             return IPv6Address.parseIPv6Address(input.substring(1, input.length() - 1));
         }
+
+        if (isNotSpecial) {
+            return OpaqueHost.parseOpaqueHost(input);
+        }
+
         final Domain domain = Domain.parseDomain(input);
         try {
             return IPv4Address.parseIPv4Address(domain.toString());
@@ -86,5 +93,4 @@ public abstract class Host implements Serializable {
             return domain;
         }
     }
-
 }

@@ -26,6 +26,8 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
+import static io.mola.galimatias.PercentEncoding.*;
+
 /**
  * Parses query strings with application/x-www-form-urlencoded rules.
  *
@@ -174,7 +176,7 @@ public final class FormURLEncodedParser {
                     || (0x41 <= b && b <= 0x5A) || 0x5F == b || (0x61 <= b && b <= 0x7A)) {
                 sb.appendCodePoint(b);
             } else {
-                URLUtils.percentEncode(b, sb);
+                percentEncode(b, sb);
             }
         }
         return sb.toString();

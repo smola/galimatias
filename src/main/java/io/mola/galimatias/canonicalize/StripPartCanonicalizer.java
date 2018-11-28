@@ -28,7 +28,7 @@ import java.util.Optional;
 
 public class StripPartCanonicalizer implements URLCanonicalizer {
 
-    public static enum Part {
+    public enum Part {
         USERNAME,
         PASSWORD,
         PORT,

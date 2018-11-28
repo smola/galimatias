@@ -24,13 +24,15 @@ package io.mola.galimatias;
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
 
-import static io.mola.galimatias.URLUtils.isASCIIDigit;
-
 public class IPv4Address extends Host {
 
     private static final long serialVersionUID = 1L;
 
     private final int address;
+
+    private IPv4Address(final int address) {
+        this.address = address;
+    }
 
     private IPv4Address(final byte[] addrBytes) {
         int addr = 0;
@@ -41,60 +43,85 @@ public class IPv4Address extends Host {
         this.address = addr;
     }
 
-    public static IPv4Address parseIPv4Address(final String input) throws GalimatiasParseException{
+    public static IPv4Address parseIPv4Address(final String input) throws GalimatiasParseException {
+        return parseIPv4Address(input, new ErrorHandler() {});
+    }
+
+    static IPv4Address parseIPv4Address(final String input, final ErrorHandler handler) throws GalimatiasParseException {
+        // https://url.spec.whatwg.org/#concept-ipv4-parser
         if (input == null) {
             throw new NullPointerException("null input");
         }
+
         if (input.isEmpty()) {
             throw new GalimatiasParseException("empty input");
         }
-        if (input.charAt(input.length() - 1) == '.') { //XXX: This case is not covered by the IPv6-mapped IPv4 case in the spec
-            throw new GalimatiasParseException("IPv4 address has trailing dot");
-        }
-        byte[] addr = new byte[4];
-        int dotsSeen = 0;
-        int addrIdx = 0;
-        int idx = 0;
-        boolean isEOF = false;
-        while (!isEOF) {
-            char c = input.charAt(idx);
-            Integer value = null;
-            if (!isASCIIDigit(c)) {
-                throw new GalimatiasParseException("Non-digit character in IPv4 address");
+
+        final String[] parts = input.split("\\.", -1);
+        int partsLength = parts.length;
+        if (partsLength > 0 && parts[partsLength - 1].isEmpty()) {
+            if (partsLength == 1) {
+                handler.error(new GalimatiasParseException("IPv4 address is empty"));
+            } else {
+                handler.error(new GalimatiasParseException("IPv4 address has trailing dot"));
+                partsLength--;
             }
-            while (isASCIIDigit(c)) {
-                final int number = c - 0x30;  // 10.3.1
-                if (value == null) {          // 10.3.2
-                    value = number;
-                } else if (value == 0) {
-                    throw new GalimatiasParseException("IPv4 address contains a leading zero");
-                } else {
-                    value = value * 10 + number;
+        }
+
+        if (partsLength > 4) {
+            throw new GalimatiasParseException("IPv4 with more than 4 parts");
+        }
+
+        int[] numbers = new int[partsLength];
+        for (int i = 0; i < partsLength; i++) {
+            if (parts[i].isEmpty()) {
+                throw new GalimatiasParseException("IPv4 with empty part");
+            }
+
+            final int n = parsePart(parts[i], handler);
+            numbers[i] = n;
+            if (n > 255) {
+                handler.error(new GalimatiasParseException("IPv4 with number greater than 255"));
+                if (i < partsLength -1) {
+                    throw new GalimatiasParseException("IPv4 non-last number greater than 255");
                 }
-                idx++;                        // 10.3.3
-                isEOF = idx >= input.length();
-                c = (isEOF)? 0x00 : input.charAt(idx);
-                if (value > 255) {            // 10.3.4
-                    throw new GalimatiasParseException("Invalid value for IPv4 address");
-                }
             }
-            if (dotsSeen < 3 && c != '.') {
-                throw new GalimatiasParseException("Illegal character in IPv4 address", idx);
+
+            if (i == partsLength - 1 && n >= Math.pow(256, 5 - partsLength)) {
+                throw new GalimatiasParseException("IPv4 with too big value");
             }
-            idx++;
-            isEOF = idx >= input.length();
-            c = (isEOF)? 0x00 : input.charAt(idx);
-            if (dotsSeen == 3 && idx < input.length()) {
-                throw new GalimatiasParseException("IPv4 address is too long", idx);
-            }
-            addr[addrIdx] = (byte) (int) value;
-            addrIdx++;
-            dotsSeen++;
         }
-        if (dotsSeen != 4) {
-            throw new GalimatiasParseException("Malformed IPv4 address");
+
+        long addr = numbers[partsLength-1];
+        for (int i = 0; i < partsLength - 1; i++) {
+            addr += numbers[i] * Math.pow(256, 3-i);
         }
-        return new IPv4Address(addr);
+
+        return new IPv4Address((int)addr);
+    }
+
+    private static int parsePart(String part, final ErrorHandler handler) throws GalimatiasParseException {
+        // https://url.spec.whatwg.org/#ipv4-number-parser
+        int r = 10;
+        if (part.startsWith("0x") || part.startsWith("0X")) {
+            handler.error(new GalimatiasParseException("IPv4 contains hexadecimal part"));
+            r = 16;
+            part = part.substring(2);
+        } else if (part.startsWith("0")) {
+            handler.error(new GalimatiasParseException("IPv4 contains octal part"));
+            r = 8;
+            part = part.substring(1);
+        }
+
+        if (part.isEmpty()) {
+            return 0;
+        }
+
+        try {
+            return Integer.parseUnsignedInt(part, r);
+        } catch (NumberFormatException ex) {
+            throw new GalimatiasParseException("invalid number format in IPv4 address");
+        }
     }
 
     /**

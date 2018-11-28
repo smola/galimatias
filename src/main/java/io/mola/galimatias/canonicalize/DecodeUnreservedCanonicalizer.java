@@ -23,7 +23,8 @@ package io.mola.galimatias.canonicalize;
 
 import io.mola.galimatias.GalimatiasParseException;
 import io.mola.galimatias.URL;
-import io.mola.galimatias.URLUtils;
+
+import static io.mola.galimatias.PercentEncoding.*;
 
 public class DecodeUnreservedCanonicalizer implements URLCanonicalizer {
 
@@ -35,37 +36,31 @@ public class DecodeUnreservedCanonicalizer implements URLCanonicalizer {
         URL output = input;
         if (output.isHierarchical()) {
             output = output
-                    .withUsername(decodeUnreserved(output.username()))
-                    .withPassword(decodeUnreserved(output.password()))
-                    .withPath(decodeUnreserved(output.path()));
+                    .withUsername(reencode(output.username(), C0ControlPercentEncodeSet))
+                    .withPassword(reencode(output.password(), C0ControlPercentEncodeSet))
+                    .withPath(reencode(output.path(), C0ControlPercentEncodeSet));
         }
-        return output
-                .withQuery(decodeUnreserved(output.query()))
-                .withFragment(decodeUnreserved(output.fragment()));
+
+        final String query = output.query();
+        if (query != null && !query.isEmpty()) {
+            output = output.withQuery(reencode(query.substring(1), C0ControlPercentEncodeSet));
+        }
+
+        final String fragment = output.fragment();
+        if (fragment != null && !fragment.isEmpty()) {
+            output = output.withFragment(reencode(fragment.substring(1), fragmentPercentEncodeSet));
+        }
+
+        return output;
     }
 
-    private static String decodeUnreserved(final String input) {
+    private static String reencode(final String input, final PercentEncodeSet encodeSet) {
         if (input == null || input.isEmpty()) {
             return input;
         }
-        final StringBuilder output = new StringBuilder();
-        for (int i = 0; i < input.length(); i++) {
-            final char c = input.charAt(i);
-            if (c == '%' && input.length() > i + 2 &&
-                    URLUtils.isASCIIHexDigit(input.charAt(i + 1)) &&
-                    URLUtils.isASCIIHexDigit(input.charAt(i + 2))) {
-                final int d = URLUtils.hexToInt(input.charAt(i + 1), input.charAt(i + 2));
-                if (URLUtils.isASCIIAlphanumeric(d) || d == 0x2D || d == 0x2E || d == 0x5F || d == 0x7E) {
-                    output.appendCodePoint(d);
-                } else {
-                    output.append(input.substring(i, i + 3));
-                }
-                i += 2;
-            } else {
-                output.append(c);
-            }
-        }
-        return output.toString();
+
+        final String decoded = percentDecode(input);
+        return utf8PercentEncode(decoded, encodeSet);
     }
 
 }

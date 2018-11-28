@@ -23,22 +23,33 @@ package io.mola.galimatias.canonicalize;
 
 import io.mola.galimatias.GalimatiasParseException;
 import io.mola.galimatias.URL;
+import io.mola.galimatias.canonicalize.RFC2396Canonicalizer;
+import io.mola.galimatias.canonicalize.URLCanonicalizer;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import org.junit.jupiter.api.Test;
+import java.util.Arrays;
+import java.util.stream.Stream;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class RFC2396CanonicalizerTest {
 
-    @Test
-    void test() throws GalimatiasParseException {
-        final URLCanonicalizer canon = new RFC2396Canonicalizer();
-        for (final String[] pair : new String[][] {
+    static Stream<Arguments> data() {
+        return Arrays.stream(new String[][] {
                 new String[]{ "http://example.com/^{}|[]`~", "http://example.com/%5E%7B%7D%7C%5B%5D%60%7E" },
                 new String[]{ "http://example.com/?^{}|[]`~", "http://example.com/?%5E%7B%7D%7C%5B%5D%60%7E" },
                 new String[]{ "http://example.com/#^{}|[]`~", "http://example.com/#%5E%7B%7D%7C%5B%5D%60%7E" }
-        }) {
-            assertEquals(URL.parse(pair[1]).toString(), canon.canonicalize(URL.parse(pair[0])).toString());
-        }
+        }).map(Arguments::of);
+    }
+
+    @ParameterizedTest
+    @MethodSource("data")
+    void test(final String origin, final String target) throws GalimatiasParseException {
+        final URLCanonicalizer canon = new RFC2396Canonicalizer();
+        Assertions.assertEquals(URL.parse(target).toString(), canon.canonicalize(URL.parse(origin)).toString());
     }
 
 }

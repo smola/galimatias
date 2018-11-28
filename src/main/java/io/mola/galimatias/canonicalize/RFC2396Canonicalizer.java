@@ -24,7 +24,7 @@ package io.mola.galimatias.canonicalize;
 import io.mola.galimatias.GalimatiasParseException;
 import io.mola.galimatias.URL;
 
-import static io.mola.galimatias.URLUtils.*;
+import static io.mola.galimatias.CodePoints.*;
 
 public class RFC2396Canonicalizer extends BaseURLCanonicalizer {
 
@@ -45,14 +45,14 @@ public class RFC2396Canonicalizer extends BaseURLCanonicalizer {
             url = url.withPath(canonicalize(url.path(), PATH_PREDICATE));
         }
 
-        // Query
-        if (url.query() != null) {
-            url = url.withQuery(canonicalize(url.query(), URIC_PREDICATE));
+        final String query = url.query();
+        if (query != null && query.length() > 1) {
+            url = url.withQuery(canonicalize(query.substring(1), URIC_PREDICATE));
         }
 
-        // Fragment
-        if (url.fragment() != null) {
-            url = url.withFragment(canonicalize(url.fragment(), URIC_PREDICATE));
+        final String fragment = url.fragment();
+        if (fragment != null && fragment.length() > 1) {
+            url = url.withFragment(canonicalize(fragment.substring(1), URIC_PREDICATE));
         }
 
         return url;

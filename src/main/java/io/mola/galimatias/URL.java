@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-2014 Santiago M. Mola <santi@mola.io>
+ * Copyright (c) 2013-2014, 2018 Santiago M. Mola <santi@mola.io>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -27,8 +27,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
+import static io.mola.galimatias.PercentEncoding.*;
+import static io.mola.galimatias.URLUtils.defaultEmpty;
 
 /**
  * A parsed URL. Immutable.
@@ -39,46 +43,36 @@ public class URL implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final String scheme;
-    private final String schemeData;
     private final String username;
     private final String password;
     private final Optional<Host> host;
     private final Optional<Integer> port;
-    private final String path;
+    private final List<String> path;
     private final String query;
     private final String fragment;
 
     private final boolean isHierarchical;
 
-    URL(final String scheme, final String schemeData,
-        final String username, final String password,
-        final Optional<Host> host, final Optional<Integer> port,
-        final Iterable<String> pathSegments,
-        final String query, final String fragment,
-        final boolean isHierarchical) {
-        this(scheme, schemeData, username, password, host, port, pathSegmentsToString(pathSegments),
-                query, fragment, isHierarchical);
-    }
-
-    URL(final String scheme, final String schemeData,
+    URL(final String scheme,
             final String username, final String password,
             final Optional<Host> host, final Optional<Integer> port,
-            final String path,
+            final List<String> path,
             final String query, final String fragment,
             final boolean isHierarchical) {
         if (scheme == null) {
             throw new NullPointerException("scheme cannot be null");
         }
         this.scheme = scheme;
-        this.schemeData = (schemeData == null)? "" : schemeData;
-        this.username = (username == null)? "" : username;
+        this.username = defaultEmpty(username);
         this.password = password;
         this.host = host;
 
         // This should be done by the parser, so this is just a defensive check.
         this.port = (port.equals(URLUtils.getDefaultPortForScheme(scheme)))? Optional.empty() : port;
 
-        this.path = path;
+        //FIXME: This should probably be like this right from the parser.
+        this.path = (!isHierarchical && path.isEmpty())? Arrays.asList("") : path;
+
         this.query = query;
         this.fragment = fragment;
         this.isHierarchical = isHierarchical;
@@ -86,10 +80,6 @@ public class URL implements Serializable {
 
     public String scheme() {
         return scheme;
-    }
-
-    public String schemeData() {
-        return schemeData;
     }
 
     public String username() {
@@ -108,10 +98,19 @@ public class URL implements Serializable {
      * @return
      */
     public String userInfo() {
+        if (!hasUserInfo()) {
+            return "";
+        }
+
         if (password == null) {
             return username;
         }
+
         return String.format("%s:%s", username, password);
+    }
+
+    private boolean hasUserInfo() {
+        return (username != null && !"".equals(username)) || (password != null && !"".equals(password));
     }
 
     public Optional<Host> host() {
@@ -146,18 +145,31 @@ public class URL implements Serializable {
     }
 
     public String path() {
-        return path;
+        if (!isHierarchical) {
+            return path.get(0);
+        }
+
+        if (path.isEmpty()) {
+            return "";
+        }
+
+        final StringBuilder output = new StringBuilder();
+        for (final String p : path) {
+            output.append('/').append(p);
+        }
+        return output.toString();
     }
 
     public List<String> pathSegments() {
-        if (!isHierarchical) {
-            return null;
-        }
-        return pathStringToSegments(path);
+        return Collections.unmodifiableList(path);
     }
 
     public String query() {
-        return query;
+        if (query == null || query.isEmpty()) {
+            return "";
+        }
+
+        return "?" + query;
     }
 
     /**
@@ -243,20 +255,19 @@ public class URL implements Serializable {
     }
 
     public String fragment() {
-        return fragment;
+        if (fragment == null || fragment.isEmpty()) {
+            return "";
+        }
+
+        return "#" + fragment;
     }
 
     public String file() {
         if (path == null && query == null) {
             return "";
         }
-        final StringBuilder output = new StringBuilder(
-                ((path != null)? path.length() : 0) +
-                ((query != null)? query.length() + 1 : 0)
-                );
-        if (path != null) {
-            output.append(path);
-        }
+        final StringBuilder output = new StringBuilder();
+        output.append(path());
         if (query != null) {
             output.append('?').append(query);
         }
@@ -289,14 +300,11 @@ public class URL implements Serializable {
         if (segments == null) {
             return null;
         }
-        final StringBuilder output = new StringBuilder();
-        for (final String segment : segments) {
-            output.append('/').append(segment);
-        }
-        if (output.length() == 0) {
-            return "/";
-        }
-        return output.toString();
+        return String.join("/", segments);
+    }
+
+    public boolean cannotBeABaseURL() {
+        return isOpaque();
     }
 
     private static List<String> pathStringToSegments(String path) {
@@ -359,16 +367,19 @@ public class URL implements Serializable {
             return url.toString();
         }
 
-        String prefixPath = (this.path().endsWith("/"))? this.path : this.path() + "/";
-
-        if (!url.path().startsWith(prefixPath) && !this.path().equals(url.path())) {
+        if (url.path.size() < path.size()) {
             return url.toString();
         }
 
-        StringBuilder output = new StringBuilder();
-        if (!this.path().equals(url.path())) {
-            output.append(url.path().replaceFirst(prefixPath, ""));
+        for (int i = 0; i < path.size(); i++) {
+            if (!url.path.get(i).equals(path.get(i))) {
+                return url.toString();
+            }
         }
+
+        StringBuilder output = new StringBuilder();
+        output.append(String.join("/", url.path.subList(path.size(), url.path.size())));
+
         if (url.query() != null) {
             output.append('?').append(url.query());
         }
@@ -394,11 +405,11 @@ public class URL implements Serializable {
     }
 
     public static URL parse(final URLParsingSettings settings, final String input) throws GalimatiasParseException {
-        return new URLParser(input).settings(settings).parse();
+        return new URLParser(settings, null, input, null, null).parse();
     }
 
     public static URL parse(final URLParsingSettings settings, final URL base, final String input) throws GalimatiasParseException {
-        return new URLParser(base, input).settings(settings).parse();
+        return new URLParser(settings, base, input, null, null).parse();
     }
 
     /**
@@ -451,38 +462,65 @@ public class URL implements Serializable {
             throw new GalimatiasParseException("empty scheme");
         }
         if (URLUtils.isRelativeScheme(newScheme) == URLUtils.isRelativeScheme(this.scheme)) {
-            return new URLParser(newScheme + ":", this, URLParser.ParseURLState.SCHEME_START).parse();
+            return new URLParser(newScheme + ":", this, URLParser.State.SCHEME_START).parse();
         }
         return new URLParser(toString().replaceFirst(this.scheme, newScheme)).parse();
     }
 
-    public URL withUsername(String newUserName) throws GalimatiasParseException {
+    public URL withUsername(String username) throws GalimatiasParseException {
+        // https://url.spec.whatwg.org/#set-the-username
         if (!isHierarchical) {
             throw new GalimatiasParseException("Cannot set username on opaque URL");
         }
-        newUserName = (newUserName == null)? "" : new URLParser(newUserName).parseUsername();
-        if (this.username.equals(newUserName)) {
+        final String newUsername = parseUserinfo(username);
+        if (this.username.equals(username)) {
             return this;
         }
-        return new URL(this.scheme, this.schemeData, newUserName, this.password, this.host, this.port, this.path, this.query, this.fragment, true);
+        return new URL(this.scheme, newUsername, this.password, this.host, this.port, this.path, this.query, this.fragment, true);
     }
 
-    public URL withPassword(String newPassword) throws GalimatiasParseException {
+    public URL withPassword(final String password) throws GalimatiasParseException {
+        // https://url.spec.whatwg.org/#set-the-password
         if (!isHierarchical) {
             throw new GalimatiasParseException("Cannot set password on opaque URL");
         }
-        if (this.password != null && this.password.equals(newPassword)) {
+        final String newPassword = parseUserinfo(password);
+        if (this.password.equals(newPassword)) {
             return this;
         }
-        newPassword = (newPassword == null || newPassword.isEmpty())? null : new URLParser(newPassword).parsePassword();
-        return new URL(this.scheme, this.schemeData, this.username, newPassword, this.host, this.port, this.path, this.query, this.fragment, true);
+        return new URL(this.scheme, this.username, newPassword, this.host, this.port, this.path, this.query, this.fragment, true);
     }
 
-    public URL withHost(final String newHost) throws GalimatiasParseException {
+    private static String parseUserinfo(final String userinfo) throws GalimatiasParseException {
+
+        // https://url.spec.whatwg.org/#set-the-password
+        if (userinfo == null) {
+            return "";
+        }
+
+        final StringBuilder buffer = new StringBuilder(userinfo.length());
+        final CodePointIterator it = new CodePointIterator(userinfo);
+        while (it.hasNext()) {
+            utf8PercentEncode(it.next(), buffer, userinfoPercentEncodeSet);
+        }
+
+        return buffer.toString();
+    }
+
+    public URL withHost(final String host) throws GalimatiasParseException {
         if (!isHierarchical) {
             throw new GalimatiasParseException("Cannot set host on opaque URL");
         }
-        return withHost(Optional.of(Host.parseHost(newHost)));
+
+        if (host == null) {
+            throw new NullPointerException("null host");
+        }
+
+        if (this.host != null && this.host.toString().equals(host)) {
+            return this;
+        }
+
+        return new URLParser(host, this, URLParser.State.HOST).parse();
     }
 
     public URL withHost(final Optional<Host> host) throws GalimatiasParseException {
@@ -492,20 +530,23 @@ public class URL implements Serializable {
         if (host == null) {
             throw new NullPointerException("null host");
         }
-        if (!host.isPresent()) {
-            throw new IllegalArgumentException("empty host");
-        }
-        if (this.host.equals(host)) {
+        if (this.host != null && this.host.equals(host)) {
             return this;
         }
-        return new URL(this.scheme, this.schemeData, this.username, this.password, host, this.port, this.path, this.query, this.fragment, true);
+
+        return withHost(host.map(Host::toHostString).orElse(""));
     }
 
-    public URL withPort(Optional<Integer> port) throws GalimatiasParseException {
+    public URL withPort(final Optional<Integer> port) throws GalimatiasParseException {
+        // Since we are just getting the parsed port as int, we don't need to call the parser:
+        // https://url.spec.whatwg.org/#dom-url-port
         if (!isHierarchical) {
             throw new GalimatiasParseException("Cannot set port on opaque URL");
         }
         if (port == this.port) {
+            return this;
+        }
+        if (!this.port.isPresent() && port.equals(defaultPort())) {
             return this;
         }
         if (port().equals(port)) {
@@ -519,51 +560,54 @@ public class URL implements Serializable {
                 throw new IllegalArgumentException("Canoot set port higher than 65535");
             }
         }
-        return new URL(this.scheme, this.schemeData, this.username, this.password, this.host, port, this.path, this.query, this.fragment, true);
+        return new URL(this.scheme, this.username, this.password, this.host, port, this.path, this.query, this.fragment, true);
     }
 
-    public URL withPath(final String newPath) throws GalimatiasParseException {
+    public URL withPath(final String path) throws GalimatiasParseException {
+        // https://url.spec.whatwg.org/#dom-url-pathname
         if (!isHierarchical) {
             throw new GalimatiasParseException("Cannot set path on opaque URL");
         }
-        return new URLParser(newPath, this, URLParser.ParseURLState.RELATIVE_PATH_START).parse();
+
+        if (path == null) {
+            throw new NullPointerException("path cannot be null");
+        }
+
+        return new URLParser(path, this, URLParser.State.PATH_START).parse();
     }
 
-    public URL withQuery(final String newQuery) throws GalimatiasParseException {
-        if (this.query == newQuery) {
+    public URL withQuery(final String query) throws GalimatiasParseException {
+        // https://url.spec.whatwg.org/#dom-url-search
+        if (this.query == query) {
             return this;
         }
-        if (this.query != null && this.query.equals(newQuery)) {
+        if (this.query != null && this.query.equals(query)) {
             return this;
         }
-        if (newQuery == null) {
-            return new URL(this.scheme, this.schemeData, this.username, this.password, this.host, this.port, this.path, null, this.fragment, true);
+        if (query == null || query.isEmpty()) {
+            return new URL(this.scheme, this.username, this.password, this.host, this.port, this.path, query, this.fragment, isHierarchical);
         }
-        if (newQuery.isEmpty()) {
-            return new URL(this.scheme, this.schemeData, this.username, this.password, this.host, this.port, this.path, newQuery, this.fragment, true);
-        }
-        final String parseQuery = (newQuery.charAt(0) == '?')? newQuery.substring(1, newQuery.length()) : newQuery;
-        return new URLParser(parseQuery, this, URLParser.ParseURLState.QUERY).parse();
+        final String parseQuery = (query.charAt(0) == '?')? query.substring(1) : query;
+        return new URLParser(parseQuery, this, URLParser.State.QUERY).parse();
     }
 
-    public URL withFragment(final String newFragment) throws GalimatiasParseException {
+    public URL withFragment(final String fragment) throws GalimatiasParseException {
+        // https://url.spec.whatwg.org/#dom-url-hash
+
         //if ("javascript".equals(scheme)) {
         //    throw new GalimatiasParseException("Cannot set fragment on 'javascript:' URL");
         //}
-        if (this.fragment == newFragment) {
+        if (this.fragment == fragment) {
             return this;
         }
-        if (this.fragment != null && this.fragment.equals(newFragment)) {
+        if (this.fragment != null && this.fragment.equals(fragment)) {
             return this;
         }
-        if (newFragment == null) {
-            return new URL(this.scheme, this.schemeData, this.username, this.password, this.host, this.port, this.path, this.query, null, true);
+        if (fragment == null || fragment.isEmpty()) {
+            return new URL(this.scheme, this.username, this.password, this.host, this.port, this.path, this.query, fragment, isHierarchical);
         }
-        if (newFragment.isEmpty()) {
-            return new URL(this.scheme, this.schemeData, this.username, this.password, this.host, this.port, this.path, this.query, newFragment, true);
-        }
-        final String parseFragment = (newFragment.charAt(0) == '#')? newFragment.substring(1, newFragment.length()) : newFragment;
-        return new URLParser(parseFragment, this, URLParser.ParseURLState.FRAGMENT).parse();
+        final String parseFragment = (fragment.charAt(0) == '#')? fragment.substring(1) : fragment;
+        return new URLParser(parseFragment, this, URLParser.State.FRAGMENT).parse();
     }
 
     /**
@@ -591,17 +635,17 @@ public class URL implements Serializable {
     public java.net.URI toJavaURI() throws URISyntaxException {
         if (isHierarchical) {
             return new URI(scheme(),
-                    (!"".equals(userInfo()))? URLUtils.percentDecode(userInfo()) : null,
+                    (!"".equals(userInfo()))? percentDecode(userInfo()) : null,
                     (host() != null)? host().toString() : null,
                     port.orElse(-1),
-                    (path() != null)? URLUtils.percentDecode(path()) : null,
-                    (query() != null)? URLUtils.percentDecode(query()) : null,
-                    (fragment() != null)? URLUtils.percentDecode(fragment()) : null
+                    (path() != null)? percentDecode(path()) : null,
+                    (query() != null)? percentDecode(query()) : null,
+                    (fragment() != null)? percentDecode(fragment()) : null
             );
         }
         return new URI(scheme(),
-                URLUtils.percentDecode(schemeData()) + ((query() == null)? "" : "?" + URLUtils.percentDecode(query())),
-                (fragment() != null)? URLUtils.percentDecode(fragment()) : null
+                percentDecode(path()) + ((query() == null)? "" : "?" + percentDecode(query())),
+                (fragment() != null)? percentDecode(fragment()) : null
         );
     }
 
@@ -664,23 +708,30 @@ public class URL implements Serializable {
 
         output.append(scheme).append(':');
 
-        if (isHierarchical) {
+        if (host.isPresent()) {
             output.append("//");
-            final String userInfo = userInfo();
-            if (!userInfo.isEmpty()) {
-                output.append(userInfo).append('@');
+            if (hasUserInfo()) {
+                output.append(username());
+                if (!"".equals(password())) {
+                    output.append(':').append(password);
+                }
+                output.append('@');
             }
-            if (host.isPresent()) {
-                output.append(host.get().toHostString());
-            }
+            output.append(host.get().toHostString());
             if (port.isPresent()) {
                 output.append(':').append(port.get());
             }
-            if (path != null) {
-                output.append(path);
-            }
+        } else if ("file".equals(scheme)) {
+            output.append("//");
+        }
+
+
+        if (!isHierarchical) {
+            output.append(path.get(0));
         } else {
-            output.append(schemeData);
+            for (final String p : path) {
+                output.append('/').append(p);
+            }
         }
 
         if (query != null) {
@@ -709,7 +760,7 @@ public class URL implements Serializable {
             output.append("//");
             final String userInfo = userInfo();
             if (!userInfo.isEmpty()) {
-                output.append(URLUtils.percentDecode(userInfo)).append('@');
+                output.append(percentDecode(userInfo)).append('@');
             }
             if (host.isPresent()) {
                 final Host hostValue = host.get();
@@ -723,18 +774,18 @@ public class URL implements Serializable {
                 output.append(':').append(port.get());
             }
             if (path != null) {
-                output.append(URLUtils.percentDecode(path));
+                output.append(percentDecode(path()));
             }
         } else {
-            output.append(URLUtils.percentDecode(schemeData));
+            output.append(percentDecode(path()));
         }
 
         if (query != null) {
-            output.append('?').append(URLUtils.percentDecode(query));
+            output.append('?').append(percentDecode(query));
         }
 
         if (fragment != null) {
-            output.append('#').append(URLUtils.percentDecode(fragment));
+            output.append('#').append(percentDecode(fragment));
         }
 
         return output.toString();
@@ -751,7 +802,6 @@ public class URL implements Serializable {
         final URL other = (URL) obj;
         return  isHierarchical == other.isHierarchical &&
                 ((scheme == null)? other.scheme == null : scheme.equals(other.scheme)) &&
-                ((schemeData == null)? other.schemeData == null : schemeData.equals(other.schemeData)) &&
                 ((username == null)? other.username == null : username.equals(other.username)) &&
                 ((password == null)? other.password == null : password.equals(other.password)) &&
                 ((host == null)? other.host == null : host.equals(other.host)) &&
@@ -765,7 +815,6 @@ public class URL implements Serializable {
     @Override
     public int hashCode() {
         int result = scheme != null ? scheme.hashCode() : 0;
-        result = 31 * result + (schemeData != null ? schemeData.hashCode() : 0);
         result = 31 * result + (username != null ? username.hashCode() : 0);
         result = 31 * result + (password != null ? password.hashCode() : 0);
         result = 31 * result + (host != null ? host.hashCode() : 0);

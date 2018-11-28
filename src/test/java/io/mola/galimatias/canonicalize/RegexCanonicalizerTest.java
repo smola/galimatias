@@ -23,6 +23,9 @@ package io.mola.galimatias.canonicalize;
 
 import io.mola.galimatias.GalimatiasParseException;
 import io.mola.galimatias.URL;
+import io.mola.galimatias.canonicalize.RegexCanonicalizer;
+import io.mola.galimatias.canonicalize.URLCanonicalizer;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.regex.Pattern;
@@ -34,7 +37,7 @@ class RegexCanonicalizerTest {
     @Test
     void test() throws GalimatiasParseException {
         URLCanonicalizer canon = new RegexCanonicalizer(RegexCanonicalizer.Scope.HOST, Pattern.compile("^www\\."), "");
-        assertEquals(URL.parse("http://example.com"), canon.canonicalize(URL.parse("http://www.example.com/")));
+        Assertions.assertEquals(URL.parse("http://example.com"), canon.canonicalize(URL.parse("http://www.example.com/")));
         assertEquals(URL.parse("http://example.com"), canon.canonicalize(URL.parse("http://example.com/")));
     }
 

@@ -39,10 +39,10 @@ class IPv4AddressTest {
         new String[] { "0.0.0.0" },
         new String[] { "255.255.255.255" },
         new String[] { "127.0.0.1" },
-        //TODO: new String[] { "192.0x00A80001", "192.168.0.1" },
-        //TODO: new String[] { "1.1.1.1.", "1.1.1.1" },
-        //TODO: new String[] { "1.1.1", "1.1.0.1" },
-        //TODO: new String[] { "4294967295", "255.255.255.255" }
+        new String[] { "192.0x00A80001", "192.168.0.1" },
+        new String[] { "1.1.1.1.", "1.1.1.1" },
+        new String[] { "1.1.1", "1.1.0.1" }, //TODO: check
+        new String[] { "4294967295", "255.255.255.255" }
     };
 
     private static Stream<Arguments> testAddresses() {
@@ -91,7 +91,7 @@ class IPv4AddressTest {
 
     @Test
     void parseAddressWithFinalDot() {
-        assertThrows(GalimatiasParseException.class, () -> IPv4Address.parseIPv4Address("1.1.1.1."));
+        assertThrows(GalimatiasParseException.class, () -> IPv4Address.parseIPv4Address("1.1.1.1.", StrictErrorHandler.getInstance()));
     }
 
     @Test

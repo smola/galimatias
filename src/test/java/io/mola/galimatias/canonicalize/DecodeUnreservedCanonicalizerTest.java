@@ -23,24 +23,35 @@ package io.mola.galimatias.canonicalize;
 
 import io.mola.galimatias.GalimatiasParseException;
 import io.mola.galimatias.URL;
+import io.mola.galimatias.canonicalize.DecodeUnreservedCanonicalizer;
+import io.mola.galimatias.canonicalize.URLCanonicalizer;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import org.junit.jupiter.api.Test;
+import java.util.Arrays;
+import java.util.stream.Stream;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class DecodeUnreservedCanonicalizerTest {
 
-    @Test
-    void test() throws GalimatiasParseException {
-        final URLCanonicalizer canon = new DecodeUnreservedCanonicalizer();
-        for (final String[] pair : new String[][] {
+    static Stream<Arguments> data() {
+        return Arrays.stream(new String[][] {
                 new String[]{ "http://%41%5A%61%7A%30%39%2D%2E%5F%7E@example.com/", "http://AZaz09-._~@example.com/"},
                 new String[]{ "http://:%41%5A%61%7A%30%39%2D%2E%5F%7E@example.com/", "http://:AZaz09-._~@example.com/"},
                 new String[]{ "http://example.com/%41%5A%61%7A%30%39%2D%2E%5F%7E", "http://example.com/AZaz09-._~" },
                 new String[]{ "http://example.com/?%41%5A%61%7A%30%39%2D%2E%5F%7E", "http://example.com/?AZaz09-._~" },
                 new String[]{ "http://example.com/#%41%5A%61%7A%30%39%2D%2E%5F%7E", "http://example.com/#AZaz09-._~" }
-        }) {
-            assertEquals(URL.parse(pair[1]).toString(), canon.canonicalize(URL.parse(pair[0])).toString());
-        }
+        }).map(Arguments::of);
+    }
+
+    @ParameterizedTest
+    @MethodSource("data")
+    void test(final String origin, final String target) throws GalimatiasParseException {
+        final URLCanonicalizer canon = new DecodeUnreservedCanonicalizer();
+        Assertions.assertEquals(URL.parse(target).toString(), canon.canonicalize(URL.parse(origin)).toString());
     }
 
 }

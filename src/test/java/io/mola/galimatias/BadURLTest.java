@@ -39,7 +39,7 @@ class BadURLTest {
     @Test
     void parseEmptyURL() {
         GalimatiasParseException exception = assertThrows(GalimatiasParseException.class, () -> URL.parse(""));
-        assertEquals("Missing scheme", exception.getMessage());
+        assertEquals("Cannot parse relative URL without a base URL", exception.getMessage());
     }
 
     @Test

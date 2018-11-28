@@ -26,6 +26,6 @@ import io.mola.galimatias.URL;
 
 public interface URLCanonicalizer {
 
-    public URL canonicalize(URL url) throws GalimatiasParseException;
+    URL canonicalize(URL url) throws GalimatiasParseException;
 
 }

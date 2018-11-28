@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static io.mola.galimatias.PercentEncoding.*;
+
 public class Domain extends Host {
 
     private static final long serialVersionUID = 2L;
@@ -62,9 +64,9 @@ public class Domain extends Host {
         final ErrorHandler errorHandler = settings.errorHandler();
 
         // WHATWG says: Let host be the result of running utf-8's decoder on the percent decoding of running utf-8 encode on input.
-        String domain = URLUtils.percentDecode(input);
+        String domain = percentDecode(input);
 
-        String asciiDomain = URLUtils.domainToASCII(domain, errorHandler);
+        String asciiDomain = domainToASCII(domain, errorHandler, false);
 
         for (int i = 0; i < asciiDomain.length(); i++) {
             char codePoint = asciiDomain.charAt(i);
@@ -106,7 +108,7 @@ public class Domain extends Host {
             return new Domain(asciiDomain, unicode);
         }
 
-        return new Domain(URLUtils.domainToUnicode(asciiDomain, errorHandler), unicode);
+        return new Domain(domainToUnicode(asciiDomain, errorHandler), unicode);
     }
 
     /**
@@ -130,7 +132,7 @@ public class Domain extends Host {
         }
         final IDNA.Info idnaInfo = new IDNA.Info();
         final StringBuilder idnaOutput = new StringBuilder();
-        IDNA.getUTS46Instance(IDNA.DEFAULT).nameToUnicode(domain, idnaOutput, idnaInfo);
+        idna.nameToUnicode(domain, idnaOutput, idnaInfo);
         return idnaOutput.toString();
     }
 
@@ -258,4 +260,99 @@ public class Domain extends Host {
         return list.toArray(new String[list.size()]);
     }
 
+    /**
+     * Converts a domain to its Unicode representation. Uses the the <strong>name to Unicode</strong>
+     * as specified in the IDNA standard.
+     *
+     * @param asciiDomain
+     * @return
+     */
+    private static String domainToUnicode(final String asciiDomain, final ErrorHandler errorHandler) throws GalimatiasParseException {
+        // https://url.spec.whatwg.org/#concept-domain-to-unicode
+        final IDNA.Info unicodeIdnaInfo = new IDNA.Info();
+        final StringBuilder unicodeIdnaOutput = new StringBuilder();
+        idna.nameToUnicode(asciiDomain, unicodeIdnaOutput, unicodeIdnaInfo);
+        processIdnaInfo(errorHandler, unicodeIdnaInfo, false);
+        return unicodeIdnaOutput.toString();
+    }
+
+    /**
+     * Converts a domain to its ASCII representation. Uses the the <strong>name to ASCII</strong>
+     * as specified in the IDNA standard.
+     *
+     * @param domain
+     * @return
+     */
+    private static String domainToASCII(final String domain, final ErrorHandler errorHandler, final boolean beStrict) throws GalimatiasParseException {
+        // https://url.spec.whatwg.org/#concept-domain-to-ascii
+        final IDNA.Info idnaInfo = new IDNA.Info();
+        final StringBuilder idnaOutput = new StringBuilder();
+        idna.nameToASCII(domain, idnaOutput, idnaInfo);
+        processIdnaInfo(errorHandler, idnaInfo, beStrict);
+        return idnaOutput.toString();
+    }
+
+    // SPEC: UseSTD3ASCIIRules set to beStrict, CheckHyphens set to false, CheckBidi set to true, CheckJoiners set to true, Transitional_Processing set to false, and VerifyDnsLength set to beStrict.
+    // ICU4J: CheckJoiners -> CONTEXTJ
+    private static final IDNA idna = IDNA.getUTS46Instance(
+            IDNA.USE_STD3_RULES|IDNA.CHECK_BIDI|IDNA.NONTRANSITIONAL_TO_ASCII|IDNA.NONTRANSITIONAL_TO_UNICODE|IDNA.CHECK_CONTEXTJ);
+
+    private static void processIdnaInfo(final ErrorHandler errorHandler, final IDNA.Info idnaInfo, final boolean beStrict) throws GalimatiasParseException {
+        for (IDNA.Error error : idnaInfo.getErrors()) {
+            String msg;
+            switch (error) {
+                case BIDI:
+                    msg = "A label does not meet the IDNA BiDi requirements (for right-to-left characters).";
+                    break;
+                case CONTEXTJ:
+                    msg = "A label does not meet the IDNA CONTEXTJ requirements.";
+                    break;
+                case CONTEXTO_DIGITS:
+                    msg = "A label does not meet the IDNA CONTEXTO requirements for digits.";
+                    break;
+                case CONTEXTO_PUNCTUATION:
+                    msg = "A label does not meet the IDNA CONTEXTO requirements for punctuation characters.";
+                    break;
+                case DISALLOWED:
+                    msg = "A label or domain name contains disallowed characters.";
+                    break;
+                case DOMAIN_NAME_TOO_LONG:
+                    msg = "A domain name is longer than 255 bytes in its storage form.";
+                    break;
+                case EMPTY_LABEL:
+                    if (!beStrict) {
+                        return;
+                    }
+                    msg = "A non-final domain name label (or the whole domain name) is empty.";
+                    return;
+                case HYPHEN_3_4:
+                    return;
+                case INVALID_ACE_LABEL:
+                    msg = "An ACE label does not contain a valid label string.";
+                    break;
+                case LABEL_HAS_DOT:
+                    msg = "A label contains a dot=full stop.";
+                    break;
+                case LABEL_TOO_LONG:
+                    msg = "A domain name label is longer than 63 bytes.";
+                    break;
+                case LEADING_COMBINING_MARK:
+                    msg = "A label starts with a combining mark.";
+                    break;
+                case LEADING_HYPHEN:
+                    return;
+                case PUNYCODE:
+                    msg = "A label starts with \"xn--\" but does not contain valid Punycode.";
+                    break;
+                case TRAILING_HYPHEN:
+                    return;
+                default:
+                    msg = "IDNA error.";
+                    break;
+            }
+            final GalimatiasParseException exception = new GalimatiasParseException(msg);
+            errorHandler.fatalError(exception);
+            throw exception;
+        }
+    }
 }

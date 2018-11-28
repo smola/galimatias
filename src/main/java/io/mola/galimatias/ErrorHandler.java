@@ -26,8 +26,8 @@ package io.mola.galimatias;
  */
 public interface ErrorHandler {
 
-    public void error(GalimatiasParseException error) throws GalimatiasParseException;
+    default void error(GalimatiasParseException error) throws GalimatiasParseException {}
 
-    public void fatalError(GalimatiasParseException error);
+    default void fatalError(GalimatiasParseException error) {}
 
 }

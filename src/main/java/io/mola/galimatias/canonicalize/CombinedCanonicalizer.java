@@ -32,7 +32,7 @@ public class CombinedCanonicalizer implements URLCanonicalizer {
     private final List<URLCanonicalizer> canonicalizers;
 
     public CombinedCanonicalizer(final URLCanonicalizer ... canons) {
-        canonicalizers = new ArrayList<URLCanonicalizer>();
+        canonicalizers = new ArrayList<>();
         for (final URLCanonicalizer canon : canons) {
             if (canon instanceof CombinedCanonicalizer) {
                 canonicalizers.addAll(((CombinedCanonicalizer) canon).canonicalizers);

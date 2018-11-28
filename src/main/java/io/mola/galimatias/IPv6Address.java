@@ -26,7 +26,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 
-import static io.mola.galimatias.URLUtils.isASCIIDigit;
+import static io.mola.galimatias.CodePoints.*;
 
 public class IPv6Address extends Host {
 
@@ -92,7 +92,7 @@ public class IPv6Address extends Host {
             int value = 0;
             int length = 0;
 
-            while (length < 4 && URLUtils.isASCIIHexDigit(c)) {
+            while (length < 4 && isASCIIHexDigit(c)) {
                 value =  value * 0x10 + Integer.parseInt("" + c, 16);
                 idx++;
                 isEOF = idx >= input.length;
@@ -296,6 +296,9 @@ public class IPv6Address extends Host {
         //         set compress pointer to null.
         //
         // NOTE: Here null is -1, and it was already initialized.
+        if (maxConsecutiveZeroes == 1) {
+            compressPointer = -1;
+        }
 
         // Step 4: For each piece in address's pieces, run these substeps:
         for (int i = 0; i < pieces.length; i++) {

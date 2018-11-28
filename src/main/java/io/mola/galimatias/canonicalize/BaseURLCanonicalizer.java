@@ -21,9 +21,9 @@
  */
 package io.mola.galimatias.canonicalize;
 
-import static io.mola.galimatias.URLUtils.UTF_8;
-import static io.mola.galimatias.URLUtils.isASCIIHexDigit;
-import static io.mola.galimatias.URLUtils.percentEncode;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static io.mola.galimatias.CodePoints.isASCIIHexDigit;
+import static io.mola.galimatias.PercentEncoding.percentEncode;
 
 abstract class BaseURLCanonicalizer implements URLCanonicalizer {
 

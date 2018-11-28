@@ -31,10 +31,17 @@ package io.mola.galimatias;
  */
 public enum ParseIssue {
     UNSPECIFIED,
+
+    /**
+     * Missing scheme or relative URL without base URL.
+     */
     MISSING_SCHEME,
+
     INVALID_PERCENT_ENCODING,
     BACKSLASH_AS_DELIMITER,
     ILLEGAL_WHITESPACE,
     ILLEGAL_CHARACTER,
-    INVALID_HOST
+    INVALID_HOST,
+    UNEXPECTED_LEADING_SPACE,
+    UNEXPECTED_TRAILING_SPACE,
 }
