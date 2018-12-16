@@ -21,7 +21,7 @@ class URLParserTest {
         assertEquals(data.scheme(), url.scheme());
         assertEquals(data.username, url.username());
         assertEquals(data.password, defaultEmpty(url.password())); //FIXME
-        assertEquals(data.hostname, (url.host() == null)? "" : url.host().toString());
+        assertEquals(data.hostname, (url.host().map(Host::toHostString).orElse("")));
         assertEquals(data.port, url.port()
                 .filter((p) -> !url.defaultPort().map(dp -> dp.equals(p)).orElse(true))
                 .map(Object::toString).orElse(""));

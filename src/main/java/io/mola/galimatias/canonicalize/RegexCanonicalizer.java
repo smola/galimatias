@@ -50,7 +50,10 @@ public class RegexCanonicalizer implements URLCanonicalizer {
     public URL canonicalize(final URL input) throws GalimatiasParseException {
         switch (scope) {
             case HOST:
-                return input.withHost(pattern.matcher(input.host().toString()).replaceAll(substitution));
+                if (!input.host().isPresent()) {
+                    return input;
+                }
+                return input.withHost(pattern.matcher(input.host().get().toString()).replaceAll(substitution));
             case PATH:
                 return input.withPath(pattern.matcher(input.path()).replaceAll(substitution));
             case QUERY:

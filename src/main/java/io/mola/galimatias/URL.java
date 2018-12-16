@@ -42,7 +42,7 @@ public class URL implements Serializable {
     private final String schemeData;
     private final String username;
     private final String password;
-    private final Host host;
+    private final Optional<Host> host;
     private final Optional<Integer> port;
     private final String path;
     private final String query;
@@ -52,7 +52,7 @@ public class URL implements Serializable {
 
     URL(final String scheme, final String schemeData,
         final String username, final String password,
-        final Host host, final Optional<Integer> port,
+        final Optional<Host> host, final Optional<Integer> port,
         final Iterable<String> pathSegments,
         final String query, final String fragment,
         final boolean isHierarchical) {
@@ -62,7 +62,7 @@ public class URL implements Serializable {
 
     URL(final String scheme, final String schemeData,
             final String username, final String password,
-            final Host host, final Optional<Integer> port,
+            final Optional<Host> host, final Optional<Integer> port,
             final String path,
             final String query, final String fragment,
             final boolean isHierarchical) {
@@ -114,7 +114,7 @@ public class URL implements Serializable {
         return String.format("%s:%s", username, password);
     }
 
-    public Host host() {
+    public Optional<Host> host() {
         return host;
     }
 
@@ -130,7 +130,7 @@ public class URL implements Serializable {
         if (!userInfo.isEmpty()) {
             output.append(userInfo()).append('@');
         }
-        output.append(host.toHostString());
+        output.append(host.map(Host::toHostString).orElse(""));
         if (port.isPresent()) {
             output.append(':').append(port.get());
         }
@@ -482,20 +482,23 @@ public class URL implements Serializable {
         if (!isHierarchical) {
             throw new GalimatiasParseException("Cannot set host on opaque URL");
         }
-        return withHost(Host.parseHost(newHost));
+        return withHost(Optional.of(Host.parseHost(newHost)));
     }
 
-    public URL withHost(final Host newHost) throws GalimatiasParseException {
+    public URL withHost(final Optional<Host> host) throws GalimatiasParseException {
         if (!isHierarchical) {
             throw new GalimatiasParseException("Cannot set host on opaque URL");
         }
-        if (newHost == null) {
+        if (host == null) {
             throw new NullPointerException("null host");
         }
-        if (this.host != null && this.host.equals(newHost)) {
+        if (!host.isPresent()) {
+            throw new IllegalArgumentException("empty host");
+        }
+        if (this.host.equals(host)) {
             return this;
         }
-        return new URL(this.scheme, this.schemeData, this.username, this.password, newHost, this.port, this.path, this.query, this.fragment, true);
+        return new URL(this.scheme, this.schemeData, this.username, this.password, host, this.port, this.path, this.query, this.fragment, true);
     }
 
     public URL withPort(Optional<Integer> port) throws GalimatiasParseException {
@@ -667,8 +670,8 @@ public class URL implements Serializable {
             if (!userInfo.isEmpty()) {
                 output.append(userInfo).append('@');
             }
-            if (host != null) {
-                output.append(host.toHostString());
+            if (host.isPresent()) {
+                output.append(host.get().toHostString());
             }
             if (port.isPresent()) {
                 output.append(':').append(port.get());
@@ -708,11 +711,12 @@ public class URL implements Serializable {
             if (!userInfo.isEmpty()) {
                 output.append(URLUtils.percentDecode(userInfo)).append('@');
             }
-            if (host != null) {
-                if (host instanceof IPv6Address) {
-                    output.append(host.toHostString());
+            if (host.isPresent()) {
+                final Host hostValue = host.get();
+                if (hostValue instanceof IPv6Address) {
+                    output.append(hostValue.toHostString());
                 } else {
-                    output.append(host.toHumanString());
+                    output.append(hostValue.toHumanString());
                 }
             }
             if (port.isPresent()) {

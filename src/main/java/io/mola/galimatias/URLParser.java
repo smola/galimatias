@@ -222,7 +222,7 @@ final class URLParser {
         StringBuilder schemeData = (url == null)? new StringBuilder() : new StringBuilder(url.schemeData());
         String username = (url == null)? null : url.username();
         String password = (url == null)? null : url.password();
-        Host host = (url == null)? null : url.host();
+        Optional<Host> host = (url == null)? Optional.empty() : url.host();
         Optional<Integer> port = (url == null)? Optional.empty() : url.port();
         boolean relativeFlag = (url != null) && url.isHierarchical();
         boolean atFlag = false; // @-flag
@@ -593,7 +593,7 @@ final class URLParser {
                             state = ParseURLState.RELATIVE_PATH_START;
                         } else {
                             try {
-                                host = Host.parseHost(buffer.toString());
+                                host = Optional.of(Host.parseHost(buffer.toString()));
                             } catch (GalimatiasParseException ex) {
                                 handleFatalInvalidHostError(ex);
                             }
@@ -611,7 +611,7 @@ final class URLParser {
                 case HOST: { //XXX: WHATWG defines HOSTNAME as an alias, useless here.
                     if (c == ':' && !bracketsFlag) {
                         try {
-                            host = Host.parseHost(buffer.toString());
+                            host = Optional.of(Host.parseHost(buffer.toString()));
                         } catch (GalimatiasParseException ex) {
                             handleFatalInvalidHostError(ex);
                         }
@@ -623,7 +623,7 @@ final class URLParser {
                     } else if (isEOF || c == '/' || c == '\\' || c == '?' || c == '#') {
                         decrIdx();
                         try {
-                            host = Host.parseHost(buffer.toString());
+                            host = Optional.of(Host.parseHost(buffer.toString()));
                         } catch (GalimatiasParseException ex) {
                             handleFatalInvalidHostError(ex);
                         }
