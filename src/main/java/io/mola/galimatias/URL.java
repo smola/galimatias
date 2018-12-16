@@ -135,7 +135,7 @@ public class URL implements Serializable {
         if (!userInfo.isEmpty()) {
             output.append(userInfo()).append('@');
         }
-        output.append(host.toString());
+        output.append(host.toHostString());
         if (port != -1) {
             output.append(':').append(port);
         }
@@ -673,11 +673,7 @@ public class URL implements Serializable {
                 output.append(userInfo).append('@');
             }
             if (host != null) {
-                if (host instanceof IPv6Address) {
-                    output.append('[').append(host).append(']');
-                } else {
-                    output.append(host);
-                }
+                output.append(host.toHostString());
             }
             if (port != -1) {
                 output.append(':').append(port);
@@ -719,7 +715,7 @@ public class URL implements Serializable {
             }
             if (host != null) {
                 if (host instanceof IPv6Address) {
-                    output.append('[').append(host).append(']');
+                    output.append(host.toHostString());
                 } else {
                     output.append(host.toHumanString());
                 }
