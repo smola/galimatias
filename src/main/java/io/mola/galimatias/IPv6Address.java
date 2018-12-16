@@ -256,6 +256,12 @@ public class IPv6Address extends Host {
         return new IPv6Address(pieces);
     }
 
+    /**
+     * Convert the IPv6 address to its standard string representation. It compresses multiple consecutive zeroes.
+     *
+     * @see Host#toString()
+     * @return standard IPv6 string representation.
+     */
     @Override
     public String toString() {
         // IPv6 serialization as specified in the WHATWG URL standard.
@@ -325,9 +331,15 @@ public class IPv6Address extends Host {
         return output.toString();
     }
 
+    /**
+     * Converts the IPv6 address to its standard representation enclosed by square brackets.
+     *
+     * @see Host#toHostString()
+     * @return standard string representation eclosed by square brackets.
+     */
     @Override
-    public String toHumanString() {
-        return toString();
+    public String toHostString() {
+        return "[" + toString() + "]";
     }
 
     @Override

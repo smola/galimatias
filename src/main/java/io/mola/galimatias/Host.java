@@ -25,10 +25,38 @@ import java.io.Serializable;
 
 public abstract class Host implements Serializable {
 
+    /**
+     * Converts the host to a string, following default rules. This is usually the most obvious string representation
+     * for a standalone host.
+     *
+     * @see #toHostString()
+     * @see #toHumanString()
+     *
+     * @return default string representation
+     */
     @Override
     public abstract String toString();
 
-    public abstract String toHumanString();
+    /**
+     * Converts the host to a Unicode string suitable for human interpretation. This will usa IDNA rules for domains.
+     *
+     * @return unicode string representation.
+     */
+    public String toHumanString() {
+        return toString();
+    }
+
+    /**
+     * Converts the host to a string following the standard
+     * <a href="https://url.spec.whatwg.org/#concept-host-serializer">host serializer</a> rules.
+     *
+     * This is similar to {@link #toString()}, but encloses IPv6 addresses between square brackets.
+     *
+     * @return host-serialized string
+     */
+    public String toHostString() {
+        return toString();
+    }
 
     /**
      * Parses a host as found in URLs. IPv6 literals are expected

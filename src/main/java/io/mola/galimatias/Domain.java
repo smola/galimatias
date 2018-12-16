@@ -109,11 +109,20 @@ public class Domain extends Host {
         return new Domain(URLUtils.domainToUnicode(asciiDomain, errorHandler), unicode);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return domain;
     }
 
+    /**
+     * Converts the domain to a Unicode representation suitable for human interpretation. It does IDNA conversion.
+     *
+     * @see Host#toHumanString()
+     * @return unicode string
+     */
     @Override
     public String toHumanString() {
         if (unicode) {

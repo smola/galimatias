@@ -132,11 +132,6 @@ public class IPv4Address extends Host {
     }
 
     @Override
-    public String toHumanString() {
-        return toString();
-    }
-
-    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
