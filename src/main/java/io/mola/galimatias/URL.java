@@ -276,10 +276,24 @@ public class URL implements Serializable {
         return output.toString();
     }
 
+    /**
+     * Whether this is a hierarchical URL or not. That is, a URL that allows multiple path segments.
+     *
+     * The term <em>hierarchical</em> comes form the URI standard
+     * (<a href="https://www.ietf.org/rfc/rfc3986.txt">RFC 3986</a>).
+     * Other libraries might refer to it as <em>relative</em> or <em>cannot-be-a-base-URL</em>.
+     * The later is the current WHATWG URL standard
+     * (see <a href="https://github.com/whatwg/url/issues/89">whatwg/url#89</a> for the rationale).
+
+     * @return
+     */
     public boolean isHierarchical() {
         return isHierarchical;
     }
 
+    /**
+     * Shorthand for <code>!{@link #isHierarchical}</code>.
+     */
     public boolean isOpaque() {
         return !isHierarchical;
     }
