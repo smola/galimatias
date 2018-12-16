@@ -24,6 +24,8 @@ package io.mola.galimatias.canonicalize;
 import io.mola.galimatias.GalimatiasParseException;
 import io.mola.galimatias.URL;
 
+import java.util.Optional;
+
 public class StripPartCanonicalizer implements URLCanonicalizer {
 
     public static enum Part {
@@ -49,7 +51,7 @@ public class StripPartCanonicalizer implements URLCanonicalizer {
             case PASSWORD:
                 return input.withPassword(null);
             case PORT:
-                return input.withPort(-1);
+                return input.withPort(Optional.empty());
             case PATH:
                 return input.withPath("/");
             case QUERY:

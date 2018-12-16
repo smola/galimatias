@@ -24,6 +24,7 @@ package io.mola.galimatias;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 import static io.mola.galimatias.URLUtils.*;
 
@@ -222,7 +223,7 @@ final class URLParser {
         String username = (url == null)? null : url.username();
         String password = (url == null)? null : url.password();
         Host host = (url == null)? null : url.host();
-        int port = (url == null)? -1 : url.port();
+        Optional<Integer> port = (url == null)? Optional.empty() : url.port();
         boolean relativeFlag = (url != null) && url.isHierarchical();
         boolean atFlag = false; // @-flag
         boolean bracketsFlag = false; // []-flag
@@ -423,7 +424,7 @@ final class URLParser {
 
                     if (isEOF) {
                         host = (base == null)? null : base.host();
-                        port = (base == null || base.port() == base.defaultPort())? -1 : base.port();
+                        port = (base == null || base.port() == base.defaultPort())? Optional.empty() : base.port();
                         pathSegments = (base == null)? null : base.pathSegments();
                         query = (base == null || base.query() == null)? null : new StringBuilder(base.query());
                     } else if (c == '/' || c == '\\') {
@@ -433,13 +434,13 @@ final class URLParser {
                         state = ParseURLState.RELATIVE_SLASH;
                     } else if (c == '?') {
                         host = (base == null)? null : base.host();
-                        port = (base == null || base.port() == base.defaultPort())? -1 : base.port();
+                        port = (base == null || base.port() == base.defaultPort())? Optional.empty() : base.port();
                         pathSegments = (base == null)? null : base.pathSegments();
                         query = new StringBuilder();
                         state = ParseURLState.QUERY;
                     } else if (c == '#') {
                         host = (base == null)? null : base.host();
-                        port = (base == null || base.port() == base.defaultPort())? -1 : base.port();
+                        port = (base == null || base.port() == base.defaultPort())? Optional.empty() : base.port();
                         pathSegments = (base == null)? null : base.pathSegments();
                         query = (base == null || base.query() == null)? null : new StringBuilder(base.query());
                         fragment = new StringBuilder();
@@ -454,7 +455,7 @@ final class URLParser {
                                 ) {
 
                             host = (base == null)? null : base.host();
-                            port = (base == null || base.port() == base.defaultPort())? -1 : base.port();
+                            port = (base == null || base.port() == base.defaultPort())? Optional.empty() : base.port();
                             pathSegments = (base == null)? new ArrayList<String>() : base.pathSegments();
                             // Pop path
                             if (!pathSegments.isEmpty()) {
@@ -480,7 +481,7 @@ final class URLParser {
                     } else {
                         if (!"file".equals(scheme)) {
                             host = (base == null)? null : base.host();
-                            port = (base == null || base.port() == base.defaultPort())? -1 : base.port();
+                            port = (base == null || base.port() == base.defaultPort())? Optional.empty() : base.port();
                         }
                         state = ParseURLState.RELATIVE_PATH;
                         idx--;
@@ -653,13 +654,13 @@ final class URLParser {
                             buffer.deleteCharAt(0);
                         }
                         //XXX: This is redundant with URL constructor
-                        if (buffer.toString().equals(getDefaultPortForScheme(scheme))) {
+                        if (buffer.toString().equals(Integer.toString(getDefaultPortForScheme(scheme).get()))) {
                             buffer.setLength(0);
                         }
                         if (buffer.length() == 0) {
-                            port = -1;
+                            port = Optional.empty();
                         } else {
-                            port = Integer.parseInt(buffer.toString());
+                            port = Optional.of(Integer.parseInt(buffer.toString()));
                         }
                         if (stateOverride != null) {
                             terminate = true;

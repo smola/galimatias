@@ -57,8 +57,8 @@ public class CLI {
         if (url.host() != null) {
             System.out.println("\t\tHost: " + url.host());
         }
-        if (url.port() != -1) {
-            System.out.println("\t\tPort: " + url.port());
+        if (url.port().isPresent()) {
+            System.out.println("\t\tPort: " + url.port().get());
         }
         if (url.path() != null) {
             System.out.println("\t\tPath: " + url.path());

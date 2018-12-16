@@ -28,6 +28,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A parsed URL. Immutable.
@@ -42,7 +43,7 @@ public class URL implements Serializable {
     private final String username;
     private final String password;
     private final Host host;
-    private final int port;
+    private final Optional<Integer> port;
     private final String path;
     private final String query;
     private final String fragment;
@@ -51,7 +52,7 @@ public class URL implements Serializable {
 
     URL(final String scheme, final String schemeData,
         final String username, final String password,
-        final Host host, final int port,
+        final Host host, final Optional<Integer> port,
         final Iterable<String> pathSegments,
         final String query, final String fragment,
         final boolean isHierarchical) {
@@ -61,7 +62,7 @@ public class URL implements Serializable {
 
     URL(final String scheme, final String schemeData,
             final String username, final String password,
-            final Host host, final int port,
+            final Host host, final Optional<Integer> port,
             final String path,
             final String query, final String fragment,
             final boolean isHierarchical) {
@@ -70,20 +71,14 @@ public class URL implements Serializable {
         }
         this.scheme = scheme;
         this.schemeData = (schemeData == null)? "" : schemeData;
-        if (isHierarchical) {
-            this.username = (username == null)? "" : username;
-            this.password = password;
-            this.host = host;
-            //XXX: This is already done in some cases by the URLParser
-            this.port = (port == defaultPort(this.scheme))? -1 : port;
-            this.path = path;
-        } else {
-            this.username = "";
-            this.password = null;
-            this.host = null;
-            this.port = -1;
-            this.path = null;
-        }
+        this.username = (username == null)? "" : username;
+        this.password = password;
+        this.host = host;
+
+        // This should be done by the parser, so this is just a defensive check.
+        this.port = (port.equals(URLUtils.getDefaultPortForScheme(scheme)))? Optional.empty() : port;
+
+        this.path = path;
         this.query = query;
         this.fragment = fragment;
         this.isHierarchical = isHierarchical;
@@ -136,26 +131,18 @@ public class URL implements Serializable {
             output.append(userInfo()).append('@');
         }
         output.append(host.toHostString());
-        if (port != -1) {
-            output.append(':').append(port);
+        if (port.isPresent()) {
+            output.append(':').append(port.get());
         }
         return output.toString();
     }
 
-    public int port() {
-        return (port == -1)? defaultPort() : port;
+    public Optional<Integer> port() {
+        return (port.isPresent())? port : defaultPort();
     }
 
-    private static int defaultPort(final String scheme) {
-        String defaultPort = URLUtils.getDefaultPortForScheme(scheme);
-        if (defaultPort == null) {
-            return -1;
-        }
-        return Integer.parseInt(defaultPort);
-    }
-
-    public int defaultPort() {
-        return defaultPort(scheme);
+    public Optional<Integer> defaultPort() {
+        return URLUtils.getDefaultPortForScheme(scheme);
     }
 
     public String path() {
@@ -511,17 +498,25 @@ public class URL implements Serializable {
         return new URL(this.scheme, this.schemeData, this.username, this.password, newHost, this.port, this.path, this.query, this.fragment, true);
     }
 
-    public URL withPort(final int newPort) throws GalimatiasParseException {
+    public URL withPort(Optional<Integer> port) throws GalimatiasParseException {
         if (!isHierarchical) {
             throw new GalimatiasParseException("Cannot set port on opaque URL");
         }
-        if (newPort == this.port) {
+        if (port == this.port) {
             return this;
         }
-        if (this.port == -1 && newPort == defaultPort()) {
+        if (port().equals(port)) {
             return this;
         }
-        return new URL(this.scheme, this.schemeData, this.username, this.password, this.host, newPort, this.path, this.query, this.fragment, true);
+        if (port.isPresent()) {
+            if (port.get() <= 0) {
+                throw new IllegalArgumentException("Cannot set port to zero or negative");
+            }
+            if (port.get() > 65535) {
+                throw new IllegalArgumentException("Canoot set port higher than 65535");
+            }
+        }
+        return new URL(this.scheme, this.schemeData, this.username, this.password, this.host, port, this.path, this.query, this.fragment, true);
     }
 
     public URL withPath(final String newPath) throws GalimatiasParseException {
@@ -595,7 +590,7 @@ public class URL implements Serializable {
             return new URI(scheme(),
                     (!"".equals(userInfo()))? URLUtils.percentDecode(userInfo()) : null,
                     (host() != null)? host().toString() : null,
-                    port,
+                    port.orElse(-1),
                     (path() != null)? URLUtils.percentDecode(path()) : null,
                     (query() != null)? URLUtils.percentDecode(query()) : null,
                     (fragment() != null)? URLUtils.percentDecode(fragment()) : null
@@ -675,8 +670,8 @@ public class URL implements Serializable {
             if (host != null) {
                 output.append(host.toHostString());
             }
-            if (port != -1) {
-                output.append(':').append(port);
+            if (port.isPresent()) {
+                output.append(':').append(port.get());
             }
             if (path != null) {
                 output.append(path);
@@ -720,8 +715,8 @@ public class URL implements Serializable {
                     output.append(host.toHumanString());
                 }
             }
-            if (port != -1) {
-                output.append(':').append(port);
+            if (port.isPresent()) {
+                output.append(':').append(port.get());
             }
             if (path != null) {
                 output.append(URLUtils.percentDecode(path));
@@ -770,7 +765,7 @@ public class URL implements Serializable {
         result = 31 * result + (username != null ? username.hashCode() : 0);
         result = 31 * result + (password != null ? password.hashCode() : 0);
         result = 31 * result + (host != null ? host.hashCode() : 0);
-        result = 31 * result + (port != -1 ? port : 0);
+        result = 31 * result + port.hashCode();
         result = 31 * result + (path != null? path.hashCode() : 0);
         result = 31 * result + (query != null ? query.hashCode() + 1 : 0);
         result = 31 * result + (fragment != null ? fragment.hashCode() + 1 : 0);

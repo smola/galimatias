@@ -22,12 +22,9 @@ class URLParserTest {
         assertEquals(data.username, url.username());
         assertEquals(data.password, defaultEmpty(url.password())); //FIXME
         assertEquals(data.hostname, (url.host() == null)? "" : url.host().toString());
-        String port = data.port;
-        if ("".equals(port)) {
-            String defaultPort = URLUtils.getDefaultPortForScheme(data.scheme());
-            port = (defaultPort == null) ? "-1" : defaultPort;
-        }
-        assertEquals(port, Integer.toString(url.port()));
+        assertEquals(data.port, url.port()
+                .filter((p) -> !url.defaultPort().map(dp -> dp.equals(p)).orElse(true))
+                .map(Object::toString).orElse(""));
         assertEquals(data.pathname, defaultEmpty(url.path())); //FIXME
         assertEquals(data.search.replaceFirst("^\\?", ""), defaultEmpty(url.query())); //FIXME
         assertEquals(data.hash.replaceFirst("^#", ""), defaultEmpty(url.fragment())); //FIXME

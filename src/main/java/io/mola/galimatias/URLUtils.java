@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Utils for parsing and serializing URLs.
@@ -334,29 +335,29 @@ public final class URLUtils {
      * @param scheme
      * @return
      */
-    public static String getDefaultPortForScheme(final String scheme) {
+    public static Optional<Integer> getDefaultPortForScheme(final String scheme) {
         if ("ftp".equals(scheme)) {
-            return "21";
+            return Optional.of(21);
         }
         if ("file".equals(scheme)) {
-            return null;
+            return Optional.empty();
         }
         if ("gopher".equals(scheme)) {
-            return "70";
+            return Optional.of(70);
         }
         if ("http".equals(scheme)) {
-            return "80";
+            return Optional.of(80);
         }
         if ("https".equals(scheme)) {
-            return "443";
+            return Optional.of(443);
         }
         if ("ws".equals(scheme)) {
-            return "80";
+            return Optional.of(80);
         }
         if ("wss".equals(scheme)) {
-            return "443";
+            return Optional.of(443);
         }
-        return null;
+        return Optional.empty();
     }
 
     static String defaultEmpty(final String s) {
