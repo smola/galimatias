@@ -160,7 +160,18 @@ final class URLParser {
                 .build());
     }
 
-    private void handleIllegalCharacterError(String message) throws GalimatiasParseException {
+    private void handleIllegalCharacterError(String message, int codePoint) throws GalimatiasParseException {
+        if (codePoint == ' ') {
+            message += ": space is not allowed";
+        } else if (codePoint == '\t') {
+            message += ": tab is not allowed";
+        } else if (codePoint == '\n') {
+            message += ": line break is not allowed";
+        } else if (codePoint == '\r') {
+            message += ": carriage return is not allowed";
+        } else {
+            message += ": \u201c" + new String(Character.toChars(codePoint)) + "\u201d is not allowed";
+        }
         handleError(GalimatiasParseException.builder()
                 .withMessage(message)
                 .withParseIssue(ParseIssue.ILLEGAL_CHARACTER)
@@ -176,7 +187,8 @@ final class URLParser {
                 .build());
     }
 
-    private void handleFatalIllegalCharacterError(String message) throws GalimatiasParseException {
+    private void handleFatalIllegalCharacterError(String message, int codePoint) throws GalimatiasParseException {
+        message += ": \u201c" + new String(Character.toChars(codePoint)) + "\u201d is not allowed";
         handleFatalError(GalimatiasParseException.builder()
                 .withMessage(message)
                 .withParseIssue(ParseIssue.ILLEGAL_CHARACTER)
@@ -330,7 +342,7 @@ final class URLParser {
 
                     // WHATWG URL: Otherwise, parse error, terminate this algorithm.
                     else {
-                        handleFatalIllegalCharacterError("Illegal character in scheme");
+                        handleFatalIllegalCharacterError("Illegal character in scheme", c);
                     }
 
                     break;
@@ -353,7 +365,7 @@ final class URLParser {
 
                         // WHATWG URL: If c is not the EOF code point, not a URL code point, and not "%", parse error.
                         if (!isEOF && c != '%' && !isURLCodePoint(c)) {
-                            handleIllegalCharacterError("Illegal character in scheme data: not a URL code point");
+                            handleIllegalCharacterError("Illegal character in scheme data", c);
                         }
 
                         if (c == '%') {
@@ -529,7 +541,7 @@ final class URLParser {
                                 continue;
                             }
                             if (!isURLCodePoint(otherChar) && otherChar != '%') {
-                                handleIllegalCharacterError("Illegal character in user or password: not a URL code point");
+                                handleIllegalCharacterError("Illegal character in user or password", buffer.codePointAt(i));
                             }
                             if (otherChar == '%') {
                                 if (i + 2 >= buffer.length() || !isASCIIHexDigit(buffer.charAt(i+1)) || !isASCIIHexDigit(buffer.charAt(i+2))) {
@@ -658,7 +670,7 @@ final class URLParser {
                     } else if (c == 0x0009 || c == 0x000A || c == 0x000D) {
                         handleIllegalWhitespaceError();
                     } else {
-                        handleFatalIllegalCharacterError("Illegal character in port");
+                        handleFatalIllegalCharacterError("Illegal character in port", c);
                     }
                     break;
                 }
@@ -724,7 +736,7 @@ final class URLParser {
                         handleIllegalWhitespaceError();
                     } else {
                         if (!isURLCodePoint(c) && c != '%') {
-                            handleIllegalCharacterError("Illegal character in path segment: not a URL code point");
+                            handleIllegalCharacterError("Illegal character in path segment", c);
                         }
 
                         if (c == '%') {
@@ -773,7 +785,7 @@ final class URLParser {
                         handleIllegalWhitespaceError();
                     } else {
                         if (!isURLCodePoint(c) && c != '%') {
-                            handleIllegalCharacterError("Illegal character in query: not a URL code point");
+                            handleIllegalCharacterError("Illegal character in query", c);
                         }
                         if (c == '%') {
                             if (!isASCIIHexDigit(at(idx+1)) || !isASCIIHexDigit(at(idx+2))) {
@@ -804,7 +816,7 @@ final class URLParser {
                         handleIllegalWhitespaceError();
                     } else {
                         if (!isURLCodePoint(c) && c != '%') {
-                            handleIllegalCharacterError("Illegal character in path segment: not a URL code point");
+                            handleIllegalCharacterError("Illegal character in fragment", c);
                         }
                         if (c == '%') {
                             if (!isASCIIHexDigit(at(idx+1)) || !isASCIIHexDigit(at(idx+2))) {
