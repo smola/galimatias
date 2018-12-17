@@ -42,6 +42,7 @@ public class ParseIssueTest {
                 { "http://www.example.com/%", ParseIssue.INVALID_PERCENT_ENCODING, false },
                 { "http://www.example.com\\path", ParseIssue.BACKSLASH_AS_DELIMITER, false },
                 { "http://us`er:pass@www.example.com/path", ParseIssue.ILLEGAL_CHARACTER, false },
+                { "http://:\uD83D\uDCA9@example.com/bar", ParseIssue.ILLEGAL_CHARACTER, false },
                 { "http://www.exam\tple.com/path", ParseIssue.ILLEGAL_WHITESPACE, false },
                 { "http://user:pass@/path", ParseIssue.INVALID_HOST, true }
         });
