@@ -532,6 +532,7 @@ final class URLParser {
 
                         for (int i = 0; i < buffer.codePointCount(0, buffer.length()); i++) {
                             final int otherChar = buffer.codePointAt(i);
+                            final char startChar = buffer.charAt(i);
                             if (
                                     otherChar == 0x0009 ||
                                     otherChar == 0x000A ||
@@ -540,8 +541,8 @@ final class URLParser {
                                 handleIllegalWhitespaceError();
                                 continue;
                             }
-                            if (!isURLCodePoint(otherChar) && otherChar != '%') {
-                                handleIllegalCharacterError("Illegal character in user or password", buffer.codePointAt(i));
+                            if (!isURLCodePoint(startChar) && startChar != '%') {
+                                handleIllegalCharacterError("Illegal character in user or password", otherChar);
                             }
                             if (otherChar == '%') {
                                 if (i + 2 >= buffer.length() || !isASCIIHexDigit(buffer.charAt(i+1)) || !isASCIIHexDigit(buffer.charAt(i+2))) {
