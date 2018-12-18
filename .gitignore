@@ -3,6 +3,7 @@
 # IntelliJ IDEA
 #.idea/workspace.xml
 .idea
+.attach_pid*
 
 # VIM
 .*.swp
