@@ -5,9 +5,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.params.provider.Arguments;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -90,4 +94,14 @@ public class URLTestData {
                     });
         }
     }
+
+    public static Stream<Arguments> casesWithIndexes() throws IOException {
+        final List<URLTestData> cases = cases().collect(Collectors.toList());
+        final List<Arguments> result = new ArrayList<>(cases.size());
+        for (int i = 0; i < cases.size(); i++) {
+            result.add(Arguments.of(i, cases.get(i)));
+        }
+        return result.stream();
+    }
+
 }
