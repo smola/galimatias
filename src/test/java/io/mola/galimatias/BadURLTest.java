@@ -71,6 +71,11 @@ public class BadURLTest {
         URL.parse("+http://example.com");
     }
 
+    @Test(expected = GalimatiasParseException.class)
+    public void parseURLWithLargePortNumber() throws GalimatiasParseException {
+        URL.parse("http://example.com:61730128112/");
+    }
+
     @Test
     public void parseURLWithErrors() throws GalimatiasParseException {
         assertThat(URL.parse("http://example.com\\foo\\bar").toString()).isEqualTo("http://example.com/foo/bar");

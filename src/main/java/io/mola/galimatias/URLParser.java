@@ -205,6 +205,15 @@ final class URLParser {
                 .build());
     }
 
+    private void handleFatalInvalidPortError(Exception exception, String portString) throws GalimatiasParseException {
+        handleFatalError(GalimatiasParseException.builder()
+                .withMessage("Invalid port: " + portString)
+                .withParseIssue(ParseIssue.INVALID_PORT)
+                .withPosition(idx)
+                .withCause(exception)
+                .build());
+    }
+
     // Based on http://src.chromium.org/viewvc/chrome/trunk/src/url/third_party/mozilla/url_parse.cc
     // http://url.spec.whatwg.org/#parsing
     //
@@ -659,7 +668,12 @@ final class URLParser {
                         if (buffer.length() == 0) {
                             port = -1;
                         } else {
-                            port = Integer.parseInt(buffer.toString());
+                            try {
+                                port = Integer.parseInt(buffer.toString());
+                            }
+                            catch (NumberFormatException e) {
+                                handleFatalInvalidPortError(e, buffer.toString());
+                            }
                         }
                         if (stateOverride != null) {
                             terminate = true;
