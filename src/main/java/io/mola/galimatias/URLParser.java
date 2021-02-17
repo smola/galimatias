@@ -659,7 +659,15 @@ final class URLParser {
                         if (buffer.length() == 0) {
                             port = -1;
                         } else {
-                            port = Integer.parseInt(buffer.toString());
+                            String portMsg = "Port number must be less than 65536";
+                            try {
+                                port = Integer.parseInt(buffer.toString());
+                                if (port > 65535) {
+                                    handleError(portMsg);
+                                }
+                            } catch (NumberFormatException e) {
+                                handleError(portMsg);
+                            }
                         }
                         if (stateOverride != null) {
                             terminate = true;
