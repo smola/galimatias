@@ -568,6 +568,7 @@ public class URL implements Serializable {
         return new URLParser(parseFragment, this, URLParser.ParseURLState.FRAGMENT).parse();
     }
 
+    @SuppressWarnings("javadoc")
     /**
      * Converts to {@link java.net.URI}.
      *
