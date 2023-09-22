@@ -158,6 +158,38 @@ public class URL implements Serializable {
         return defaultPort(scheme);
     }
 
+    public Object[] unSerializedOrigin() {
+        Object[] origin = new Object[3];
+        String schemeValue = this.scheme();
+        String hostValue = (host == null ? "" : host.toString());
+        Integer portValue = null;
+
+        int currentPort = this.port();
+
+        if (
+            !("http".equals(schemeValue) && currentPort == 80) &&
+            !("https".equals(schemeValue) && currentPort == 443) &&
+            -1 < currentPort
+        ) {
+            portValue = currentPort;
+        }
+
+        origin[0] = schemeValue;
+        origin[1] = hostValue;
+        origin[2] = portValue;
+
+        return origin;
+    }
+
+    public String origin() {
+        Object[] originValue = this.unSerializedOrigin();
+        String schemeValue = originValue[0].toString() + "://";
+        String hostValue =originValue[1].toString();
+        String portValue = originValue[2] == null ? "" : ":" + originValue[2].toString();
+
+        return schemeValue + hostValue + portValue;
+    }
+
     public String path() {
         return path;
     }
