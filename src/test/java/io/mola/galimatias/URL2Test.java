@@ -98,6 +98,7 @@ public final class URL2Test extends TestCase {
         assertEquals("path", url.host().toString()); // Android will parse this as ""
         assertEquals("/", url.file()); // Android will parse this as "/path"
         assertEquals("/", url.path());
+        assertEquals("http://path", url.origin());
     }
 
     public void testNoHost() throws Exception {
@@ -112,6 +113,7 @@ public final class URL2Test extends TestCase {
         assertEquals("/", url.path()); // Android will be "/path"
         assertEquals(null, url.query());
         assertEquals(null, url.fragment());
+        assertEquals("http://path", url.origin());
     }
 
     public void testNoPath() throws Exception {
@@ -119,6 +121,7 @@ public final class URL2Test extends TestCase {
         assertEquals("host", url.host().toString());
         assertEquals("/", url.file()); // Android will be ""
         assertEquals("/", url.path()); // Android will be ""
+        assertEquals("http://host", url.origin());
     }
 
     public void testEmptyHostAndNoPath() throws Exception {
@@ -156,6 +159,7 @@ public final class URL2Test extends TestCase {
         assertEquals("user@host", url.authority());
         assertEquals("user", url.userInfo());
         assertEquals("host", url.host().toString());
+        assertEquals("http://host", url.origin());
     }
 
     public void testUserNoPasswordExplicitPort() throws Exception {
@@ -164,6 +168,7 @@ public final class URL2Test extends TestCase {
         assertEquals("user", url.userInfo());
         assertEquals("host", url.host().toString());
         assertEquals(8080, url.port());
+        assertEquals("http://host:8080", url.origin());
     }
 
     public void testUserPasswordHostPort() throws Exception {
@@ -172,6 +177,7 @@ public final class URL2Test extends TestCase {
         assertEquals("user:password", url.userInfo());
         assertEquals("host", url.host().toString());
         assertEquals(8080, url.port());
+        assertEquals("http://host:8080", url.origin());
     }
 
     public void testUserPasswordEmptyHostPort() throws Exception {
@@ -192,6 +198,7 @@ public final class URL2Test extends TestCase {
         URL url = URL.parse("http://host/path");
         assertEquals("/path", url.file());
         assertEquals("/path", url.path());
+        assertEquals("http://host", url.origin());
     }
 
     public void testQueryOnly() throws Exception {
@@ -199,6 +206,7 @@ public final class URL2Test extends TestCase {
         assertEquals("/?query", url.file());
         assertEquals("/", url.path());
         assertEquals("query", url.query());
+        assertEquals("http://host", url.origin());
     }
 
     public void testFragmentOnly() throws Exception {
@@ -206,6 +214,7 @@ public final class URL2Test extends TestCase {
         assertEquals("/", url.file());
         assertEquals("/", url.path());
         assertEquals("fragment", url.fragment());
+        assertEquals("http://host", url.origin());
     }
 
     public void testAtSignInPath() throws Exception {
@@ -213,12 +222,14 @@ public final class URL2Test extends TestCase {
         assertEquals("/file@foo", url.file());
         assertEquals("/file@foo", url.path());
         assertEquals("", url.userInfo()); // Null on Android
+        assertEquals("http://host", url.origin());
     }
 
     public void testColonInPath() throws Exception {
         URL url = URL.parse("http://host/file:colon");
         assertEquals("/file:colon", url.file());
         assertEquals("/file:colon", url.path());
+        assertEquals("http://host", url.origin());
     }
 
     public void testSlashInQuery() throws Exception {
@@ -226,6 +237,7 @@ public final class URL2Test extends TestCase {
         assertEquals("/file?query/path", url.file());
         assertEquals("/file", url.path());
         assertEquals("query/path", url.query());
+        assertEquals("http://host", url.origin());
     }
 
     public void testQuestionMarkInQuery() throws Exception {
@@ -233,6 +245,7 @@ public final class URL2Test extends TestCase {
         assertEquals("/file?query?another", url.file());
         assertEquals("/file", url.path());
         assertEquals("query?another", url.query());
+        assertEquals("http://host", url.origin());
     }
 
     public void testAtSignInQuery() throws Exception {
@@ -240,6 +253,7 @@ public final class URL2Test extends TestCase {
         assertEquals("/file?query@at", url.file());
         assertEquals("/file", url.path());
         assertEquals("query@at", url.query());
+        assertEquals("http://host", url.origin());
     }
 
     public void testColonInQuery() throws Exception {
@@ -247,6 +261,7 @@ public final class URL2Test extends TestCase {
         assertEquals("/file?query:colon", url.file());
         assertEquals("/file", url.path());
         assertEquals("query:colon", url.query());
+        assertEquals("http://host", url.origin());
     }
 
     public void testQuestionMarkInFragment() throws Exception {
@@ -255,6 +270,7 @@ public final class URL2Test extends TestCase {
         assertEquals("/file", url.path());
         assertEquals(null, url.query());
         assertEquals("fragment?query", url.fragment());
+        assertEquals("http://host", url.origin());
     }
 
     public void testColonInFragment() throws Exception {
@@ -263,6 +279,7 @@ public final class URL2Test extends TestCase {
         assertEquals("/file", url.path());
         assertEquals(80, url.port());
         assertEquals("fragment:80", url.fragment());
+        assertEquals("http://host", url.origin());
     }
 
     public void testSlashInFragment() throws Exception {
@@ -270,6 +287,7 @@ public final class URL2Test extends TestCase {
         assertEquals("/file", url.file());
         assertEquals("/file", url.path());
         assertEquals("fragment/path", url.fragment());
+        assertEquals("http://host", url.origin());
     }
 
     /* TODO
@@ -286,11 +304,13 @@ public final class URL2Test extends TestCase {
         assertEquals("/file", url.file());
         assertEquals("/file", url.path());
         assertEquals("fragment#another", url.fragment());
+        assertEquals("http://host", url.origin());
     }
 
     public void testEmptyPort() throws Exception {
         URL url = URL.parse("http://host:/");
         assertEquals(80, url.port());
+        assertEquals("http://host", url.origin());
     }
 
     public void testNonNumericPort() throws Exception {
@@ -325,6 +345,7 @@ public final class URL2Test extends TestCase {
         assertEquals("/another", url.path());
         assertEquals(null, url.query());
         assertEquals(null, url.fragment());
+        assertEquals("http://host", url.origin());
     }
 
     public void testRelativeFragmentOnQuery() throws Exception {
@@ -335,6 +356,7 @@ public final class URL2Test extends TestCase {
         assertEquals("/file", url.path());
         assertEquals("query/x", url.query());
         assertEquals("another", url.fragment());
+        assertEquals("http://host", url.origin());
     }
 
     public void testPathContainsRelativeParts() throws Exception {
@@ -501,6 +523,7 @@ public final class URL2Test extends TestCase {
         URL url = URL.parse("http://user:[::1]@host");
         assertEquals("user:[::1]", url.userInfo());
         assertEquals("host", url.host().toString());
+        assertEquals("http://host", url.origin());
     }
 
     /*TODO
@@ -529,6 +552,7 @@ public final class URL2Test extends TestCase {
         assertEquals(null, url.authority()); // RI and galimatias return null, Android returns ""
         assertEquals("//foo", url.path());
         assertEquals("file:////foo", url.toString());
+        assertEquals("file://", url.origin());
     }
 
     public void testFileUrlWithAuthority() throws Exception {
@@ -536,6 +560,7 @@ public final class URL2Test extends TestCase {
         assertEquals("x", url.authority());
         assertEquals("/foo", url.path());
         assertEquals("file://x/foo", url.toString());
+        assertEquals("file://x", url.origin());
     }
 
     /**
@@ -548,6 +573,7 @@ public final class URL2Test extends TestCase {
         assertEquals("foo", url.authority()); // Android will be ""
         assertEquals("/", url.path()); // Android will be "/foo"
         assertEquals("http://foo/", url.toString()); // RI drops '//', android will be "http:///foo"
+        assertEquals("http://foo", url.origin()); // Android returns "http:///foo:80"
     }
 
     public void testHttpUrlExtraLeadingSlashes() throws Exception {
@@ -555,6 +581,17 @@ public final class URL2Test extends TestCase {
         assertEquals("foo", url.authority()); // RI returns null, Android "//"
         assertEquals("/", url.path()); // Android returns "//foo"
         assertEquals("http://foo/", url.toString()); // Android returns "http:////foo"
+        assertEquals("http://foo", url.origin()); // Android returns "http:////foo:80"
+    }
+
+    public void testHttpsUrl() throws Exception {
+        URL url = URL.parse("https://foo/path");
+        assertEquals("https://foo", url.origin());
+    }
+
+    public void testHttpsUrlWithPort() throws Exception {
+        URL url = URL.parse("https://foo:4000/path");
+        assertEquals("https://foo:4000", url.origin());
     }
 
     public void testFileUrlRelativePath() throws Exception {
@@ -566,6 +603,7 @@ public final class URL2Test extends TestCase {
         URL url = URL.parse("file:../a/b");
         assertEquals("/a/b", url.path());  // Android will be "../a/b"
         assertEquals("file:///a/b", url.toString()); // Android will be "file:../a/b"
+        assertEquals("file://", url.origin());
     }
 
     public void testParsingDotAsHostname() throws Exception {
@@ -644,6 +682,7 @@ public final class URL2Test extends TestCase {
         URL url = URL.parse("http:///path");
         assertEquals("path", url.authority()); // Android will be ""
         assertEquals("/", url.path()); // Android will be "/path"
+        assertEquals("http://path", url.origin());
     }
 
     public void testEmptyAuthorityWithQuery() throws Exception {
@@ -707,6 +746,7 @@ public final class URL2Test extends TestCase {
         assertEquals("a_b.c.d.net", url.authority());
         // The RFC's don't permit underscores in hostnames, but URL accepts them (unlike URI).
         assertEquals("a_b.c.d.net", url.host().toString());
+        assertEquals("http://a_b.c.d.net", url.origin());
     }
 
     /*TODO
